@@ -361,6 +361,10 @@ public class AccountHandler extends BaseBridgeHandler {
         updateProperties(thingProperties);
     }
 
+    public boolean equalsThingUID(String thingUID) {
+        return getThing().getUID().getAsString().equals(thingUID);
+    }
+
     /**
      * Disposes the bridge.
      */

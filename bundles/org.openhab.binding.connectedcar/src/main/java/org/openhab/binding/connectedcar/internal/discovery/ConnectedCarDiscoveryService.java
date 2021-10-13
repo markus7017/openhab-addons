@@ -83,6 +83,9 @@ public class ConnectedCarDiscoveryService extends AbstractDiscoveryService imple
                 case API_BRAND_WECHARGE:
                     tuid = THING_TYPE_WCWALLBOX;
                     break;
+                case API_BRAND_MERCEDES:
+                    tuid = THING_TYPE_MMEVEHICLE;
+                    break;
                 default:
                     tuid = THING_TYPE_CNVEHICLE;
             }

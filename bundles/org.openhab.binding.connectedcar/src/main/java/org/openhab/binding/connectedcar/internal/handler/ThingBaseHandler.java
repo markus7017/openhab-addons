@@ -111,6 +111,10 @@ public abstract class ThingBaseHandler extends BaseThingHandler implements Accou
         this.cache = new ChannelCache(this, thingId);
     }
 
+    public boolean equalsThingUID(String thingUID) {
+        return getThing().getUID().getAsString().equals(thingUID);
+    }
+
     @Override
     public void initialize() {
         logger.debug("{}: Initializing!", getConfigAs(ThingConfiguration.class).vin);
