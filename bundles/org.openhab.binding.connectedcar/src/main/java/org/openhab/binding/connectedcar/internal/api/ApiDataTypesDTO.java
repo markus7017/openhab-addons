@@ -26,6 +26,7 @@ import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.Car
 import org.openhab.binding.connectedcar.internal.api.carnet.CarNetPendingRequest;
 import org.openhab.binding.connectedcar.internal.api.fordpass.FPApiJsonDTO.FPActionRequest;
 import org.openhab.binding.connectedcar.internal.api.fordpass.FPApiJsonDTO.FPVehicleStatusData;
+import org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MMeVehicleStatusData;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleList.SEVehicle;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData;
 import org.openhab.binding.connectedcar.internal.api.wecharge.WeChargeJsonDTO.WeChargeStationDetails;
@@ -53,6 +54,7 @@ public class ApiDataTypesDTO {
     public static final String API_BRAND_SKODA_E = "Skoda-E";
     public static final String API_BRAND_SEAT = "Seat";
     public static final String API_BRAND_FORD = "Ford";
+    public static final String API_BRAND_MERCEDES = "MercedesMe";
     public static final String API_BRAND_NULL = "NULL";
 
     public static final String API_REQUEST_SUCCESSFUL = "request_successful";
@@ -137,6 +139,7 @@ public class ApiDataTypesDTO {
         public @Nullable SEVehicleStatusData seStatus;
         public @Nullable FPVehicleStatusData fpStatus;
         public @Nullable WeChargeStatus weChargeStatus;
+        public @Nullable MMeVehicleStatusData mmeStatus;
         public GeoPosition vehicleLocation = new GeoPosition();
         public GeoPosition parkingPosition = new GeoPosition();
 
@@ -157,6 +160,10 @@ public class ApiDataTypesDTO {
 
         public VehicleStatus(FPVehicleStatusData status) {
             fpStatus = status;
+        }
+
+        public VehicleStatus(MMeVehicleStatusData status) {
+            mmeStatus = status;
         }
 
         public VehicleStatus(WeChargeStatus status) {

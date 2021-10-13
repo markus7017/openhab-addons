@@ -86,7 +86,7 @@ public class HandlerFactory extends BaseThingHandlerFactory {
                     || THING_TYPE_VWID.equals(thingTypeUID) || THING_TYPE_VWGO.equals(thingTypeUID)
                     || THING_TYPE_SKODA.equals(thingTypeUID) || THING_TYPE_ENYAK.equals(thingTypeUID)
                     || THING_TYPE_SEAT.equals(thingTypeUID) || THING_TYPE_FORD.equals(thingTypeUID)
-                    || THING_TYPE_WECHARGE.equals(thingTypeUID)) {
+                    || THING_TYPE_MERCEDES.equals(thingTypeUID) || THING_TYPE_WECHARGE.equals(thingTypeUID)) {
                 AccountHandler handler = new AccountHandler((Bridge) thing, resources, tokenManager);
                 registerDeviceDiscoveryService(handler);
                 return handler;
@@ -100,6 +100,8 @@ public class HandlerFactory extends BaseThingHandlerFactory {
                 return new FordVehicleHandler(thing, resources, zoneId, channelIdMapper, channelTypeProvider);
             } else if (THING_TYPE_WCWALLBOX.equals(thingTypeUID)) {
                 return new WeChargeThingHandler(thing, resources, zoneId, channelIdMapper, channelTypeProvider);
+            } else if (THING_TYPE_MMEVEHICLE.equals(thingTypeUID)) {
+                return new MercedesVehicleHandler(thing, resources, zoneId, channelIdMapper, channelTypeProvider);
             } else {
                 logger.warn("HandlerFactory: Unsuppoerted ThingType requested: {}", thingTypeUID);
             }
