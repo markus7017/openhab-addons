@@ -29,6 +29,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.util.MultiMap;
 import org.eclipse.jetty.util.StringUtil;
 import org.eclipse.jetty.util.UrlEncoded;
+import org.openhab.binding.connectedcar.internal.api.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,16 +74,18 @@ public class MercedesAuthServlet extends HttpServlet {
     @Override
     protected void doGet(@Nullable HttpServletRequest req, @Nullable HttpServletResponse resp)
             throws ServletException, IOException {
-        logger.debug("Mercedes auth callback servlet received GET request {}.", req.getRequestURI());
-        final String servletBaseURL = req.getRequestURL().toString();
-        final Map<String, String> replaceMap = new HashMap<>();
+        if (req != null && resp != null) {
+            logger.debug("Mercedes auth callback servlet received GET request {}.", req.getRequestURI());
+            final String servletBaseURL = req.getRequestURL().toString();
+            final Map<String, String> replaceMap = new HashMap<>();
 
-        handleMercedesRedirect(replaceMap, servletBaseURL, req.getQueryString());
-        resp.setContentType(CONTENT_TYPE);
-        replaceMap.put(KEY_REDIRECT_URI, servletBaseURL);
-        // replaceMap.put(KEY_PLAYERS, formatPlayers(playerTemplate, servletBaseURL));
-        resp.getWriter().append(replaceKeysFromMap(indexTemplate, replaceMap));
-        resp.getWriter().close();
+            handleMercedesRedirect(replaceMap, servletBaseURL, req.getQueryString());
+            resp.setContentType(CONTENT_TYPE);
+            replaceMap.put(KEY_REDIRECT_URI, servletBaseURL);
+            // replaceMap.put(KEY_PLAYERS, formatPlayers(playerTemplate, servletBaseURL));
+            resp.getWriter().append(replaceKeysFromMap(indexTemplate, replaceMap));
+            resp.getWriter().close();
+        }
     }
 
     /**
@@ -118,58 +121,13 @@ public class MercedesAuthServlet extends HttpServlet {
                 try {
                     replaceMap.put(KEY_AUTHORIZED_USER, String.format(HTML_USER_AUTHORIZED,
                             mercedesAuthService.authorize(servletBaseURL, reqState, reqCode)));
-                } catch (RuntimeException e) {
+                } catch (ApiException e) {
                     logger.debug("Exception during authorizaton: ", e);
                     replaceMap.put(KEY_ERROR, String.format(HTML_ERROR, e.getMessage()));
                 }
             }
         }
     }
-
-    // /**
-    // * Formats the HTML of all available Mercedes Vehicles and returns it as a String
-    // *
-    // * @param playerTemplate The player template to format the player values in
-    // * @param servletBaseURL the redirect_uri to be used in the authorization url created on the authorization button.
-    // * @return A String with the players formatted with the player template
-    // */
-    // private String formatPlayers(String playerTemplate, String servletBaseURL) {
-    // final List<MercedesAccountHandler> players = mercedesAuthService.getMercedesAccountHandlers();
-
-    // return players.isEmpty() ? HTML_EMPTY_PLAYERS
-    // : players.stream().map(p -> formatPlayer(playerTemplate, p, servletBaseURL))
-    // .collect(Collectors.joining());
-    // }
-
-    // /**
-    // * Formats the HTML of a Spotify Bridge Player and returns it as a String
-    // *
-    // * @param playerTemplate The player template to format the player values in
-    // * @param handler The handler for the player to format
-    // * @param servletBaseURL the redirect_uri to be used in the authorization url created on the authorization button.
-    // * @return A String with the player formatted with the player template
-    // */
-    // private String formatPlayer(String playerTemplate, MercedesAccountHandler handler, String servletBaseURL) {
-    // final Map<String, String> map = new HashMap<>();
-
-    // map.put(PLAYER_ID, handler.getUID().getAsString());
-    // map.put(PLAYER_NAME, handler.getLabel());
-    // final String spotifyUser = handler.getUser();
-
-    // if (handler.isAuthorized()) {
-    // map.put(PLAYER_AUTHORIZED_CLASS, " authorized");
-    // map.put(PLAYER_SPOTIFY_USER_ID, String.format(" (Authorized user: %s)", spotifyUser));
-    // } else if (!StringUtil.isBlank(spotifyUser)) {
-    // map.put(PLAYER_AUTHORIZED_CLASS, " Unauthorized");
-    // map.put(PLAYER_SPOTIFY_USER_ID, String.format(" (Unauthorized user: %s)", spotifyUser));
-    // } else {
-    // map.put(PLAYER_AUTHORIZED_CLASS, "");
-    // map.put(PLAYER_SPOTIFY_USER_ID, "");
-    // }
-
-    // map.put(PLAYER_AUTHORIZE, handler.formatAuthorizationUrl(servletBaseURL));
-    // return replaceKeysFromMap(playerTemplate, map);
-    // }
 
     /**
      * Replaces all keys from the map found in the template with values from the map. If the key is not found the key
