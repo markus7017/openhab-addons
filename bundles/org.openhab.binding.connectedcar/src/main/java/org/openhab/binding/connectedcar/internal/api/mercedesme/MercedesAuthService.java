@@ -123,7 +123,7 @@ public class MercedesAuthService {
      * @param code The Mercedes returned code value
      * @return returns the name of the Mercedes user that is authorized
      */
-    public String authorize(String servletBaseURL, String state, String code) {
+    public String authorize(String servletBaseURL, String state, String code) throws ApiException {
         final AccountHandler listener = getMercedesAuthListener(state);
 
         if (listener == null) {
@@ -132,7 +132,8 @@ public class MercedesAuthService {
                     state);
             throw new ApiException(ERROR_UKNOWN_BRIDGE);
         } else {
-            return listener.authorize(servletBaseURL, code);
+            // return listener.authorize(servletBaseURL, code);
+            return "";
         }
     }
 
