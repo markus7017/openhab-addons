@@ -21,6 +21,7 @@ import org.openhab.binding.connectedcar.internal.api.ApiEventListener;
 import org.openhab.binding.connectedcar.internal.api.ApiHttpClient;
 import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 
 /**
  * {@link BrandCarNetSkoda} provides the Skoda specific functions of the API, portal URL us
@@ -48,9 +49,9 @@ public class BrandCarNetSkoda extends CarNetApi implements BrandAuthenticator {
         properties.xappName = "cz.skodaauto.connect";
     }
 
-    public BrandCarNetSkoda(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public BrandCarNetSkoda(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override

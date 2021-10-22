@@ -18,23 +18,29 @@ package org.openhab.binding.connectedcar.internal.api.mercedesme;
  * @author Markus Michels - Initial contribution
  */
 public class MMeJsonDTO {
-    public static final String MERCEDES_AUTH_URL = "https://id.mercedes-benz.com/as/authorization.oauth2";
-    public static final String MERCEDES_TOKEN_URL = "https://id.mercedes-benz.com/as/token.oauth2";
-    public static final String MERCEDES_API_URL = "https://api.mercedes-benz.com/vehicledata/v2/vehicles/";
+    public static final String MME_REGION_EUROPE = "EU";
+    public static final String MME_REGION_NORTHAM = "US";
+    public static final String MME_REGION_APAC = "AP";
 
     // Authorization related Servlet and resources aliases.
-    public static final String MERCEDES_ALIAS = "/connectmercedes";
+    public static final String MMME_ALIAS_URI = "/connectmercedes";
 
     // Mercedes scopes needed by this binding to work.
-    public static final String MERCEDES_SCOPE_FUELSTATUS = "mb:vehicle:mbdata:fuelstatus ";
-    public static final String MERCEDES_SCOPE_EVSTATUS = "mb:vehicle:mbdata:evstatus ";
-    public static final String MERCEDES_SCOPE_VEHICLELOCK = "mb:vehicle:mbdata:vehiclelock ";
-    public static final String MERCEDES_SCOPE_VEHICLESTATUS = "mb:vehicle:mbdata:vehiclestatus ";
-    public static final String MERCEDES_SCOPE_PAYASYOUDRIVE = "mb:vehicle:mbdata:payasyoudrive ";
-
-    public static final String MERCEDES_SCOPE_REFRESHTOKEN = "offline_access";
+    public static final String MME_SCOPE_FUELSTATUS = "mb:vehicle:mbdata:fuelstatus ";
+    public static final String MME_SCOPE_EVSTATUS = "mb:vehicle:mbdata:evstatus ";
+    public static final String MME_SCOPE_VEHICLELOCK = "mb:vehicle:mbdata:vehiclelock ";
+    public static final String MME_SCOPE_VEHICLESTATUS = "mb:vehicle:mbdata:vehiclestatus ";
+    public static final String MME_SCOPE_PAYASYOUDRIVE = "mb:vehicle:mbdata:payasyoudrive ";
+    public static final String MME_SCOPE_REFRESHTOKEN = "offline_access";
+    public static final String MME_AUTH_SCOPE = MME_SCOPE_VEHICLESTATUS + " " + MME_SCOPE_FUELSTATUS + " "
+            + MME_SCOPE_EVSTATUS + " " + MME_SCOPE_VEHICLELOCK;
 
     public class MmeErrorResponse {
+    }
+
+    public class MmeRequestPinResponse {
+        public Boolean isEmail;
+        public String username;
     }
 
     public static class MMeVehicleListData {
@@ -46,5 +52,4 @@ public class MMeJsonDTO {
         public class MMeVehicleStatus {
         }
     }
-
 }

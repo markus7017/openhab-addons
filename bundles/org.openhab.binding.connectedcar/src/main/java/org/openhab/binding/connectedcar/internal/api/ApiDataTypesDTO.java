@@ -48,13 +48,12 @@ public class ApiDataTypesDTO {
     public static final String API_BRAND_AUDI = "Audi";
     public static final String API_BRAND_VW = "VW";
     public static final String API_BRAND_VWID = "Id";
-    public static final String API_BRAND_VWGO = "Go";
     public static final String API_BRAND_WECHARGE = "WeCharge";
     public static final String API_BRAND_SKODA = "Skoda";
     public static final String API_BRAND_SKODA_E = "Skoda-E";
     public static final String API_BRAND_SEAT = "Seat";
     public static final String API_BRAND_FORD = "Ford";
-    public static final String API_BRAND_MERCEDES = "MercedesMe";
+    public static final String API_BRAND_MERCEDES = "Mercedes";
     public static final String API_BRAND_NULL = "NULL";
 
     public static final String API_REQUEST_SUCCESSFUL = "request_successful";

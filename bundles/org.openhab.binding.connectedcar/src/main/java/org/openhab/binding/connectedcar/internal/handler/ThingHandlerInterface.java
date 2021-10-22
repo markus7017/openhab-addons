@@ -10,25 +10,21 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.connectedcar.internal.config;
+package org.openhab.binding.connectedcar.internal.handler;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.connectedcar.internal.config.CombinedConfig;
 
 /**
- * The {@link AccountConfiguration} class contains fields mapping thing configuration parameters.
+ * {@link ThingHandlerInterface} defines interface functions the AccountHandler exposes.
  *
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public class AccountConfiguration {
+public interface ThingHandlerInterface {
+    CombinedConfig getCombinedConfig();
 
-    public String brand = "";
+    String getProperty(String key);
 
-    public String region = "";
-    public String user = "";
-    public String password = "";
-    public String code = "";
-
-    public int apiLevelVentilation = 2;
-    public int apiLevelClimatisation = 2;
+    void fillProperty(String key, String value);
 }

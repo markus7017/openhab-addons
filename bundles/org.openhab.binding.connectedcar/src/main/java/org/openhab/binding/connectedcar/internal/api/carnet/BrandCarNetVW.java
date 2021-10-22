@@ -24,6 +24,7 @@ import org.openhab.binding.connectedcar.internal.api.ApiHttpClient;
 import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
 import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CarNetImageUrlsVW;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,9 +54,9 @@ public class BrandCarNetVW extends CarNetApi implements BrandAuthenticator {
         properties.xappId = "de.volkswagen.car-net.eu.e-remote";
     }
 
-    public BrandCarNetVW(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public BrandCarNetVW(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override

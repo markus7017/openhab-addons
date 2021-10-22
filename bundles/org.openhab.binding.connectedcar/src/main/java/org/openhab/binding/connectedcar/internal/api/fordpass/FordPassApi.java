@@ -42,6 +42,7 @@ import org.openhab.binding.connectedcar.internal.api.fordpass.FPApiJsonDTO.FPAct
 import org.openhab.binding.connectedcar.internal.api.fordpass.FPApiJsonDTO.FPVehicleListData;
 import org.openhab.binding.connectedcar.internal.api.fordpass.FPApiJsonDTO.FPVehicleListData.FPVehicleData.FPVehicle;
 import org.openhab.binding.connectedcar.internal.api.fordpass.FPApiJsonDTO.FPVehicleStatusData;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,9 +57,9 @@ public class FordPassApi extends ApiBase implements BrandAuthenticator {
     private final Map<String, FPVehicle> vehicleList = new HashMap<>();
     private final static String URL_PARM_LRDT = "?lrdt=" + urlEncode("01-01-1970 00:00:00");
 
-    public FordPassApi(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public FordPassApi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override

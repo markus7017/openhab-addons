@@ -41,6 +41,7 @@ import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonD
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleList.WCVehicle;
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleStatusData;
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCVehicleStatusData.WCVehicleStatus;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
 import org.slf4j.Logger;
@@ -57,9 +58,9 @@ public class WeConnectApi extends ApiWithOAuth implements BrandAuthenticator {
     private Map<String, WCVehicle> vehicleData = new HashMap<>();
     private boolean capParkingPos = true;
 
-    public WeConnectApi(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public WeConnectApi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override

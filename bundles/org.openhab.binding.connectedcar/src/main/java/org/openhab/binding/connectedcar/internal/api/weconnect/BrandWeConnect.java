@@ -32,6 +32,7 @@ import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
 import org.openhab.binding.connectedcar.internal.api.IdentityOAuthFlow;
 import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CarNetImageUrlsVW;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,9 +70,9 @@ public class BrandWeConnect extends WeConnectApi implements BrandAuthenticator {
         properties.stdHeaders.put(HttpHeader.ACCEPT_LANGUAGE.toString(), "de-de");
     }
 
-    public BrandWeConnect(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public BrandWeConnect(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override

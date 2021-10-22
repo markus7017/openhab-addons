@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.connectedcar.internal.api.mercedesme;
 
-import static org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MERCEDES_ALIAS;
+import static org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MMME_ALIAS_URI;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -70,7 +70,7 @@ public class MercedesAuthService {
     protected void activate(ComponentContext componentContext, Map<String, Object> properties) {
         try {
             bundleContext = componentContext.getBundleContext();
-            httpService.registerServlet(MERCEDES_ALIAS, createServlet(), new Hashtable<>(),
+            httpService.registerServlet(MMME_ALIAS_URI, createServlet(), new Hashtable<>(),
                     httpService.createDefaultHttpContext());
             // httpService.registerResources(MERCEDES_ALIAS + SPOTIFY_IMG_ALIAS, "web", null);
         } catch (NamespaceException | ServletException | IOException e) {
@@ -80,7 +80,7 @@ public class MercedesAuthService {
 
     @Deactivate
     protected void deactivate(ComponentContext componentContext) {
-        httpService.unregister(MERCEDES_ALIAS);
+        httpService.unregister(MMME_ALIAS_URI);
         // httpService.unregister(MERCEDES_ALIAS + SPOTIFY_IMG_ALIAS);
     }
 

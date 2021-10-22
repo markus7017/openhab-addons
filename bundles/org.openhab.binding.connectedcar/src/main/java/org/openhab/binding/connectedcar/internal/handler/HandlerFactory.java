@@ -83,10 +83,10 @@ public class HandlerFactory extends BaseThingHandlerFactory {
 
         try {
             if (THING_TYPE_MYAUDI.equals(thingTypeUID) || THING_TYPE_VW.equals(thingTypeUID)
-                    || THING_TYPE_VWID.equals(thingTypeUID) || THING_TYPE_VWGO.equals(thingTypeUID)
-                    || THING_TYPE_SKODA.equals(thingTypeUID) || THING_TYPE_ENYAK.equals(thingTypeUID)
-                    || THING_TYPE_SEAT.equals(thingTypeUID) || THING_TYPE_FORD.equals(thingTypeUID)
-                    || THING_TYPE_MERCEDES.equals(thingTypeUID) || THING_TYPE_WECHARGE.equals(thingTypeUID)) {
+                    || THING_TYPE_VWID.equals(thingTypeUID) || THING_TYPE_SKODA.equals(thingTypeUID)
+                    || THING_TYPE_ENYAK.equals(thingTypeUID) || THING_TYPE_SEAT.equals(thingTypeUID)
+                    || THING_TYPE_FORD.equals(thingTypeUID) || THING_TYPE_MERCEDES.equals(thingTypeUID)
+                    || THING_TYPE_WECHARGE.equals(thingTypeUID)) {
                 AccountHandler handler = new AccountHandler((Bridge) thing, resources, tokenManager);
                 registerDeviceDiscoveryService(handler);
                 return handler;

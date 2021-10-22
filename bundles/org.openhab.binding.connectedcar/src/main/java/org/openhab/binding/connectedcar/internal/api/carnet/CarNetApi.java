@@ -79,6 +79,7 @@ import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.Car
 import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CarNetVehicleList;
 import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CarNetVehicleStatus;
 import org.openhab.binding.connectedcar.internal.config.CombinedConfig;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.openhab.core.library.types.PointType;
 import org.openhab.core.library.unit.SIUnits;
 import org.slf4j.Logger;
@@ -93,8 +94,9 @@ import org.slf4j.LoggerFactory;
 public class CarNetApi extends ApiWithOAuth {
     private final Logger logger = LoggerFactory.getLogger(CarNetApi.class);
 
-    public CarNetApi(ApiHttpClient httpClient, IdentityManager tokenManager, @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+    public CarNetApi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
+            @Nullable ApiEventListener eventListener) {
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     /**

@@ -57,10 +57,10 @@
 		<config-description-ref uri="bridge-type:connectedcar:fordaccount"/>
 	</bridge-type>
 
-    <bridge-type id="mercedes">
-        <label>@text/thing-type.connectedcar.cnvehicle.label</label>
-        <description>@text/thing-type.connectedcar.mercedes.description</description>
+	<bridge-type id="mercedes">
+		<label>@text/thing-type.connectedcar.mercedes.label</label>
+		<description>@text/thing-type.connectedcar.mercedes.description</description>
 
-        <config-description-ref uri="bridge-type:connectedcar:mmeaccount"/>
-    </bridge-type>
+		<config-description-ref uri="bridge-type:connectedcar:mmeaccount"/>
+	</bridge-type>
 </thing:thing-descriptions>

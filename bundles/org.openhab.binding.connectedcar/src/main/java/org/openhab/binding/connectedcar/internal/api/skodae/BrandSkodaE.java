@@ -33,6 +33,7 @@ import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
 import org.openhab.binding.connectedcar.internal.api.IdentityOAuthFlow;
 import org.openhab.binding.connectedcar.internal.api.carnet.BrandCarNetSkoda;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 
 /**
  * {@link BrandSkodaE} provides the Brand interface for Skoda Enyak
@@ -60,9 +61,9 @@ public class BrandSkodaE extends SkodaEApi implements BrandAuthenticator {
         properties.xappName = "cz.skodaauto.connect";
     }
 
-    public BrandSkodaE(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public BrandSkodaE(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override

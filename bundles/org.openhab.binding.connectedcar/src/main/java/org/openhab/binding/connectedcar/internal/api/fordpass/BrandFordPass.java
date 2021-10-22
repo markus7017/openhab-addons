@@ -27,6 +27,7 @@ import org.openhab.binding.connectedcar.internal.api.ApiIdentity.OAuthToken;
 import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
 import org.openhab.binding.connectedcar.internal.api.IdentityOAuthFlow;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 
 /**
  * {@link BrandApiFord} provides the brand specific functions of the API
@@ -53,9 +54,9 @@ public class BrandFordPass extends FordPassApi implements BrandAuthenticator {
         properties.tokenRefreshUrl = "https://api.mps.ford.com/api/oauth2/v1/refresh";
     }
 
-    public BrandFordPass(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public BrandFordPass(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override

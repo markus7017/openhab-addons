@@ -25,6 +25,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.http.HttpHeader;
 import org.openhab.binding.connectedcar.internal.api.ApiIdentity.OAuthToken;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,9 +39,9 @@ public class ApiWithOAuth extends ApiBase implements BrandAuthenticator {
     private final Logger logger = LoggerFactory.getLogger(ApiWithOAuth.class);
     private static final String UTF_8 = StandardCharsets.UTF_8.name();
 
-    public ApiWithOAuth(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public ApiWithOAuth(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override
