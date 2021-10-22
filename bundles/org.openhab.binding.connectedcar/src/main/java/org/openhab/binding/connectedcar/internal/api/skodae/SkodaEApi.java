@@ -44,6 +44,7 @@ import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehic
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEChargerStatus;
 import org.openhab.binding.connectedcar.internal.api.skodae.SEApiJsonDTO.SEVehicleStatusData.SEVehicleStatus.SEClimaterStatus;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
 
@@ -56,8 +57,9 @@ import org.openhab.core.library.unit.Units;
 public class SkodaEApi extends ApiWithOAuth implements BrandAuthenticator {
     private Map<String, SEVehicle> vehicleData = new HashMap<>();
 
-    public SkodaEApi(ApiHttpClient httpClient, IdentityManager tokenManager, @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+    public SkodaEApi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
+            @Nullable ApiEventListener eventListener) {
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override

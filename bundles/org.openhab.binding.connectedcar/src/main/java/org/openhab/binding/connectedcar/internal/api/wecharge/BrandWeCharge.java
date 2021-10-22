@@ -27,6 +27,7 @@ import org.openhab.binding.connectedcar.internal.api.ApiIdentity;
 import org.openhab.binding.connectedcar.internal.api.ApiIdentity.OAuthToken;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
 import org.openhab.binding.connectedcar.internal.api.IdentityOAuthFlow;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 
 /**
  * {@link BrandWeCharge} provides the Brand interface for WeCharge
@@ -45,7 +46,6 @@ public class BrandWeCharge extends WeChargeApi {
         properties.authUserAttr = "identifier";
         properties.authScope = "openid";
         properties.redirect_uri = "wecharge://authenticated";
-        // properties.redirect_uri = "https://web-home-mobile.apps.emea.vwapps.io/auth";
         properties.xrequest = "com.volkswagen.wecharge";
         properties.responseType = "code";
         properties.userAgent = "WeConnect/5 CFNetwork/1206 Darwin/20.1.0";
@@ -64,9 +64,9 @@ public class BrandWeCharge extends WeChargeApi {
         properties.stdHeaders.put("content-version", "1");
     }
 
-    public BrandWeCharge(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public BrandWeCharge(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override

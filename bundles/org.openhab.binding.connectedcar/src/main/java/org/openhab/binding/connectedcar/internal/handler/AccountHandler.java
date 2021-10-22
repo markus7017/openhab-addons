@@ -18,10 +18,10 @@ import static org.openhab.binding.connectedcar.internal.util.Helpers.getString;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -42,6 +42,7 @@ import org.openhab.binding.connectedcar.internal.api.carnet.BrandCarNetSeat;
 import org.openhab.binding.connectedcar.internal.api.carnet.BrandCarNetSkoda;
 import org.openhab.binding.connectedcar.internal.api.carnet.BrandCarNetVW;
 import org.openhab.binding.connectedcar.internal.api.fordpass.BrandFordPass;
+import org.openhab.binding.connectedcar.internal.api.mercedesme.BrandMercedes;
 import org.openhab.binding.connectedcar.internal.api.skodae.BrandSkodaE;
 import org.openhab.binding.connectedcar.internal.api.wecharge.BrandWeCharge;
 import org.openhab.binding.connectedcar.internal.api.weconnect.BrandWeConnect;
@@ -68,7 +69,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 @NonNullByDefault
-public class AccountHandler extends BaseBridgeHandler {
+public class AccountHandler extends BaseBridgeHandler implements ThingHandlerInterface {
     private final Logger logger = LoggerFactory.getLogger(AccountHandler.class);
 
     public final String thingId;
@@ -94,11 +95,11 @@ public class AccountHandler extends BaseBridgeHandler {
         BRAND_MAP.put(THING_MYAUDI, API_BRAND_AUDI);
         BRAND_MAP.put(THING_VOLKSWAGEN, API_BRAND_VW);
         BRAND_MAP.put(THING_VWID, API_BRAND_VWID);
-        BRAND_MAP.put(THING_VWGO, API_BRAND_VWGO);
         BRAND_MAP.put(THING_SEAT, API_BRAND_SEAT);
         BRAND_MAP.put(THING_SKODA, API_BRAND_SKODA);
         BRAND_MAP.put(THING_SKODA_E, API_BRAND_SKODA_E);
         BRAND_MAP.put(THING_FORD, API_BRAND_FORD);
+        BRAND_MAP.put(THING_MERCEDES, API_BRAND_MERCEDES);
         BRAND_MAP.put(THING_WECHARGE, API_BRAND_WECHARGE);
     }
 
@@ -109,24 +110,30 @@ public class AccountHandler extends BaseBridgeHandler {
      */
     public AccountHandler(Bridge bridge, TextResources messages, IdentityManager tokenManager) {
         super(bridge);
-        this.messages = messages;
-        this.tokenManager = tokenManager;
-        this.thingId = getThing().getUID().getId();
 
-        // Generate a unique Id for all tokens of the new Account thing, but also of all depending Vehicle things. This
-        // allows sharing the tokens across all things associated with the account.
-        config.account = getConfigAs(AccountConfiguration.class);
-        String ttype = getThing().getUID().toString();
-        ttype = Helpers.substringBetween(ttype, ":", ":");
-        String brand = BRAND_MAP.get(ttype);
-        if (brand == null) {
-            throw new IllegalArgumentException("Unable to get brand for thing type " + ttype);
+        try {
+            this.messages = messages;
+            this.tokenManager = tokenManager;
+            this.thingId = getThing().getUID().getId();
+
+            // Generate a unique Id for all tokens of the new Account thing, but also of all depending Vehicle things.
+            // This
+            // allows sharing the tokens across all things associated with the account.
+            config.account = getConfigAs(AccountConfiguration.class);
+            String ttype = getThing().getUID().toString();
+            ttype = Helpers.substringBetween(ttype, ":", ":");
+            String brand = BRAND_MAP.get(ttype);
+            if (brand == null) {
+                throw new IllegalArgumentException("Unable to get brand for thing type " + ttype);
+            }
+            config.account.brand = brand;
+            api = createApi(config, null);
+            config.authenticator = api;
+            config.api = api.getProperties();
+            createTokenSet(config);
+        } catch (ApiException e) {
+            throw new IllegalArgumentException(e);
         }
-        config.account.brand = brand;
-        api = createApi(config, null);
-        config.authenticator = api;
-        config.api = api.getProperties();
-        createTokenSet(config);
     }
 
     public void createTokenSet(CombinedConfig config) {
@@ -145,9 +152,12 @@ public class AccountHandler extends BaseBridgeHandler {
             try {
                 initializeThing();
             } catch (ApiException e) {
-                String detail = e.isSecurityException() ? messages.get("login-failed", getString(e.getMessage()))
-                        : getString(e.getMessage());
-                stateChanged(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, detail);
+                String message = e.toString();
+                String detail = e.isConfigurationException() || e.isSecurityException()
+                        ? messages.get("login-failed", message)
+                        : message;
+                stateChanged(ThingStatus.OFFLINE, e.isConfigurationException() ? ThingStatusDetail.CONFIGURATION_PENDING
+                        : ThingStatusDetail.COMMUNICATION_ERROR, detail);
                 logger.debug("{}: Initialization failed: {}", config.getLogId(), detail);
             }
         });
@@ -162,11 +172,8 @@ public class AccountHandler extends BaseBridgeHandler {
      * @throws ApiException
      */
     public boolean initializeThing() throws ApiException {
-        Map<String, String> properties = new TreeMap<String, String>();
-
         if (!api.isInitialized()) {
             api.initialize(config);
-            refreshProperties(properties);
         }
 
         vehicleList = new ArrayList<VehicleDetails>();
@@ -216,23 +223,26 @@ public class AccountHandler extends BaseBridgeHandler {
 
     public ApiBase createApi(CombinedConfig config, @Nullable ApiEventListener apiListener) {
         ApiHttpClient httpClient = createHttpClient(apiListener);
+        api.setConfig(config);
         switch (config.account.brand) {
             case API_BRAND_AUDI:
-                return new BrandCarNetAudi(httpClient, tokenManager, apiListener);
+                return new BrandCarNetAudi(this, httpClient, tokenManager, apiListener);
             case API_BRAND_VW:
-                return new BrandCarNetVW(httpClient, tokenManager, apiListener);
+                return new BrandCarNetVW(this, httpClient, tokenManager, apiListener);
             case API_BRAND_VWID:
-                return new BrandWeConnect(httpClient, tokenManager, apiListener);
+                return new BrandWeConnect(this, httpClient, tokenManager, apiListener);
             case API_BRAND_WECHARGE:
-                return new BrandWeCharge(httpClient, tokenManager, apiListener);
+                return new BrandWeCharge(this, httpClient, tokenManager, apiListener);
             case API_BRAND_SKODA:
-                return new BrandCarNetSkoda(httpClient, tokenManager, apiListener);
+                return new BrandCarNetSkoda(this, httpClient, tokenManager, apiListener);
             case API_BRAND_SEAT:
-                return new BrandCarNetSeat(httpClient, tokenManager, apiListener);
+                return new BrandCarNetSeat(this, httpClient, tokenManager, apiListener);
             case API_BRAND_SKODA_E:
-                return new BrandSkodaE(httpClient, tokenManager, apiListener);
+                return new BrandSkodaE(this, httpClient, tokenManager, apiListener);
             case API_BRAND_FORD:
-                return new BrandFordPass(httpClient, tokenManager, apiListener);
+                return new BrandFordPass(this, httpClient, tokenManager, apiListener);
+            case API_BRAND_MERCEDES:
+                return new BrandMercedes(this, httpClient, tokenManager, apiListener);
             default:
                 logger.warn("Unknown brand {}", config.account.brand);
             case API_BRAND_NULL:
@@ -333,32 +343,20 @@ public class AccountHandler extends BaseBridgeHandler {
         }
     }
 
+    @Override
+    public String getProperty(String key) {
+        Map<String, String> properties = getThing().getProperties();
+        return getString(properties.get(key));
+    }
+
+    @Override
+    public void fillProperty(String key, String value) {
+        updateProperties(Collections.singletonMap(key, value));
+    }
+
+    @Override
     public CombinedConfig getCombinedConfig() {
         return config;
-    }
-
-    /**
-     * Add one property to the Thing Properties
-     *
-     * @param key Name of the property
-     * @param value Value of the property
-     */
-    public void updateProperties(String key, String value) {
-        Map<String, String> property = new TreeMap<String, String>();
-        property.put(key, value);
-        updateProperties(property);
-    }
-
-    public void refreshProperties(Map<String, String> newProperties) {
-        Map<String, String> thingProperties = editProperties();
-        for (Map.Entry<String, String> prop : newProperties.entrySet()) {
-            if (thingProperties.containsKey(prop.getKey())) {
-                thingProperties.replace(prop.getKey(), prop.getValue());
-            } else {
-                thingProperties.put(prop.getKey(), prop.getValue());
-            }
-        }
-        updateProperties(thingProperties);
     }
 
     public boolean equalsThingUID(String thingUID) {

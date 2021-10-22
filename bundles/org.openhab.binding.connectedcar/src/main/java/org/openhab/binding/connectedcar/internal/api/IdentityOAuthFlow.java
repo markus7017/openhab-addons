@@ -23,6 +23,8 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
 
+import javax.ws.rs.core.HttpHeaders;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.http.HttpHeader;
 import org.slf4j.Logger;
@@ -117,8 +119,14 @@ public class IdentityOAuthFlow extends ApiHttpMap {
     }
 
     public ApiResult post(String url, boolean json) throws ApiException {
-        header(HttpHeader.CONTENT_TYPE, json ? CONTENT_TYPE_JSON : CONTENT_TYPE_FORM_URLENC);
-        res = http.post(url, headers, getRequestData(json));
+        if (!getHeaders().containsKey(HttpHeaders.CONTENT_TYPE.toString())) {
+            header(HttpHeader.CONTENT_TYPE, json ? CONTENT_TYPE_JSON : CONTENT_TYPE_FORM_URLENC);
+        }
+        return post(url, getRequestData(json));
+    }
+
+    public ApiResult post(String url, String data) throws ApiException {
+        res = http.post(url, headers, data);
         return update();
     }
 

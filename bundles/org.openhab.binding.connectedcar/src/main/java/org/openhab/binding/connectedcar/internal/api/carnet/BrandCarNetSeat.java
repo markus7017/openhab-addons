@@ -21,6 +21,7 @@ import org.openhab.binding.connectedcar.internal.api.ApiEventListener;
 import org.openhab.binding.connectedcar.internal.api.ApiHttpClient;
 import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 
 /**
  * {@link BrandCarNetSeat} provides the SEAT specific functions of the API
@@ -46,9 +47,9 @@ public class BrandCarNetSeat extends CarNetApi implements BrandAuthenticator {
         properties.xappVersion = "1.1.29";
     }
 
-    public BrandCarNetSeat(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public BrandCarNetSeat(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override

@@ -29,6 +29,7 @@ import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
 import org.openhab.binding.connectedcar.internal.api.carnet.BrandCarNetAudi.AudiVehicles.AudiVehicle;
 import org.openhab.binding.connectedcar.internal.config.CombinedConfig;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,9 +96,9 @@ public class BrandCarNetAudi extends CarNetApi implements BrandAuthenticator {
         properties.xrequest = "de.myaudi.mobile.assistant";
     }
 
-    public BrandCarNetAudi(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public BrandCarNetAudi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override

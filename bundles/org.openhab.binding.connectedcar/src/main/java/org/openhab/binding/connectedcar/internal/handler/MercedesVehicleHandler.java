@@ -83,5 +83,4 @@ public class MercedesVehicleHandler extends ThingBaseHandler {
         }
         return processed;
     }
-
 }

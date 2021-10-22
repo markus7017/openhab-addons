@@ -10,25 +10,21 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.connectedcar.internal.config;
+package org.openhab.binding.connectedcar.internal.api;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
 /**
- * The {@link AccountConfiguration} class contains fields mapping thing configuration parameters.
+ * The {@link ApiConfigurationException} implements an extension to the standard Exception class. It indicates that some
+ * configuration option is missing.
  *
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public class AccountConfiguration {
+public class ApiConfigurationException extends Exception {
+    private static final long serialVersionUID = 439283710832778090L;
 
-    public String brand = "";
-
-    public String region = "";
-    public String user = "";
-    public String password = "";
-    public String code = "";
-
-    public int apiLevelVentilation = 2;
-    public int apiLevelClimatisation = 2;
+    public ApiConfigurationException(String message) {
+        super(message);
+    }
 }

@@ -32,6 +32,7 @@ import org.openhab.binding.connectedcar.internal.api.ApiIdentity.JwtToken;
 import org.openhab.binding.connectedcar.internal.api.ApiIdentity.OAuthToken;
 import org.openhab.binding.connectedcar.internal.config.CombinedConfig;
 import org.openhab.binding.connectedcar.internal.config.ThingConfiguration;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.openhab.core.library.types.PointType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,9 +51,9 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
     private static final String UNSUPPORTED = API_REQUEST_UNSUPPORTED;
 
     private final Logger logger = LoggerFactory.getLogger(ApiBase.class);
-
     protected final Gson gson = new Gson();
 
+    protected @Nullable ThingHandlerInterface handler;
     protected String thingId = "";
     protected CombinedConfig config = new CombinedConfig();
     protected ApiHttpClient http = new ApiHttpClient();
@@ -62,9 +63,13 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
     protected boolean initialzed = false;
 
     public ApiBase() {
+
     }
 
-    public ApiBase(ApiHttpClient httpClient, IdentityManager tokenManager, @Nullable ApiEventListener eventListener) {
+    public ApiBase(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
+            @Nullable ApiEventListener eventListener) {
+        this.handler = handler;
+        this.config = handler.getCombinedConfig();
         this.http = httpClient;
         this.tokenManager = tokenManager;
         this.eventListener = eventListener;
@@ -75,24 +80,6 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
         setConfig(configIn); // derive from account config
         thingId = config.account.brand;
         initialzed = tokenManager.refreshTokens(config);
-    }
-
-    @Override
-    public void setConfig(CombinedConfig config) {
-        // config.api = getProperties();
-        this.config = config;
-        http.setConfig(this.config);
-        thingId = config.vehicle.vin;
-        setupRequestQueue(thingId, eventListener);
-    }
-
-    @Override
-    public String getApiUrl() throws ApiException {
-        return "";
-    }
-
-    public String getServiceIdEx(String serviceId) {
-        return serviceId;
     }
 
     /**
@@ -114,6 +101,24 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
     @Override
     public boolean isInitialized() {
         return initialzed;
+    }
+
+    @Override
+    public void setConfig(CombinedConfig config) {
+        // config.api = getProperties();
+        this.config = config;
+        http.setConfig(this.config);
+        thingId = config.vehicle.vin;
+        setupRequestQueue(thingId, eventListener);
+    }
+
+    @Override
+    public String getApiUrl() throws ApiException {
+        return "";
+    }
+
+    public String getServiceIdEx(String serviceId) {
+        return serviceId;
     }
 
     @Override
@@ -249,7 +254,7 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
     }
 
     @Override
-    public ApiBrandProperties getProperties() {
+    public ApiBrandProperties getProperties() throws ApiException {
         return new ApiBrandProperties();
     }
 

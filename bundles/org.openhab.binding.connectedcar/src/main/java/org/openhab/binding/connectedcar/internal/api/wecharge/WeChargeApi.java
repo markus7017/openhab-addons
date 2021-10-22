@@ -45,6 +45,7 @@ import org.openhab.binding.connectedcar.internal.api.wecharge.WeChargeJsonDTO.WC
 import org.openhab.binding.connectedcar.internal.api.wecharge.WeChargeJsonDTO.WCTariffResponse;
 import org.openhab.binding.connectedcar.internal.api.wecharge.WeChargeJsonDTO.WeChargeStationDetails;
 import org.openhab.binding.connectedcar.internal.api.wecharge.WeChargeJsonDTO.WeChargeStatus;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,9 +59,9 @@ public class WeChargeApi extends ApiWithOAuth implements BrandAuthenticator {
     private final Logger logger = LoggerFactory.getLogger(WeChargeApi.class);
     protected final WeChargeStatus chargerStatus = new WeChargeStatus();
 
-    public WeChargeApi(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public WeChargeApi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override

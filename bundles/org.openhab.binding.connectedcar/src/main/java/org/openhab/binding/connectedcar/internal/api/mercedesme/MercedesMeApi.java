@@ -12,19 +12,18 @@
  */
 package org.openhab.binding.connectedcar.internal.api.mercedesme;
 
-import static org.openhab.binding.connectedcar.internal.BindingConstants.CONTENT_TYPE_JSON;
 import static org.openhab.binding.connectedcar.internal.api.ApiDataTypesDTO.API_BRAND_MERCEDES;
-import static org.openhab.binding.connectedcar.internal.util.Helpers.fromJson;
+import static org.openhab.binding.connectedcar.internal.util.Helpers.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.ws.rs.core.HttpHeaders;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.jetty.http.HttpHeader;
 import org.openhab.binding.connectedcar.internal.api.ApiBase;
 import org.openhab.binding.connectedcar.internal.api.ApiDataTypesDTO.VehicleDetails;
 import org.openhab.binding.connectedcar.internal.api.ApiDataTypesDTO.VehicleStatus;
@@ -34,9 +33,9 @@ import org.openhab.binding.connectedcar.internal.api.ApiHttpClient;
 import org.openhab.binding.connectedcar.internal.api.ApiHttpMap;
 import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
-import org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MMeVehicleListData;
 import org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MMeVehicleListData.MMeVehicle;
 import org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MMeVehicleStatusData;
+import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,9 +49,9 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator {
     private final Logger logger = LoggerFactory.getLogger(MercedesMeApi.class);
     private final Map<String, MMeVehicle> vehicleList = new HashMap<>();
 
-    public MercedesMeApi(ApiHttpClient httpClient, IdentityManager tokenManager,
+    public MercedesMeApi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
-        super(httpClient, tokenManager, eventListener);
+        super(handler, httpClient, tokenManager, eventListener);
     }
 
     @Override
@@ -68,7 +67,8 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator {
     @Override
     public ArrayList<String> getVehicles() throws ApiException {
         Map<String, String> params = createApiParameters();
-        MMeVehicleListData data = callApi("", "users/vehicles", params, "getVehicleList", MMeVehicleListData.class);
+        /* MMeVehicleListData */ String data = callApi("", "v1/vehicle/self/masterdata?" + addLocaleUrl(), params,
+                "getVehicleList", String.class);
         vehicleList.clear();
         ArrayList<String> list = new ArrayList<String>();
         /*
@@ -111,17 +111,17 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator {
      * FPActionResponse rsp = fromJson(gson, json, FPActionResponse.class);
      * return "200".equals(rsp.status) ? API_REQUEST_SUCCESSFUL : API_REQUEST_FAILED;
      * }
-     * 
+     *
      * @Override
      * public String controlLock(boolean lock) throws ApiException {
      * return sendAction(FPSERVICE_DOORS, lock ? "lock" : "unlock", "lock", lock);
      * }
-     * 
+     *
      * @Override
      * public String controlEngine(boolean start) throws ApiException {
      * return sendAction(FPSERVICE_ENGINE, start ? "start" : "stop", "start", start);
      * }
-     * 
+     *
      * private String sendAction(String service, String action, String command, boolean start) throws ApiException {
      * logger.debug("{}: Sending action {} ({}, {}))", thingId, action, command, start);
      * HttpMethod method = start ? HttpMethod.PUT : HttpMethod.DELETE;
@@ -131,7 +131,7 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator {
      * req.checkUrl = uri + "/" + req.requestId;
      * return queuePendingAction(new ApiActionRequest(req));
      * }
-     * 
+     *
      * @Override
      * public String getApiRequestStatus(ApiActionRequest req) throws ApiException {
      * String json = http.get(req.checkUrl, createApiParameters()).response;
@@ -144,23 +144,22 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator {
      * }
      */
     protected ApiHttpMap createDefaultParameters() throws ApiException {
-        return new ApiHttpMap().header(HttpHeader.USER_AGENT, config.api.userAgent).header(HttpHeaders.ACCEPT_LANGUAGE,
-                "en-us");
+        return new ApiHttpMap().headers(config.api.stdHeaders)//
+                .header("X-Request-Id", UUID.randomUUID().toString());
     }
 
     protected Map<String, String> createApiParameters(String token) throws ApiException {
-        /*
-         * 'Accept': '* /*',
-         * 'Accept-Language': 'en-us',
-         * 'User-Agent': 'fordpass-na/353 CFNetwork/1121.2.2 Darwin/19.3.0',
-         */
         return createDefaultParameters().header("Application-Id", config.api.xClientId)
-                .header(HttpHeaders.ACCEPT, CONTENT_TYPE_JSON)//
-                .header("Auth-Token", token.isEmpty() ? createAccessToken() : token) //
+                // .header(HttpHeaders.ACCEPT, CONTENT_TYPE_FORM_URLENC)//
+                .header(HttpHeaders.AUTHORIZATION, token.isEmpty() ? createAccessToken() : token) //
                 .getHeaders();
     }
 
     protected Map<String, String> createApiParameters() throws ApiException {
         return createApiParameters(createAccessToken());
+    }
+
+    protected String addLocaleUrl() {
+        return "country=" + substringAfter(config.api.xcountry, "-") + "&locale=" + config.api.xcountry;
     }
 }

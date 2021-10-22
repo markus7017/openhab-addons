@@ -28,49 +28,51 @@ import org.openhab.core.library.types.PointType;
  */
 @NonNullByDefault
 public interface ApiBrandInterface {
-    abstract void initialize(CombinedConfig configIn) throws ApiException;
 
-    abstract CombinedConfig initialize(String vin, CombinedConfig configIn) throws ApiException;
+    boolean isInitialized();
 
-    abstract boolean isInitialized();
+    void initialize(CombinedConfig configIn) throws ApiException;
 
-    abstract ApiBrandProperties getProperties();
+    CombinedConfig initialize(String vin, CombinedConfig configIn) throws ApiException;
 
-    abstract @Nullable ApiBrandProperties getProperties2();
+    ApiBrandProperties getProperties() throws ApiException;
 
-    abstract void setConfig(CombinedConfig config);
+    @Nullable
+    ApiBrandProperties getProperties2();
 
-    abstract String getApiUrl() throws ApiException;
+    void setConfig(CombinedConfig config);
 
-    abstract boolean refreshTokens() throws ApiException;
+    String getApiUrl() throws ApiException;
 
-    abstract public ArrayList<String> getVehicles() throws ApiException;
+    boolean refreshTokens() throws ApiException;
 
-    abstract VehicleDetails getVehicleDetails(String vin) throws ApiException;
+    public ArrayList<String> getVehicles() throws ApiException;
 
-    abstract String refreshVehicleStatus() throws ApiException;
+    VehicleDetails getVehicleDetails(String vin) throws ApiException;
 
-    abstract boolean isAccessTokenValid() throws ApiException;
+    String refreshVehicleStatus() throws ApiException;
 
-    abstract String controlEngine(boolean start) throws ApiException;
+    boolean isAccessTokenValid() throws ApiException;
 
-    abstract String controlLock(boolean lock) throws ApiException;
+    String controlEngine(boolean start) throws ApiException;
 
-    abstract String controlClimater(boolean start, String heaterSource) throws ApiException;
+    String controlLock(boolean lock) throws ApiException;
 
-    abstract String controlClimaterTemp(double tempC, String heaterSource) throws ApiException;
+    String controlClimater(boolean start, String heaterSource) throws ApiException;
 
-    abstract String controlPreHeating(boolean start, int duration) throws ApiException;
+    String controlClimaterTemp(double tempC, String heaterSource) throws ApiException;
 
-    abstract String controlVentilation(boolean start, int duration) throws ApiException;
+    String controlPreHeating(boolean start, int duration) throws ApiException;
 
-    abstract String controlWindowHeating(boolean start) throws ApiException;
+    String controlVentilation(boolean start, int duration) throws ApiException;
 
-    abstract String controlCharger(boolean start) throws ApiException;
+    String controlWindowHeating(boolean start) throws ApiException;
 
-    abstract String controlMaxCharge(int maxCurrent) throws ApiException;
+    String controlCharger(boolean start) throws ApiException;
 
-    abstract String controlTargetChgLevel(int targetLevel) throws ApiException;
+    String controlMaxCharge(int maxCurrent) throws ApiException;
 
-    abstract String controlHonkFlash(boolean honk, PointType position, int duration) throws ApiException;
+    String controlTargetChgLevel(int targetLevel) throws ApiException;
+
+    String controlHonkFlash(boolean honk, PointType position, int duration) throws ApiException;
 }

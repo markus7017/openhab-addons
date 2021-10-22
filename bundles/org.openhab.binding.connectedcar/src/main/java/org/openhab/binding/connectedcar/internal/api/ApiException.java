@@ -96,6 +96,10 @@ public class ApiException extends Exception {
         return (getCauseClass() == ApiSecurityException.class) || (apiResult.httpCode == HttpStatus.FORBIDDEN_403);
     }
 
+    public boolean isConfigurationException() {
+        return getCauseClass() == ApiConfigurationException.class;
+    }
+
     public boolean isHttpAccessUnauthorized() {
         return apiResult.isHttpUnauthorized();
     }

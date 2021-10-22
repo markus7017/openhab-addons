@@ -12,8 +12,8 @@
  */
 package org.openhab.binding.connectedcar.internal.api;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
@@ -51,6 +51,6 @@ public class ApiBrandProperties {
     public String clientName = "";
     public String clientPlatform = "";
 
-    public Map<String, String> loginHeaders = new HashMap<>();
-    public Map<String, String> stdHeaders = new HashMap<>();
+    public Map<String, String> loginHeaders = new TreeMap<>();
+    public Map<String, String> stdHeaders = new TreeMap<>();
 }

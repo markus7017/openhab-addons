@@ -324,9 +324,7 @@ public class Helpers {
      */
     public static String urlEncode(String s) {
         String url = UrlEncoded.encodeString(s, StandardCharsets.UTF_8); // returns forms data format
-        url = url.replace("+", "%20");
-        url = url.replace("%2D", "-");
-        url = url.replace("%5F", "_");
+        url = url.replace("+", "%20").replace("%2D", "-").replace("%40", "@").replace("%5F", "_");
         return url;
     }
 
