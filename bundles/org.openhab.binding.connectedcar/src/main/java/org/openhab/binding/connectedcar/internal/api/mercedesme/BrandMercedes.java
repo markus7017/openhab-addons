@@ -82,7 +82,7 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
             case MME_REGION_APAC:
                 properties.xappName = "mycar-store-ap";
                 properties.xappVersion = "1.6.2";
-                properties.xcountry = "de-DE";
+                properties.xcountry = "en-US";
                 properties.apiDefaultUrl = "https://bff-prod.risingstars-amap.daimler.com";
                 break;
             default:
@@ -129,7 +129,7 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
             json = oauth.init(createDefaultParameters()) //
                     // .headers(config.api.loginHeaders)//
                     .data("nonce", nonce).data("locale", config.api.xcountry)
-                    .data("emailOrPhoneNumber", config.account.user)
+                    .data("emailOrPhoneNumber", urlEncode(config.account.user))
                     .data("countryCode", substringAfter(config.api.xcountry, "-"))//
                     .post(loginUrl, true).response;
             MmeRequestPinResponse response = fromJson(gson, json, MmeRequestPinResponse.class);
