@@ -33,11 +33,10 @@ import org.openhab.binding.connectedcar.internal.api.ApiHttpClient;
 import org.openhab.binding.connectedcar.internal.api.ApiHttpMap;
 import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
-import org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MMeVehicleListData.MMeVehicle;
+import org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MMeVehicleLMasteristData;
+import org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MMeVehicleLMasteristData.MMeVehicleMasterDataEntry;
 import org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MMeVehicleStatusData;
 import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link MercedesMeApi} implements the MercedesMe API
@@ -46,8 +45,7 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class MercedesMeApi extends ApiBase implements BrandAuthenticator {
-    private final Logger logger = LoggerFactory.getLogger(MercedesMeApi.class);
-    private final Map<String, MMeVehicle> vehicleList = new HashMap<>();
+    private final Map<String, MMeVehicleMasterDataEntry> vehicleList = new HashMap<>();
 
     public MercedesMeApi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
@@ -66,32 +64,42 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator {
 
     @Override
     public ArrayList<String> getVehicles() throws ApiException {
-        Map<String, String> params = createApiParameters();
-        /* MMeVehicleListData */ String data = callApi("", "v1/vehicle/self/masterdata?" + addLocaleUrl(), params,
+        String json = callApi("", "v1/vehicle/self/masterdata?" + addLocaleUrl(), createApiParameters(),
                 "getVehicleList", String.class);
+        json = "{ \"vehicles\" : " + json + " }"; // Convert JSON form unnamed array to simplify Gson mapping
         vehicleList.clear();
         ArrayList<String> list = new ArrayList<String>();
-        /*
-         * for (MMeVehicle vehicle : data.vehicles.values) {
-         * list.add(vehicle.vin);
-         * vehicleList.put(vehicle.vin, vehicle);
-         * }
-         */ return list;
+        MMeVehicleLMasteristData data = fromJson(gson, json, MMeVehicleLMasteristData.class);
+        for (MMeVehicleMasterDataEntry vehicle : data.vehicles) {
+            list.add(vehicle.fin);
+            vehicleList.put(vehicle.fin, vehicle);
+        }
+        try {
+            getUserInfo();
+        } catch (ApiException e) {
+
+        }
+        return list;
     }
 
     @Override
     public VehicleDetails getVehicleDetails(String vin) throws ApiException {
-        if (vehicleList.containsKey(vin)) {
+        MMeVehicleMasterDataEntry vehicle = vehicleList.get(vin);
+        if (vehicle != null) {
             VehicleDetails details = new VehicleDetails();
-            MMeVehicle vehicle = vehicleList.get(vin);
-            if (vehicle != null) {
-                // details.vin = vehicle.vin;
-                details.brand = API_BRAND_MERCEDES;
-                /*
-                 * details.color = vehicle.color;
-                 * String model = details.brand + " " + vehicle.vehicleType;
-                 * details.model = !vehicle.nickName.isEmpty() ? vehicle.nickName + " (" + model + ")" : model;
-                 */
+            details.vin = vehicle.fin;
+            details.brand = API_BRAND_MERCEDES;
+            details.model = details.brand + " " + getString(vehicle.fin);
+            try {
+                String json = callApi("", "/v1/vehicle/{2}/capabilities/commands", createApiParameters(),
+                        "getCommandCapabilities", String.class);
+            } catch (ApiException e) {
+
+            }
+            try {
+                getGeoFences();
+            } catch (ApiException e) {
+
             }
             return details;
         }
@@ -100,8 +108,16 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator {
 
     @Override
     public VehicleStatus getVehicleStatus() throws ApiException {
-        String json = http.get("vehicles/v4/{2}/status", createApiParameters()).response;
+        String json = callApi("", "vehicles/v4/{2}/status", createApiParameters(), "getVehicleList", String.class);
         return new VehicleStatus(fromJson(gson, json, MMeVehicleStatusData.class));
+    }
+
+    protected void getUserInfo() throws ApiException {
+        String json = callApi("", "v1/user/self", createApiParameters(), "getGeoFences", String.class);
+    }
+
+    protected void getGeoFences() throws ApiException {
+        String json = callApi("", "v1/geofencing/fences/?vin={2}", createApiParameters(), "getGeoFences", String.class);
     }
 
     /*

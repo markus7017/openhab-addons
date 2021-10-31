@@ -39,8 +39,6 @@ import org.openhab.core.types.StateDescriptionFragmentBuilder;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Extends the ChannelTypeProvider for user defined channel and channel group types.
@@ -50,7 +48,6 @@ import org.slf4j.LoggerFactory;
 @NonNullByDefault
 @Component(service = { ChannelTypeProvider.class, CarChannelTypeProvider.class })
 public class CarChannelTypeProvider implements ChannelTypeProvider, ChannelGroupTypeProvider {
-    private final Logger logger = LoggerFactory.getLogger(CarChannelTypeProvider.class);
     private final ChannelDefinitions channelIdMapper;
     private final TextResources resources;
 

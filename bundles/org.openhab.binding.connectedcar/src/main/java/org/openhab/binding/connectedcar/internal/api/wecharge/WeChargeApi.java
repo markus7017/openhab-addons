@@ -178,7 +178,6 @@ public class WeChargeApi extends ApiWithOAuth implements BrandAuthenticator {
     private void restartStation(String stationId) throws ApiException {
         String json = http.post("home-charging/v1/stations/" + stationId + "/reboot", crerateParameters().getHeaders(),
                 "{\"reboot_mode\":\"immediate\"}").response;
-        int i = 1;
     }
 
     private void loadHomeChargingData(WeChargeStatus status) throws ApiException {

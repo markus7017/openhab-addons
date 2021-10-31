@@ -63,7 +63,6 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
     protected boolean initialzed = false;
 
     public ApiBase() {
-
     }
 
     public ApiBase(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
@@ -370,5 +369,20 @@ public class ApiBase extends ApiRequestQueue implements ApiBrandInterface, Brand
 
     public GeoPosition getStoredPosition() throws ApiException {
         return new GeoPosition();
+    }
+
+    public String getProperty(String property) {
+        if (handler != null) {
+            return handler.getProperty(property);
+        }
+        throw new IllegalArgumentException("Handler not initialized!");
+    }
+
+    public void fillProperty(String property, String value) {
+        if (handler != null) {
+            handler.fillProperty(property, value);
+        } else {
+            throw new IllegalArgumentException("Handler not initialized!");
+        }
     }
 }

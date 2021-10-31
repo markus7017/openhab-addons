@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.connectedcar.internal.api.mercedesme;
 
+import java.util.ArrayList;
+
 /**
  * {@link MMeJsonDTO} defines data formats for MercedesMe API
  *
@@ -43,12 +45,95 @@ public class MMeJsonDTO {
         public String username;
     }
 
-    public static class MMeVehicleListData {
-        public class MMeVehicle {
+    public class MMeVehicle {
+        public String id;
+        public String licenseplate;
+        public String salesdesignation;
+        public String finorvin;
+        public String modelyear;
+        public String colorname;
+        public String fueltype;
+        public String powerhp;
+        public String powerkw;
+        public String numberofdoors;
+        public String numberofseats;
+    }
+
+    public static class MMeVehicleLMasteristData {
+        public static class MMeVehicleMasterDataEntry {
+            public String doorsCount;
+            public String fin;
+            public String fuelType;
+            public String handDrive;
+            public String roofType; // e.g. "NoSunroof"
+            public String tirePressureMonitoringType; // e.g. "TirePressureMonitoring"
+            public String windowsLiftCount; // e.g. "FourLift"
         }
+
+        public ArrayList<MMeVehicleMasterDataEntry> vehicles;
+    }
+
+    public class MMeVehicleList {
+        public class MMeVehicleListEntry {
+            public String id;
+            public String licenseplate;
+            public String finorvin;
+        }
+
+        public ArrayList<MMeVehicleListEntry> vehicles;
     }
 
     public class MMeVehicleStatusData {
+        public class MMeValue {
+            public String unit;
+            public String value;
+            public String retrievalstatus;
+            public String timestamp;
+        }
+
+        public class MMeTireStatus {
+
+            public MMeValue tirepressurefrontleft;
+            public MMeValue tirepressurefrontright;
+            public MMeValue tirepressurerearleft;
+            public MMeValue tirepressurerearright;
+        }
+
+        public class MMeDoorStatus {
+
+            public MMeValue doorstatusfrontleft;
+            public MMeValue doorstatusfrontright;
+            public MMeValue doorstatusrearleft;
+            public MMeValue doorstatusrearright;
+            public MMeValue doorlockstatusfrontleft;
+            public MMeValue doorlockstatusfrontright;
+            public MMeValue doorlockstatusrearleft;
+            public MMeValue doorlockstatusrearright;
+            public MMeValue doorlockstatusdecklid;
+            public MMeValue doorlockstatusgas;
+            public MMeValue doorlockstatusvehicle;
+        }
+
+        public class MMeLocation {
+            public MMeValue latitude;
+            public MMeValue longitude;
+            public MMeValue heading;
+        }
+
+        public class MMeOdometer {
+            public MMeValue odometer;
+            public MMeValue distancesincereset;
+            public MMeValue distancesincestart;
+        }
+
+        public class MMeFuelStatus extends MMeValue {
+
+        }
+
+        public class MMeSocStatus extends MMeValue {
+
+        }
+
         public class MMeVehicleStatus {
         }
     }

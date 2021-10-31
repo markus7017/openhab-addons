@@ -105,23 +105,26 @@ public class FPServiceStatus extends ApiBaseService {
         logger.debug("{}: Get Vehicle Status", thingId);
         boolean updated = false;
 
-        FPVehicleStatus status = api.getVehicleStatus().fpStatus.vehiclestatus;
-        if (status != null) {
-            boolean locked = "LOCK".equalsIgnoreCase(getString(status.lockStatus.value));
-            updated |= updateChannel(CHANNEL_CONTROL_LOCK, getOnOff(locked));
-            updated |= updateChannel(CHANNEL_STATUS_ODOMETER, getDecimal(milesToKM(status.odometer.value)));
-            updated |= updateChannel(CHANNEL_STATUS_SWUPDATE, getOnOff(status.firmwareUpgInProgress.value));
-            updated |= updateChannel(CHANNEL_STATUS_DEEPSLEEP, getOnOff(status.deepSleepInProgress.value));
+        FPVehicleStatusData data = api.getVehicleStatus().fpStatus;
+        if (data != null) {
+            FPVehicleStatus status = data.vehiclestatus;
+            if (status != null) {
+                boolean locked = "LOCK".equalsIgnoreCase(getString(status.lockStatus.value));
+                updated |= updateChannel(CHANNEL_CONTROL_LOCK, getOnOff(locked));
+                updated |= updateChannel(CHANNEL_STATUS_ODOMETER, getDecimal(milesToKM(status.odometer.value)));
+                updated |= updateChannel(CHANNEL_STATUS_SWUPDATE, getOnOff(status.firmwareUpgInProgress.value));
+                updated |= updateChannel(CHANNEL_STATUS_DEEPSLEEP, getOnOff(status.deepSleepInProgress.value));
 
-            boolean ignition = "On".equalsIgnoreCase(status.ignitionStatus.value);
-            updated |= updateChannel(CHANNEL_CONTROL_ENGINE, getOnOff(ignition));
+                boolean ignition = "On".equalsIgnoreCase(status.ignitionStatus.value);
+                updated |= updateChannel(CHANNEL_CONTROL_ENGINE, getOnOff(ignition));
 
-            updated |= updateLocation(status);
-            updated |= updateRangeStatus(status);
-            updated |= updateMaintenance(status);
-            updated |= updateChargingStatus(status);
-            updated |= updateDoorWindowStatus(status);
-            updated |= updateTireStatus(status);
+                updated |= updateLocation(status);
+                updated |= updateRangeStatus(status);
+                updated |= updateMaintenance(status);
+                updated |= updateChargingStatus(status);
+                updated |= updateDoorWindowStatus(status);
+                updated |= updateTireStatus(status);
+            }
         }
         return updated;
     }

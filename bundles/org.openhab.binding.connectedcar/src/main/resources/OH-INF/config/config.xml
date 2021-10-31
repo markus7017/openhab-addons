@@ -34,74 +34,6 @@
 		</parameter>
 	</config-description>
 
-	<config-description uri="bridge-type:connectedcar:idaccount">
-		<parameter-group name="authentication">
-			<label>Authentication</label>
-			<description>Authentication settings.</description>
-		</parameter-group>
-
-		<parameter name="user" type="text" required="true" groupName="authentication">
-			<label>Online User</label>
-			<description>User name for the Login.</description>
-		</parameter>
-		<parameter name="password" type="text" required="true" groupName="authentication">
-			<label>Password</label>
-			<context>password</context>
-			<description>Password to access the account.</description>
-		</parameter>
-	</config-description>
-
-	<config-description uri="bridge-type:connectedcar:wcaccount">
-		<parameter-group name="authentication">
-			<label>Authentication</label>
-			<description>Authentication settings.</description>
-		</parameter-group>
-
-		<parameter name="user" type="text" required="true" groupName="authentication">
-			<label>Online User</label>
-			<description>User name for the Login.</description>
-		</parameter>
-		<parameter name="password" type="text" required="true" groupName="authentication">
-			<label>Password</label>
-			<context>password</context>
-			<description>Password to access the account.</description>
-		</parameter>
-	</config-description>
-
-	<config-description uri="bridge-type:connectedcar:seaccount">
-		<parameter-group name="authentication">
-			<label>Authentication</label>
-			<description>Authentication settings.</description>
-		</parameter-group>
-
-		<parameter name="user" type="text" required="true" groupName="authentication">
-			<label>Online User</label>
-			<description>User name for the Login.</description>
-		</parameter>
-		<parameter name="password" type="text" required="true" groupName="authentication">
-			<label>Password</label>
-			<context>password</context>
-			<description>Password to access the account.</description>
-		</parameter>
-	</config-description>
-
-	<config-description uri="bridge-type:connectedcar:fordaccount">
-		<parameter-group name="authentication">
-			<label>Authentication</label>
-			<description>Authentication settings.</description>
-		</parameter-group>
-
-		<parameter name="user" type="text" required="true" groupName="authentication">
-			<label>Online User</label>
-			<description>User name for the Login.</description>
-		</parameter>
-		<parameter name="password" type="text" required="true" groupName="authentication">
-			<label>Password</label>
-			<context>password</context>
-			<description>Password to access the account.</description>
-		</parameter>
-	</config-description>
-
 	<config-description uri="thing-type:connectedcar:cnvehicle">
 		<parameter name="vin" type="text" required="false">
 			<label>Vehicle Identification Number (VIN)</label>
@@ -170,6 +102,23 @@
 		</parameter>
 	</config-description>
 
+	<config-description uri="bridge-type:connectedcar:idaccount">
+		<parameter-group name="authentication">
+			<label>Authentication</label>
+			<description>Authentication settings.</description>
+		</parameter-group>
+
+		<parameter name="user" type="text" required="true" groupName="authentication">
+			<label>Online User</label>
+			<description>User name for the Login.</description>
+		</parameter>
+		<parameter name="password" type="text" required="true" groupName="authentication">
+			<label>Password</label>
+			<context>password</context>
+			<description>Password to access the account.</description>
+		</parameter>
+	</config-description>
+
 	<config-description uri="thing-type:connectedcar:idvehicle">
 		<parameter name="vin" type="text" required="false">
 			<label>Vehicle Identification Number (VIN)</label>
@@ -188,6 +137,23 @@
 		</parameter>
 	</config-description>
 
+	<config-description uri="bridge-type:connectedcar:seaccount">
+		<parameter-group name="authentication">
+			<label>Authentication</label>
+			<description>Authentication settings.</description>
+		</parameter-group>
+
+		<parameter name="user" type="text" required="true" groupName="authentication">
+			<label>Online User</label>
+			<description>User name for the Login.</description>
+		</parameter>
+		<parameter name="password" type="text" required="true" groupName="authentication">
+			<label>Password</label>
+			<context>password</context>
+			<description>Password to access the account.</description>
+		</parameter>
+	</config-description>
+
 	<config-description uri="thing-type:connectedcar:sevehicle">
 		<parameter name="vin" type="text" required="false">
 			<label>Vehicle Identification Number (VIN)</label>
@@ -203,6 +169,23 @@
 			<description>Status update interval in minutes.</description>
 			<default>15</default>
 			<advanced>true</advanced>
+		</parameter>
+	</config-description>
+
+	<config-description uri="bridge-type:connectedcar:fordaccount">
+		<parameter-group name="authentication">
+			<label>Authentication</label>
+			<description>Authentication settings.</description>
+		</parameter-group>
+
+		<parameter name="user" type="text" required="true" groupName="authentication">
+			<label>Online User</label>
+			<description>User name for the Login.</description>
+		</parameter>
+		<parameter name="password" type="text" required="true" groupName="authentication">
+			<label>Password</label>
+			<context>password</context>
+			<description>Password to access the account.</description>
 		</parameter>
 	</config-description>
 
@@ -229,30 +212,60 @@
 	</config-description>
 
 	<config-description uri="bridge-type:connectedcar:mmeaccount">
-        <parameter name="region" type="text" required="true">
-            <label>Region</label>
-            <description>Specify region where your Mercedes has been registered.</description>
-            <options>
-                <option value="EU">Europe</option>
-                <option value="US">North America</option>
-                <option value="AP">Asia Pacific</option>
-            </options>
-            <default>EU</default>
-        </parameter>
+		<parameter name="region" type="text" required="true">
+			<label>Region</label>
+			<description>Specify region where your Mercedes has been registered.</description>
+			<options>
+				<option value="EU">Europe</option>
+				<option value="US">North America</option>
+				<option value="AP">Asia Pacific</option>
+			</options>
+			<default>EU</default>
+		</parameter>
 		<parameter name="user" type="text" required="true">
 			<label>Online User</label>
 			<description>User name for the Login.</description>
 		</parameter>
-		<parameter name="password" type="text" required="true">
+		<parameter name="code" type="text">
+			<label>Login Code</label>
+			<context>password</context>
+			<description>TAN-Code received by E-Mail on first Login Request.</description>
+		</parameter>
+	</config-description>
+
+	<config-description uri="thing-type:connectedcar:mmevehicle">
+		<parameter name="vin" type="text" required="false">
+			<label>Vehicle Identification Number (VIN)</label>
+			<description>This is the unique ID to identify the vehicle</description>
+		</parameter>
+		<parameter name="enableAddressLookup" type="boolean" required="false">
+			<label>Enable Address Lookups</label>
+			<description>Use OpenStreetMap to reverse lookup address from vehicle's Geo position</description>
+			<default>true</default>
+		</parameter>
+		<parameter name="pollingInterval" type="integer" required="false" min="5">
+			<label>Polling Interval</label>
+			<description>Status update interval in minutes.</description>
+			<default>15</default>
+			<advanced>true</advanced>
+		</parameter>
+	</config-description>
+
+	<config-description uri="bridge-type:connectedcar:wcaccount">
+		<parameter-group name="authentication">
+			<label>Authentication</label>
+			<description>Authentication settings.</description>
+		</parameter-group>
+
+		<parameter name="user" type="text" required="true" groupName="authentication">
+			<label>Online User</label>
+			<description>User name for the Login.</description>
+		</parameter>
+		<parameter name="password" type="text" required="true" groupName="authentication">
 			<label>Password</label>
 			<context>password</context>
 			<description>Password to access the account.</description>
 		</parameter>
-        <parameter name="code" type="text">
-            <label>Login Code</label>
-            <context>password</context>
-            <description>TAN-Code received by E-Mail on first Login Request.</description>
-        </parameter>
 	</config-description>
 
 	<config-description uri="thing-type:connectedcar:wcwallbox">

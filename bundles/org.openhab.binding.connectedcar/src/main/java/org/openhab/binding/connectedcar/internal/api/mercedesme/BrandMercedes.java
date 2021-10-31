@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
-    private final Logger logger = LoggerFactory.getLogger(MercedesMeApi.class);
+    private final Logger logger = LoggerFactory.getLogger(BrandMercedes.class);
     private ApiBrandProperties properties = new ApiBrandProperties();
 
     public BrandMercedes(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
@@ -71,26 +71,27 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
                 properties.xappName = "mycar-store-ece";
                 properties.xappVersion = "1.6.3";
                 properties.xcountry = "de-DE";
+                properties.loginUrl = "https://bff-prod.risingstars.daimler.com/v1/login";
                 properties.apiDefaultUrl = "https://bff-prod.risingstars.daimler.com";
                 break;
             case MME_REGION_NORTHAM:
                 properties.xappName = "mycar-store-us";
                 properties.xappVersion = "3.0.1";
                 properties.xcountry = "en-US";
+                properties.loginUrl = "https://bff-prod.risingstars.daimler.com/v1/login";
                 properties.apiDefaultUrl = "https://bff-prod.risingstars-amap.daimler.com";
                 break;
             case MME_REGION_APAC:
                 properties.xappName = "mycar-store-ap";
                 properties.xappVersion = "1.6.2";
-                properties.xcountry = "en-US";
+                properties.xcountry = "de-DE";
+                properties.loginUrl = "https://bff-prod.risingstars.daimler.com/v1/login";
                 properties.apiDefaultUrl = "https://bff-prod.risingstars-amap.daimler.com";
                 break;
             default:
                 throw new ApiException("Unsupported Region: " + config.account.region);
         }
         properties.xappVersion = "1.11.0 (1051)";
-
-        properties.loginUrl = properties.apiDefaultUrl + "/v1/login";
 
         properties.stdHeaders.put(HttpHeaders.USER_AGENT.toString(), properties.userAgent);
         properties.stdHeaders.put(HttpHeaders.ACCEPT.toString(), "*/*");
@@ -119,7 +120,7 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
     public ApiIdentity login(String loginUrl, IdentityOAuthFlow oauth) throws ApiException {
         String json = "";
         String message = "";
-        String nonce = handler.getProperty(PROPERTY_NONCE);
+        String nonce = getProperty(PROPERTY_NONCE);
         if (config.account.code.isEmpty() || nonce.isEmpty()) {
             // Step 1: create login pin
             logger.info("{}: Requesting Login Code for {}", config.getLogId(), config.account.user);
@@ -129,16 +130,16 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
             json = oauth.init(createDefaultParameters()) //
                     // .headers(config.api.loginHeaders)//
                     .data("nonce", nonce).data("locale", config.api.xcountry)
-                    .data("emailOrPhoneNumber", urlEncode(config.account.user))
+                    .data("emailOrPhoneNumber", config.account.user)
                     .data("countryCode", substringAfter(config.api.xcountry, "-"))//
                     .post(loginUrl, true).response;
             MmeRequestPinResponse response = fromJson(gson, json, MmeRequestPinResponse.class);
             if (getBool(response.isEmail)) {
                 message = "Login code has been requested successful, check your E-Mails and enter the TAN-Code into the Bridge Thing configuration within the next 15 minutes";
                 logger.info("{}: {}", config.getLogId(), message);
-                handler.fillProperty(PROPERTY_NONCE, nonce);
-                handler.fillProperty("accessToken", "");
-                handler.fillProperty("refreshToken", "");
+                fillProperty(PROPERTY_NONCE, nonce);
+                fillProperty("accessToken", "");
+                fillProperty("refreshToken", "");
                 throw new ApiException(message, new ApiConfigurationException(message));
             }
             message = "Unable to request Login Code";
@@ -163,13 +164,13 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
                     .data("password", password).data("scope", urlEncode(config.api.authScope))//
                     .post(config.api.tokenUrl, false).response;
             OAuthToken token = fromJson(gson, json, OAuthToken.class).normalize();
-            handler.fillProperty("accessToken", token.accessToken);
-            handler.fillProperty("refreshToken", token.refreshToken);
+            fillProperty("accessToken", token.accessToken);
+            fillProperty("refreshToken", token.refreshToken);
             return new ApiIdentity(fromJson(gson, json, OAuthToken.class).normalize());
         } catch (ApiException e) {
             OAuthToken ctoken = new OAuthToken();
-            ctoken.accessToken = handler.getProperty("accessToken");
-            ctoken.refreshToken = handler.getProperty("refreshToken");
+            ctoken.accessToken = getProperty("accessToken");
+            ctoken.refreshToken = getProperty("refreshToken");
             return new ApiIdentity(refreshToken(new ApiIdentity(ctoken)));
         }
     }

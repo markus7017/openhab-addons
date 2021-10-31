@@ -152,13 +152,24 @@ public class AccountHandler extends BaseBridgeHandler implements ThingHandlerInt
             try {
                 initializeThing();
             } catch (ApiException e) {
-                String message = e.toString();
-                String detail = e.isConfigurationException() || e.isSecurityException()
-                        ? messages.get("login-failed", message)
-                        : message;
-                stateChanged(ThingStatus.OFFLINE, e.isConfigurationException() ? ThingStatusDetail.CONFIGURATION_PENDING
-                        : ThingStatusDetail.COMMUNICATION_ERROR, detail);
-                logger.debug("{}: Initialization failed: {}", config.getLogId(), detail);
+                String message = "";
+                String detail = "";
+
+                ThingStatusDetail subStatus = ThingStatusDetail.COMMUNICATION_ERROR;
+                message = e.getApiResult().toString();
+                if (message.isEmpty()) {
+                    message = getString(e.toString());
+                }
+                if (e.isConfigurationException()) {
+                    subStatus = ThingStatusDetail.CONFIGURATION_PENDING;
+                    detail = messages.get("config-pending", message);
+                } else if (e.isSecurityException()) {
+                    detail = messages.get("login-failed", message);
+                } else {
+                    detail = messages.get("init-failed", message);
+                }
+                stateChanged(ThingStatus.OFFLINE, subStatus, detail);
+                logger.debug("{}: {}", config.getLogId(), detail);
             }
         });
     }

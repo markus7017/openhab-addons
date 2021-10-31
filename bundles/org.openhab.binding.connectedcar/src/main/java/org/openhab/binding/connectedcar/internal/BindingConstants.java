@@ -72,11 +72,10 @@ public class BindingConstants {
     public static final ThingTypeUID THING_TYPE_MMEVEHICLE = new ThingTypeUID(BINDING_ID, "mmevehicle");
 
     public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections
-            .unmodifiableSet(Stream.of(THING_TYPE_MYAUDI, THING_TYPE_VW, THING_TYPE_VWID, THING_TYPE_SKODA,
-                    THING_TYPE_ENYAK, THING_TYPE_SEAT, THING_TYPE_FORD, THING_TYPE_MERCEDES, //
-                    THING_TYPE_CNVEHICLE, THING_TYPE_IDVEHICLE, THING_TYPE_SKODAEVEHICLE, THING_TYPE_FORDVEHICLE,
-                    THING_TYPE_MMEVEHICLE, //
-                    THING_TYPE_WECHARGE, THING_TYPE_WCWALLBOX).collect(Collectors.toSet()));
+            .unmodifiableSet(Stream.of(THING_TYPE_MYAUDI, THING_TYPE_VW, THING_TYPE_SKODA, THING_TYPE_SEAT,
+                    THING_TYPE_CNVEHICLE, THING_TYPE_ENYAK, THING_TYPE_SKODAEVEHICLE, THING_TYPE_FORD,
+                    THING_TYPE_FORDVEHICLE, THING_TYPE_VWID, THING_TYPE_IDVEHICLE, THING_TYPE_MERCEDES,
+                    THING_TYPE_MMEVEHICLE, THING_TYPE_WECHARGE, THING_TYPE_WCWALLBOX).collect(Collectors.toSet()));
 
     // List of all ChannelGroups and Channels
     public static final String CHANNEL_GROUP_GENERAL = "general";

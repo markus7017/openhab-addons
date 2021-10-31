@@ -27,7 +27,6 @@ import org.openhab.binding.connectedcar.internal.api.ApiEventListener;
 import org.openhab.binding.connectedcar.internal.api.ApiException;
 import org.openhab.binding.connectedcar.internal.api.ApiHttpClient;
 import org.openhab.binding.connectedcar.internal.api.ApiIdentity;
-import org.openhab.binding.connectedcar.internal.api.ApiIdentity.JwtToken;
 import org.openhab.binding.connectedcar.internal.api.ApiIdentity.OAuthToken;
 import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
@@ -98,7 +97,7 @@ public class BrandSkodaE extends SkodaEApi implements BrandAuthenticator {
         if (config.vstatus.imageUrls.length == 0) {
             try {
                 String idToken = tokenManager.createProfileToken(config);
-                JwtToken jwt = decodeJwt(idToken);
+                // JwtToken jwt = decodeJwt(idToken);
                 String json = super.callApi("", API_URL + "vehicles/{2}",
                         fillAppHeaders(tokenManager.createProfileToken(config)), "getImageUrls", String.class);
             } catch (ApiException e) {

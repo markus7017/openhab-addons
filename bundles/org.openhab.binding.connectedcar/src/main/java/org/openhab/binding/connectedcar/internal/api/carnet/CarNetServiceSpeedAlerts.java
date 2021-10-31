@@ -28,8 +28,6 @@ import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CNS
 import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CNSpeedAlerts.CarNetSpeedAlerts.CarNetpeedAlertEntry;
 import org.openhab.binding.connectedcar.internal.handler.CarNetVehicleHandler;
 import org.openhab.binding.connectedcar.internal.provider.ChannelDefinitions.ChannelIdMapEntry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link CarNetServiceSpeedAlerts} implements speedalert service.
@@ -38,8 +36,6 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class CarNetServiceSpeedAlerts extends ApiBaseService {
-    private final Logger logger = LoggerFactory.getLogger(CarNetServiceSpeedAlerts.class);
-
     public CarNetServiceSpeedAlerts(CarNetVehicleHandler thingHandler, CarNetApi api) {
         super(CNAPI_SERVICE_SPEED_ALERT, thingHandler, api);
     }

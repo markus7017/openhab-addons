@@ -25,8 +25,6 @@ import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
 import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CarNetImageUrlsVW;
 import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link BrandCarNetVW} provides the VW specific functions of the API
@@ -35,7 +33,6 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class BrandCarNetVW extends CarNetApi implements BrandAuthenticator {
-    private final Logger logger = LoggerFactory.getLogger(BrandCarNetVW.class);
     private static ApiBrandProperties properties = new ApiBrandProperties();
     static {
         properties.brand = API_BRAND_VW;

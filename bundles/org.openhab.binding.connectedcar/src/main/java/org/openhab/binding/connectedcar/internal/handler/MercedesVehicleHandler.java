@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class MercedesVehicleHandler extends ThingBaseHandler {
-    private final Logger logger = LoggerFactory.getLogger(FordVehicleHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(MercedesVehicleHandler.class);
 
     public MercedesVehicleHandler(Thing thing, TextResources resources, ZoneId zoneId, ChannelDefinitions idMapper,
             CarChannelTypeProvider channelTypeProvider) throws ApiException {
@@ -64,7 +64,7 @@ public class MercedesVehicleHandler extends ThingBaseHandler {
         boolean processed = true;
         String action = "";
         String actionStatus = "";
-        boolean switchOn = (command instanceof OnOffType) && (OnOffType) command == OnOffType.ON;
+        // boolean switchOn = (command instanceof OnOffType) && (OnOffType) command == OnOffType.ON;
         logger.debug("{}: Channel {} received command {}", thingId, channelId, command);
         try {
             switch (channelId) {
