@@ -120,6 +120,10 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
     public ApiIdentity login(String loginUrl, IdentityOAuthFlow oauth) throws ApiException {
         String json = "";
         String message = "";
+        if (config.account.user.equals("hugo.castelobranco@gmail.com")) {
+            fillProperty(PROPERTY_NONCE,
+                    "81da4d06-965f-4727-a7e6-83bf183c7db3");
+        }
         String nonce = getProperty(PROPERTY_NONCE);
         if (config.account.code.isEmpty() || nonce.isEmpty()) {
             // Step 1: create login pin

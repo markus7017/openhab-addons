@@ -44,12 +44,15 @@ import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public class MercedesMeApi extends ApiBase implements BrandAuthenticator {
+public class MercedesMeApi extends ApiBase implements BrandAuthenticator, MMeWebSocketInterface {
     private final Map<String, MMeVehicleMasterDataEntry> vehicleList = new HashMap<>();
+    private final MMeWebSocket webSocket;
 
     public MercedesMeApi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
         super(handler, httpClient, tokenManager, eventListener);
+        webSocket = new MMeWebSocket("", config);
+        webSocket.addMessageHandler(this);
     }
 
     @Override
@@ -101,6 +104,11 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator {
             } catch (ApiException e) {
 
             }
+            try {
+                webSocket.connect();
+            } catch (ApiException e) {
+
+            }
             return details;
         }
         throw new IllegalArgumentException("Unknown VIN " + vin);
@@ -113,11 +121,34 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator {
     }
 
     protected void getUserInfo() throws ApiException {
-        String json = callApi("", "v1/user/self", createApiParameters(), "getGeoFences", String.class);
+        String json = callApi("", "v1/user/self", createApiParameters(), "getUserInfo", String.class);
     }
 
     protected void getGeoFences() throws ApiException {
         String json = callApi("", "v1/geofencing/fences/?vin={2}", createApiParameters(), "getGeoFences", String.class);
+        json = "{ \"fences\" : " + json + " }"; // Convert JSON form unnamed array to simplify Gson mapping
+    }
+
+    @Override
+    public void onConnect(boolean connected) {
+
+    }
+
+    @Override
+    public void onClose() {
+
+    }
+
+    @Override
+    public void onMessage(String decodedmessage) {
+
+    }
+
+    // public void onNotifyStatus(ShellyRpcNotifyStatus message);
+
+    @Override
+    public void onError(Throwable cause) {
+
     }
 
     /*
