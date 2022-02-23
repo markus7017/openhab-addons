@@ -14,6 +14,11 @@ package org.openhab.binding.connectedcar.internal.api.mercedesme;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
+/**
+ * {@link MMeWebSocketInterface} define the interface for the WebSocket listener
+ *
+ * @author Markus Michels - Initial contribution
+ */
 @NonNullByDefault
 public interface MMeWebSocketInterface {
     public void onConnect(boolean connected);

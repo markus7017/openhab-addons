@@ -22,6 +22,7 @@ import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CNA
 import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CNApiError2.CNErrorMessage2;
 import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CNErrorMessage2Details;
 import org.openhab.binding.connectedcar.internal.api.fordpass.FPApiJsonDTO.FPErrorResponse;
+import org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MMeErrorResponse;
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCActionResponse.WCApiError;
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCActionResponse.WCApiError2;
 
@@ -87,6 +88,13 @@ public class ApiErrorDTO {
         }
     }
 
+    public ApiErrorDTO(MMeErrorResponse mmeError) {
+        // bade: a JSON is coded as a string, remap
+        code = "" + mmeError.errorCode;
+        error = getString(mmeError.error);
+        description = getString(mmeError.reason);
+    }
+
     public boolean isValid() {
         return !code.isEmpty() || !error.isEmpty() || !description.isEmpty();
     }
@@ -114,7 +122,7 @@ public class ApiErrorDTO {
 
     @Override
     public String toString() {
-        return description + "(" + code + " " + error + ")";
+        return description + " (" + code + " " + error + ")";
     }
 
     private String getString(@Nullable String s) {

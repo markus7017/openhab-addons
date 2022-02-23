@@ -37,10 +37,17 @@ public class MMeJsonDTO {
     public static final String MME_AUTH_SCOPE = MME_SCOPE_VEHICLESTATUS + " " + MME_SCOPE_FUELSTATUS + " "
             + MME_SCOPE_EVSTATUS + " " + MME_SCOPE_VEHICLELOCK;
 
-    public class MmeErrorResponse {
+    public class MMeErrorResponse {
+        /*
+         * {"error_description":"{errorCode:1003,reason:Too many failed login attempts. Please try again in 0 minutes.}"
+         * ,"error":"invalid_grant"}
+         */
+        public Integer errorCode;
+        public String reason;
+        public String error;
     }
 
-    public class MmeRequestPinResponse {
+    public class MMeRequestPinResponse {
         public Boolean isEmail;
         public String username;
     }

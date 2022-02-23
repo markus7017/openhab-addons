@@ -17,7 +17,10 @@ import static org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDT
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -41,6 +44,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
+/**
+ * {@link MMeWebSocket} implements the WebSocket interface to connecte to the backend and receive status updates
+ *
+ * @author Markus Michels - Initial contribution
+ */
 @NonNullByDefault
 @WebSocket
 public class MMeWebSocket {
@@ -72,7 +80,7 @@ public class MMeWebSocket {
     private final CombinedConfig config;
 
     private String thingId = "";
-    private String deviceIp = "";
+    public String accessToken = "";
 
     private @Nullable Session session;
     private @Nullable MMeWebSocketInterface websocketHandler;
@@ -81,16 +89,16 @@ public class MMeWebSocket {
     private ClientUpgradeRequest webSocketClientRequest = new ClientUpgradeRequest();
     private String apiResponse = "";
 
-    public MMeWebSocket(String thingId, CombinedConfig config) {
-        this.thingId = thingId;
+    public MMeWebSocket(CombinedConfig config) {
         this.config = config;
+        this.thingId = config.getLogId();
     }
 
     public void addMessageHandler(MMeWebSocketInterface interfacehandler) {
         this.websocketHandler = interfacehandler;
     }
 
-    public void connect() throws ApiException {
+    public void connect(String accessToken) throws ApiException {
         try {
             String url;
             switch (config.account.region) {
@@ -105,14 +113,20 @@ public class MMeWebSocket {
                     url = WEBSOCKET_API_BASE_PA;
                     break;
             }
+            this.accessToken = accessToken;
             websocketAddress = new URI(url);
 
             for (Map.Entry<String, String> header : config.api.stdHeaders.entrySet()) {
                 webSocketClientRequest.setHeader(header.getKey(), header.getValue());
             }
-            webSocketClientRequest.setHeader(HttpHeaders.USER_AGENT, WEBSOCKET_USER_AGENT);
-            webSocketClientRequest.setTimeout(30, TimeUnit.MILLISECONDS);
+            webSocketClientRequest.setHeader(HttpHeaders.AUTHORIZATION, accessToken);
+            webSocketClientRequest.setHeader(HttpHeaders.CONTENT_TYPE,
+                    "application/x-www-form-urlencoded; charset=utf-8");
+            webSocketClientRequest.setHeader("X-Request-Id", UUID.randomUUID().toString());
+            webSocketClientRequest.setTimeout(5 * 30, TimeUnit.MILLISECONDS);
 
+            Map<String, List<String>> h = webSocketClientRequest.getHeaders();
+            logger.debug("{}: Connecting WebSocket {}, Headers=\n{}", thingId, url, h);
             webSocketClient.start();
             webSocketClient.connect(this, websocketAddress, webSocketClientRequest);
         } catch (Exception e) {
@@ -120,15 +134,8 @@ public class MMeWebSocket {
         }
     }
 
-    @OnWebSocketConnect
-    public void onConnect(Session session) {
-        this.session = session;
-        boolean connected = session.isOpen();
-        actualStatus = connected ? SocketStatus.CONNECTION_ESTABLISHED : SocketStatus.CONNECTION_FAILED;
-        logger.debug("{}: WebSocket connect {}", thingId, connected ? "was successful" : "failed!");
-        if (websocketHandler != null) {
-            websocketHandler.onConnect(true);
-        }
+    public boolean isConnected() {
+        return session != null && session.isOpen();
     }
 
     public String sendMessage(String str) throws ApiException {
@@ -144,9 +151,32 @@ public class MMeWebSocket {
         throw new ApiException("Unable to send API request (WebSocket I/O failed");
     }
 
+    public void closeWebsocketSession() throws ApiException {
+        logger.debug("{}: Closing WebSocket", thingId);
+        if (session != null) {
+            session.close();
+        }
+        try {
+            webSocketClient.stop();
+        } catch (Exception e) {
+            throw new ApiException("Unable to close WebSocket session", e);
+        }
+    }
+
+    @OnWebSocketConnect
+    public void onConnect(Session session) {
+        this.session = session;
+        boolean connected = isConnected();
+        actualStatus = connected ? SocketStatus.CONNECTION_ESTABLISHED : SocketStatus.CONNECTION_FAILED;
+        logger.debug("{}: WebSocket connect {}", thingId, connected ? "was successful" : "failed!");
+        if (websocketHandler != null) {
+            websocketHandler.onConnect(true);
+        }
+    }
+
     @OnWebSocketMessage
-    public void onText(Session session, String receivedMessage) {
-        logger.debug("{}: Inbound WebSocket message: {}", thingId, receivedMessage);
+    public void onWebSocketText(Session session, String receivedMessage) {
+        logger.debug("{}: WebSocket message received,payload={}", thingId, receivedMessage);
         apiResponse = receivedMessage;
         MMeWebSocketInterface handler = websocketHandler;
         if (handler != null) {
@@ -162,27 +192,30 @@ public class MMeWebSocket {
              */
             handler.onMessage(receivedMessage);
         } else {
-            logger.debug("{}: No WebSocket onText handler registered!");
+            logger.debug("{}: No WebSocket onText handler registered!", thingId);
         }
     }
 
-    public void closeWebsocketSession() throws ApiException {
-        logger.debug("{}: Closing WebSocket");
-        if (session != null) {
-            session.close();
+    @OnWebSocketMessage
+    public void onWebSocketBinary(byte[] message, int offset, int length) {
+        logger.debug("{}: Web Socket binary payload, offset={}, length={}", thingId, offset, length);
+        logger.debug("{}:  DATA: {}", thingId, byteArrayToHex(message));
+        ByteBuffer buffer = ByteBuffer.wrap(message, offset, length);
+    }
+
+    public static String byteArrayToHex(byte[] a) {
+        StringBuilder sb = new StringBuilder(a.length * 2);
+        for (byte b : a) {
+            sb.append(String.format("%02x ", b));
         }
-        try {
-            webSocketClient.stop();
-        } catch (Exception e) {
-            throw new ApiException("Unable to close WebSocket session", e);
-        }
+        return sb.toString();
     }
 
     @OnWebSocketClose
     public void onClose(int statusCode, String reason) {
         logger.debug("{}: WebSocket closed", thingId);
         if (statusCode != StatusCode.NORMAL) {
-            logger.debug("{}: WebSocket Connection closed: {} - {}", thingId, statusCode, reason);
+            logger.debug("{}: WebSocket Connection closed, code={}, reason={}", thingId, statusCode, reason);
         }
         if (session != null) {
             if (!session.isOpen()) {
@@ -195,20 +228,21 @@ public class MMeWebSocket {
         if (websocketHandler != null) {
             websocketHandler.onClose();
         }
+        actualStatus = SocketStatus.CONNECTION_FAILED;
         disposeWebsocketPollingJob();
-        reconnectWebsocket();
+        // reconnectWebsocket();
     }
 
     @OnWebSocketError
     public void onError(Throwable cause) {
-        logger.warn("{}: WebSocket Error {}", cause.getMessage());
+        logger.warn("{}: WebSocket Error {}, reasons={}, state={}", thingId, cause, cause.getMessage(),
+                webSocketClient.getState());
         if (websocketHandler != null) {
             websocketHandler.onError(cause);
         }
-        disposeWebsocketPollingJob();
         actualStatus = SocketStatus.COMMUNICATION_ERROR;
-        reconnectWebsocket();
-
+        disposeWebsocketPollingJob();
+        // reconnectWebsocket();
     }
 
     public void reconnectWebsocket() {
@@ -230,7 +264,7 @@ public class MMeWebSocket {
                 } catch (Exception e) {
                     logger.debug("Connection error {}", e.getMessage());
                 }
-                connect();
+                connect(accessToken);
                 break;
             case AUTHENTICATION_COMPLETE:
                 if (webSocketReconnectionPollingJob != null) {
@@ -245,10 +279,6 @@ public class MMeWebSocket {
         }
     }
 
-    public void dispose() {
-        close();
-    }
-
     public void close() {
         disposeWebsocketPollingJob();
         if (webSocketReconnectionPollingJob != null) {
@@ -256,6 +286,10 @@ public class MMeWebSocket {
                 webSocketReconnectionPollingJob.cancel(true);
             }
             webSocketReconnectionPollingJob = null;
+        }
+        if (session != null) {
+            session.close();
+            session = null;
         }
     }
 
@@ -268,4 +302,7 @@ public class MMeWebSocket {
         }
     }
 
+    public void dispose() {
+        close();
+    }
 }

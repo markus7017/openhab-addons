@@ -43,6 +43,9 @@ public class ApiException extends Exception {
 
     public ApiException(String message, Throwable throwable) {
         super(message, throwable);
+        if (throwable instanceof ApiException) {
+            apiResult = ((ApiException) throwable).apiResult;
+        }
     }
 
     public ApiException(String message, ApiResult result) {
@@ -73,11 +76,16 @@ public class ApiException extends Exception {
             } else if (clazz == MalformedURLException.class) {
                 message = MessageFormat.format("Invalid URL: '{0}'", message);
             } else {
-                message = nonNullString(cause.toString()) + "(" + nonNullString(cause.getMessage()) + ")";
+                if (isConfigurationException() || isSecurityException()) {
+                    message = nonNullString(cause.getMessage());
+                } else {
+                    message = nonNullString(cause.toString()) + "(" + nonNullString(cause.getMessage()) + ")";
+                }
             }
         } else {
             if (super.getClass() != ApiException.class) {
-                message = MessageFormat.format("{0} {1}", super.getClass().toString(), super.getMessage());
+                message = MessageFormat.format("{0} {1}", super.getClass().toString(),
+                        nonNullString(super.getMessage()));
             }
         }
 

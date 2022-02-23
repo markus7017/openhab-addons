@@ -106,7 +106,7 @@ public class ConnectedCarDiscoveryService extends AbstractDiscoveryService imple
     @Override
     protected void startScan() {
         try {
-            accountHandler.initializeThing();
+            accountHandler.initializeThing("Discovery:startScan");
         } catch (ApiException e) {
             logger.debug("Discovery failed: {}", e.getMessage());
         }

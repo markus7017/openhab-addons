@@ -51,7 +51,7 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator, MMeWeb
     public MercedesMeApi(ThingHandlerInterface handler, ApiHttpClient httpClient, IdentityManager tokenManager,
             @Nullable ApiEventListener eventListener) {
         super(handler, httpClient, tokenManager, eventListener);
-        webSocket = new MMeWebSocket("", config);
+        webSocket = new MMeWebSocket(config);
         webSocket.addMessageHandler(this);
     }
 
@@ -77,6 +77,14 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator, MMeWeb
             list.add(vehicle.fin);
             vehicleList.put(vehicle.fin, vehicle);
         }
+        /*
+         * if (vehicleList.isEmpty()) {
+         * MMeVehicleMasterDataEntry v = new MMeVehicleMasterDataEntry();
+         * v.fin = "4711000000";
+         * list.add(v.fin);
+         * vehicleList.put(v.fin, v);
+         * }
+         */
         try {
             getUserInfo();
         } catch (ApiException e) {
@@ -89,6 +97,14 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator, MMeWeb
     public VehicleDetails getVehicleDetails(String vin) throws ApiException {
         MMeVehicleMasterDataEntry vehicle = vehicleList.get(vin);
         if (vehicle != null) {
+            if (!webSocket.isConnected()) {
+                try {
+                    webSocket.connect(createAccessToken());
+                } catch (ApiException e) {
+
+                }
+            }
+
             VehicleDetails details = new VehicleDetails();
             details.vin = vehicle.fin;
             details.brand = API_BRAND_MERCEDES;
@@ -104,11 +120,6 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator, MMeWeb
             } catch (ApiException e) {
 
             }
-            try {
-                webSocket.connect();
-            } catch (ApiException e) {
-
-            }
             return details;
         }
         throw new IllegalArgumentException("Unknown VIN " + vin);
@@ -116,7 +127,7 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator, MMeWeb
 
     @Override
     public VehicleStatus getVehicleStatus() throws ApiException {
-        String json = callApi("", "vehicles/v4/{2}/status", createApiParameters(), "getVehicleList", String.class);
+        String json = callApi("", "vehicles/v4/{2}/status", createApiParameters(), "getVehicleStatus", String.class);
         return new VehicleStatus(fromJson(gson, json, MMeVehicleStatusData.class));
     }
 
@@ -131,24 +142,20 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator, MMeWeb
 
     @Override
     public void onConnect(boolean connected) {
-
     }
 
     @Override
     public void onClose() {
-
     }
 
     @Override
     public void onMessage(String decodedmessage) {
-
     }
 
     // public void onNotifyStatus(ShellyRpcNotifyStatus message);
 
     @Override
     public void onError(Throwable cause) {
-
     }
 
     /*
@@ -208,5 +215,9 @@ public class MercedesMeApi extends ApiBase implements BrandAuthenticator, MMeWeb
 
     protected String addLocaleUrl() {
         return "country=" + substringAfter(config.api.xcountry, "-") + "&locale=" + config.api.xcountry;
+    }
+
+    public void dispose() {
+        webSocket.close();
     }
 }

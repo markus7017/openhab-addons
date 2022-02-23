@@ -109,15 +109,15 @@ public class IdentityManager {
             throw new ApiSecurityException("Authentication failed: Unable to get access token!");
         }
 
-        tokens.apiToken.xcsrf = oauth.csrf;
         updateTokenSet(config.tokenSetId, tokens);
         return tokens.apiToken.accessToken;
     }
 
-    public String createXCSRF(CombinedConfig config) throws ApiException {
-        createAccessToken(config);
+    public String setAccessToken(CombinedConfig config, OAuthToken token) {
         TokenSet tokens = getTokenSet(config.tokenSetId);
-        return tokens.apiToken.xcsrf;
+        tokens.apiToken = new ApiIdentity(token);
+        updateTokenSet(config.tokenSetId, tokens);
+        return tokens.apiToken.accessToken;
     }
 
     public String createIdToken(CombinedConfig config) throws ApiException {

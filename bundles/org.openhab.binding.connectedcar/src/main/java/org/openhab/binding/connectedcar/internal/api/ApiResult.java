@@ -23,6 +23,7 @@ import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpStatus;
 import org.openhab.binding.connectedcar.internal.api.carnet.CarNetApiGSonDTO.CNApiError2;
 import org.openhab.binding.connectedcar.internal.api.fordpass.FPApiJsonDTO.FPErrorResponse;
+import org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MMeErrorResponse;
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCActionResponse.WCApiError;
 import org.openhab.binding.connectedcar.internal.api.weconnect.WeConnectApiJsonDTO.WCActionResponse.WCApiError2;
 
@@ -155,6 +156,15 @@ public class ApiResult {
                     if (response.contains("Response: {\"httpStatus\"")) {
                         // FordPass
                         apiError = new ApiErrorDTO(gson.fromJson(response, FPErrorResponse.class));
+                    } else if (response.contains("{\"error_description\":\"{errorCode:")) {
+                        /*
+                         * {"error_description":"{errorCode:1003,reason:Too many failed login attempts. Please try again in 0 minutes.}"
+                         * ,"error":"invalid_grant"}
+                         */
+                        String json = response.replace("{\"error_description\":\"{errorCode:", "{ \"errorCode\" : ")
+                                .replace("reason:", " \"reason\" : \"").replace("}\",\"error\":", "\", \"error\":");
+                        // How bad: A JSON is encoded within a string, reformat
+                        apiError = new ApiErrorDTO(gson.fromJson(json, MMeErrorResponse.class));
                     } else if (response.contains("uri") && response.contains("status")
                             && response.contains("message")) {
                         // WeConnect v2

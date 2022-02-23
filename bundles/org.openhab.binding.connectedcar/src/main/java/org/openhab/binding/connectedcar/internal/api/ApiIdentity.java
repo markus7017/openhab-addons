@@ -33,7 +33,6 @@ public class ApiIdentity {
     protected String idToken = "";
     protected String securityToken = "";
     protected String refreshToken = "";
-    protected String xcsrf = "";
 
     protected int authVersion = 1;
     protected int validity = -1;
@@ -102,8 +101,6 @@ public class ApiIdentity {
         @SerializedName("refreshToken")
         public String refreshToken2 = "";
 
-        public String xcsrf = "";
-
         public OAuthToken normalize() {
             // Map We Connect format to generic one
             if (accessToken.isEmpty() && !accessToken2.isEmpty()) {
@@ -141,7 +138,6 @@ public class ApiIdentity {
         securityToken = getString(token.securityToken);
         wcAccessToken = getString(token.wcAccessToken);
         refreshToken = getString(token.refreshToken);
-        xcsrf = getString(token.xcsrf);
 
         setValidity(getInteger(token.validity));
     }

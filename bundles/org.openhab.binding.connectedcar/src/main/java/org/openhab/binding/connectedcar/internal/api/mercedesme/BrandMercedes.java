@@ -31,10 +31,11 @@ import org.openhab.binding.connectedcar.internal.api.ApiHttpClient;
 import org.openhab.binding.connectedcar.internal.api.ApiHttpMap;
 import org.openhab.binding.connectedcar.internal.api.ApiIdentity;
 import org.openhab.binding.connectedcar.internal.api.ApiIdentity.OAuthToken;
+import org.openhab.binding.connectedcar.internal.api.ApiSecurityException;
 import org.openhab.binding.connectedcar.internal.api.BrandAuthenticator;
 import org.openhab.binding.connectedcar.internal.api.IdentityManager;
 import org.openhab.binding.connectedcar.internal.api.IdentityOAuthFlow;
-import org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MmeRequestPinResponse;
+import org.openhab.binding.connectedcar.internal.api.mercedesme.MMeJsonDTO.MMeRequestPinResponse;
 import org.openhab.binding.connectedcar.internal.handler.ThingHandlerInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,21 +94,26 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
         }
         properties.xappVersion = "1.11.0 (1051)";
 
+        String uuid = getProperty("deviceUUID");
+        if (uuid.isEmpty()) {
+            uuid = UUID.randomUUID().toString();
+            fillProperty("deviceUUID", uuid);
+            logger.debug("{}: Device UUID {} created", thingId, uuid);
+        }
+
         properties.stdHeaders.put(HttpHeaders.USER_AGENT.toString(), properties.userAgent);
         properties.stdHeaders.put(HttpHeaders.ACCEPT.toString(), "*/*");
         properties.stdHeaders.put(HttpHeaders.ACCEPT_LANGUAGE.toString(), properties.xcountry + ";q=1.0");
         properties.stdHeaders.put("X-Locale", properties.xcountry);
-        properties.stdHeaders.put("device-uuid", UUID.randomUUID().toString());
+        properties.stdHeaders.put("device-uuid", uuid);
         properties.stdHeaders.put("RIS-OS-Name", "ios");
         properties.stdHeaders.put("RIS-OS-Version", "14.6");
         properties.stdHeaders.put("RIS-SDK-Version", "2.43.0");
         properties.stdHeaders.put("RIS-application-version", properties.xappVersion);
-        properties.stdHeaders.put("X-ApplicationName", config.api.xappName);
+        properties.stdHeaders.put("X-ApplicationName", properties.xappName);
         properties.stdHeaders.put("X-SessionId", UUID.randomUUID().toString());
         properties.stdHeaders.put("X-TrackingId", UUID.randomUUID().toString());
-
-        properties.loginHeaders.put("Stage", properties.apiDefaultUrl.contains("tryout") ? "staging" : "prod");
-        properties.loginHeaders.put("X-Authmode", "CIAMNG"); // "KEYCLOAK");
+        properties.loginHeaders.put("X-Authmode", "KEYCLOAK"); // "CIAMNG");
         return properties;
     }
 
@@ -120,14 +126,15 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
     public ApiIdentity login(String loginUrl, IdentityOAuthFlow oauth) throws ApiException {
         String json = "";
         String message = "";
-        if (config.account.user.equals("hugo.castelobranco@gmail.com")) {
-            fillProperty(PROPERTY_NONCE,
-                    "81da4d06-965f-4727-a7e6-83bf183c7db3");
-        }
+
         String nonce = getProperty(PROPERTY_NONCE);
         if (config.account.code.isEmpty() || nonce.isEmpty()) {
             // Step 1: create login pin
             logger.info("{}: Requesting Login Code for {}", config.getLogId(), config.account.user);
+
+            fillProperty("accessToken", "");
+            fillProperty("refreshToken", "");
+            fillProperty(PROPERTY_NONCE, "");
 
             nonce = UUID.randomUUID().toString();// generateNonce();
             logger.debug("{}: Login NONCE={}", config.getLogId(), nonce);
@@ -137,17 +144,16 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
                     .data("emailOrPhoneNumber", config.account.user)
                     .data("countryCode", substringAfter(config.api.xcountry, "-"))//
                     .post(loginUrl, true).response;
-            MmeRequestPinResponse response = fromJson(gson, json, MmeRequestPinResponse.class);
+            MMeRequestPinResponse response = fromJson(gson, json, MMeRequestPinResponse.class);
             if (getBool(response.isEmail)) {
                 message = "Login code has been requested successful, check your E-Mails and enter the TAN-Code into the Bridge Thing configuration within the next 15 minutes";
                 logger.info("{}: {}", config.getLogId(), message);
                 fillProperty(PROPERTY_NONCE, nonce);
-                fillProperty("accessToken", "");
-                fillProperty("refreshToken", "");
                 throw new ApiException(message, new ApiConfigurationException(message));
             }
             message = "Unable to request Login Code";
-            logger.warn("{}: {}", config.getLogId(), message);
+            logger.warn("{}: {}", thingId, message);
+            resetTokenInfo();
             throw new ApiException(message, new ApiConfigurationException(message));
         }
 
@@ -158,6 +164,23 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
 
     @Override
     public ApiIdentity grantAccess(IdentityOAuthFlow oauth) throws ApiException {
+        OAuthToken ctoken = new OAuthToken();
+        ctoken.accessToken = getProperty("accessToken");
+        ctoken.refreshToken = getProperty("refreshToken");
+        if (!ctoken.accessToken.isEmpty() && !ctoken.refreshToken.isEmpty()) {
+            try {
+                String val = getProperty("tokenValidity");
+                ctoken.validity = val.isEmpty() ? -1 : Integer.parseInt(val);
+                tokenManager.setAccessToken(config, ctoken);
+                return new ApiIdentity(refreshToken(new ApiIdentity(ctoken)));
+            } catch (ApiException e) {
+                resetTokenInfo();
+                String message = "Token expired, a new TAN is required. Clear Login Code in accoun thing config and request a new once (see README)";
+                logger.warn("{}: {}", thingId, message);
+                throw new ApiException(message, new ApiConfigurationException(message));
+            }
+        }
+
         try {
             // Step 2: get aaccess token
             String password = oauth.code + ":" + config.account.code;
@@ -167,15 +190,9 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
                     .data("grant_type", "password").data("username", urlEncode(config.account.user))
                     .data("password", password).data("scope", urlEncode(config.api.authScope))//
                     .post(config.api.tokenUrl, false).response;
-            OAuthToken token = fromJson(gson, json, OAuthToken.class).normalize();
-            fillProperty("accessToken", token.accessToken);
-            fillProperty("refreshToken", token.refreshToken);
-            return new ApiIdentity(fromJson(gson, json, OAuthToken.class).normalize());
+            return new ApiIdentity(createTokenInfo(json));
         } catch (ApiException e) {
-            OAuthToken ctoken = new OAuthToken();
-            ctoken.accessToken = getProperty("accessToken");
-            ctoken.refreshToken = getProperty("refreshToken");
-            return new ApiIdentity(refreshToken(new ApiIdentity(ctoken)));
+            throw new ApiSecurityException("Unable to login", e);
         }
     }
 
@@ -188,6 +205,20 @@ public class BrandMercedes extends MercedesMeApi implements BrandAuthenticator {
                 .data("refresh_token", apiToken.getRefreshToken());
         String json = http.post(config.api.tokenRefreshUrl, params.getHeaders(), //
                 params.getRequestData(false)).response;
+        return createTokenInfo(json);
+    }
+
+    private OAuthToken createTokenInfo(String json) throws ApiException {
+        OAuthToken token = fromJson(gson, json, OAuthToken.class).normalize();
+        fillProperty("accessToken", token.accessToken);
+        fillProperty("refreshToken", token.refreshToken);
+        fillProperty("tokenValidity", "" + token.validity);
         return fromJson(gson, json, OAuthToken.class).normalize();
+    }
+
+    private void resetTokenInfo() {
+        fillProperty("accessToken", "");
+        fillProperty("refreshToken", "");
+        fillProperty("tokenValidity", "");
     }
 }

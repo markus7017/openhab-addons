@@ -32,6 +32,7 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory.Client;
 import org.openhab.binding.connectedcar.internal.api.ApiBase;
 import org.openhab.binding.connectedcar.internal.api.ApiDataTypesDTO.VehicleDetails;
+import org.openhab.binding.connectedcar.internal.api.ApiErrorDTO;
 import org.openhab.binding.connectedcar.internal.api.ApiEventListener;
 import org.openhab.binding.connectedcar.internal.api.ApiException;
 import org.openhab.binding.connectedcar.internal.api.ApiHttpClient;
@@ -150,13 +151,16 @@ public class AccountHandler extends BaseBridgeHandler implements ThingHandlerInt
         updateStatus(ThingStatus.UNKNOWN);
         scheduler.execute(() -> {
             try {
-                initializeThing();
+                initializeThing("initialize");
             } catch (ApiException e) {
                 String message = "";
                 String detail = "";
 
                 ThingStatusDetail subStatus = ThingStatusDetail.COMMUNICATION_ERROR;
-                message = e.getApiResult().toString();
+                ApiErrorDTO err = e.getApiResult().getApiError();
+                if (!err.description.isEmpty()) {
+                    message = err.toString();
+                }
                 if (message.isEmpty()) {
                     message = getString(e.toString());
                 }
@@ -182,9 +186,12 @@ public class AccountHandler extends BaseBridgeHandler implements ThingHandlerInt
      * @return
      * @throws ApiException
      */
-    public boolean initializeThing() throws ApiException {
+    public boolean initializeThing(String caller) throws ApiException {
+        logger.debug("{}: Initialize Thing (caller: {}()", thingId, caller);
         if (!api.isInitialized()) {
             api.initialize(config);
+        } else {
+            api.setConfig(config);
         }
 
         vehicleList = new ArrayList<VehicleDetails>();
@@ -206,17 +213,22 @@ public class AccountHandler extends BaseBridgeHandler implements ThingHandlerInt
     /**
      * This routine is called every time the Thing configuration has been changed
      */
+
     @Override
     public void handleConfigurationUpdate(Map<String, Object> configurationParameters) {
         super.handleConfigurationUpdate(configurationParameters);
+
         try {
-            stateChanged(ThingStatus.UNKNOWN, ThingStatusDetail.CONFIGURATION_PENDING,
+            stateChanged(ThingStatus.UNKNOWN, ThingStatusDetail.HANDLER_CONFIGURATION_PENDING,
                     "Thing config updated, re-initialize");
             config.account = getConfigAs(AccountConfiguration.class);
+            if (config.account.code.isEmpty()) {
+                int i = 1;
+            }
             api.setConfig(config);
-            initializeThing();
-        } catch (ApiException e) {
-            logger.warn("{}: {}", messages.get("init-fialed", "Re-initialization failed!"), thingId, e);
+            initializeThing("handleConfigurationUpdate");
+        } catch (Exception e) {
+            logger.warn("{}: {}", messages.get("init-failed", e.toString()), thingId);
         }
     }
 
@@ -272,7 +284,7 @@ public class AccountHandler extends BaseBridgeHandler implements ThingHandlerInt
                 logger.trace("{}: WeakSSL enabled, HttpClient setup: {}", thingId, httpClient.dump());
             }
         } catch (Exception e) {
-            logger.warn("{}: {}", messages.get("init-fialed", "Unable to start HttpClient!"), thingId, e);
+            logger.warn("{}: {}", messages.get("init-failed", "Unable to start HttpClient!"), thingId, e);
         }
         ApiHttpClient client = new ApiHttpClient(httpClient, apiListener);
         client.setConfig(config);
@@ -344,8 +356,8 @@ public class AccountHandler extends BaseBridgeHandler implements ThingHandlerInt
         try {
             ThingStatus status = getThing().getStatus();
             if (status == ThingStatus.OFFLINE) {
-                logger.debug("{}: Re-initialize with account {}", thingId, config.account.user);
-                initializeThing();
+                logger.debug("{}: Reconnect with account {}", thingId, config.account.user);
+                initializeThing("refreshStatus");
             } else if (status == ThingStatus.ONLINE) {
                 api.refreshTokens();
             }
