@@ -104,6 +104,15 @@ The binding provides the same feature set across all devices as good as possible
 | shellypro3em        | Shelly Pro 3 with 3 integrated power meters              | SPEM-003CEBEU                                  |
 | shellypro4pm        | Shelly Pro 4 PM with 4x relay + power meter              | SPSW-004PE16EU, SPSW-104PE16EU                 |
 
+### Shelly BLU
+
+| thing-type        | Model                                                  | Vendor ID |
+| ----------------- | ------------------------------------------------------ | --------- |
+| shellyblubutton   | Shelly BLU Button 1                                    | SBBT      |
+| shellybludw       | Shelly BLU Door/Windows                                | SBDW      |
+
+>>>>>>> 2c14db7e3a (Shelly BLU support, various fixes)
+
 ## Binding Configuration
 
 The binding has the following configuration options:
@@ -159,6 +168,29 @@ It's recommended to switch the Shelly devices to CoAP peer mode if you have only
 This allows routing the CoIoT/CoAP messages across multiple IP subnets without special network setup required.
 You could use Shelly Manager (doc/ShellyManager.md) to easily do the setup (configuring the openHAB host as CoAP peer address).
 Keep Multicast mode if you have multiple hosts, which should receive the CoAP updates.
+
+### Discovery of BLU Devices
+
+The BLU devices use Bluetooth Low Energy (BLE).
+The binding can't communicate directly with the device, but the Plus/Pro series with firmware 0.14.1 or newer could be used as a gateway.
+The binding automatically installs a script on the Shelly Device (oh-blu-scanner), which forwards the BLU events to the binding using the WebSocket channel.
+
+Follow these steps to add the Shelly BLU Device to openHAB
+- Make sure a Shelly is near by the BLU device, enable Bluetooh on this device (the Bluetooth Gateway mode is not required)
+- Add this thing to openHAB, make sure thing gets online
+- Enable "BLU Gateway Support" in the thing configuration of the Shelly device acting as gateway.
+- Now press the button on your BLU device, this wakes up the device and the script forwards this event to the binding
+- As a result the corresponding thing should show up in the Inbox
+- Add the thing (at this point no channels are created), the new thing will show status CONFIG_PENDING
+- Click the device button again, the binding gets another event and creates the channels and thing changes status to ONLINE
+- Finally link the channels to the equipment in the model
+
+Note: During initialization the script 'oh-blu-scanner.js' gets installed and activated on the Shelly Gateway device.
+
+Every time an event is received sensors#lastUpdate and channels are updated with the reported values.
+device#wifiSignal indicates the Bluetooth signal strength and gets updated when the device sends an event.
+
+The binding supports multiple Shelly Plus/Pro as gateway devices unless they are added as thing and are ONLINE.
 
 ### Password Protected Devices
 
@@ -1340,6 +1372,38 @@ Channels lastEvent and eventCount are only available if input type is set to mom
 |        | autoOff     | Number  | r/w       | Relay #1: Sets a  timer to turn the device OFF after every ON command; in seconds |
 |        | timerActive | Switch  | yes       | Relay #1: ON: An auto-on/off timer is active                                      |
 |        | button      | Trigger | yes       | Event trigger, see section Button Events                                          |
+
+## Shelly BLU Devices
+
+### Shelly BLU Button 1 (thing-type: shellyblubutton)
+
+See notes on discovery of Shelly BLU devices above.
+
+| Group   | Channel       | Type     | read-only | Description                                                                         |
+| ------- | ------------- | -------- | --------- | ----------------------------------------------------------------------------------- |
+| status  | lastEvent     | String   | yes       | Last event type (S/SS/SSS/L)                                                        |
+|         | eventCount    | Number   | yes       | Counter gets incremented every time the device issues a button event.               |
+|         | button        | Trigger  | yes       | Event trigger with payload, see SHORT_PRESSED or LONG_PRESSED                       |
+|         | lastUpdate    | DateTime | yes       | Timestamp of the last measurement                                                   |
+| battery | batteryLevel  | Number   | yes       | Battery Level in %                                                                  |
+|         | lowBattery    | Switch   | yes       | Low battery alert (< 20%)                                                           |
+| device  | gatewayDevice | String   | yes       | Shelly forwarded last status update (BLU gateway), could vary from packet to packet |
+
+
+
+### Shelly BLU Door/Window Sensor (thing-type: shellybludw)
+
+See notes on discovery of Shelly BLU devices above.
+
+| Group   | Channel       | Type     | read-only | Description                                                                         |
+| ------- | ------------- | -------- | --------- | ----------------------------------------------------------------------------------- |
+| sensors | state         | Contact  | yes       | OPEN: Contact is open, CLOSED: Contact is closed                                    |
+|         | lux           | Number   | yes       | Brightness in Lux                                                                   |
+|         | tilt          | Number   | yes       | Tilt in ° (angle), -1 indicates that the sensor is not calibrated                   |
+|         | lastUpdate    | DateTime | yes       | Timestamp of the last update (any sensor value changed)                             |
+| battery | batteryLevel  | Number   | yes       | Battery Level in %                                                                  |
+|         | lowBattery    | Switch   | yes       | Low battery alert (< 20%)                                                           |
+| device  | gatewayDevice | String   | yes       | Shelly forwarded last status update (BLU gateway), could vary from packet to packet |
 
 ## Full Example
 
