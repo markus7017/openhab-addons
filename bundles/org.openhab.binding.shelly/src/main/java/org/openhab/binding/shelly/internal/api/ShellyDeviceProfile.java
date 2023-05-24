@@ -100,6 +100,7 @@ public class ShellyDeviceProfile {
     public boolean isIX = false; // true for a Shelly IX
     public boolean isTRV = false; // true for a Shelly TRV
     public boolean isSmoke = false; // true for Shelly Smoke
+    public boolean isWall = false; // true: Shelly Wall Display
 
     public int minTemp = 0; // Bulb/Duo: Min Light Temp
     public int maxTemp = 0; // Bulb/Duo: Max Light Temp
@@ -132,9 +133,8 @@ public class ShellyDeviceProfile {
         name = getString(settings.name);
         deviceType = getString(settings.device.type);
         mac = getString(settings.device.mac);
-        hostname = settings.device.hostname != null && !settings.device.hostname.isEmpty()
-                ? settings.device.hostname.toLowerCase()
-                : "shelly-" + mac.toUpperCase().substring(6, 11);
+        hostname = !getString(settings.device.hostname).isEmpty() ? settings.device.hostname.toLowerCase()
+                : mac.length() >= 12 ? "shelly-" + mac.toUpperCase().substring(6, 11) : "unknown";
         mode = getString(settings.mode).toLowerCase();
         hwRev = settings.hwinfo != null ? getString(settings.hwinfo.hwRevision) : "";
         hwBatchId = settings.hwinfo != null ? getString(settings.hwinfo.batchId.toString()) : "";
@@ -207,9 +207,12 @@ public class ShellyDeviceProfile {
         isIX = thingType.equals(THING_TYPE_SHELLYIX3_STR) || thingType.equals(THING_TYPE_SHELLYPLUSI4_STR)
                 || thingType.equals(THING_TYPE_SHELLYPLUSI4DC_STR);
         isButton = thingType.equals(THING_TYPE_SHELLYBUTTON1_STR) || thingType.equals(THING_TYPE_SHELLYBUTTON2_STR);
-        isSensor = isHT || isFlood || isDW || isSmoke || isGas || isButton || isUNI || isMotion || isSense || isTRV;
-        hasBattery = isHT || isFlood || isDW || isSmoke || isButton || isMotion || isTRV;
         isTRV = thingType.equals(THING_TYPE_SHELLYTRV_STR);
+        isWall = thingType.equals(THING_TYPE_SHELLYWALLDISPLAY_STR);
+
+        isSensor = isHT || isFlood || isDW || isSmoke || isGas || isButton || isUNI || isMotion || isSense || isTRV
+                || isWall;
+        hasBattery = isHT || isFlood || isDW || isSmoke || isButton || isMotion || isTRV;
 
         alwaysOn = !hasBattery || isMotion || isSense; // true means: device is reachable all the time (no sleep mode)
     }
@@ -268,7 +271,7 @@ public class ShellyDeviceProfile {
         } else if (isButton) {
             return CHANNEL_GROUP_STATUS;
         } else if (isRoller) {
-            return numRelays <= 2 ? CHANNEL_GROUP_ROL_CONTROL : CHANNEL_GROUP_ROL_CONTROL + idx;
+            return numRollers <= 1 ? CHANNEL_GROUP_ROL_CONTROL : CHANNEL_GROUP_ROL_CONTROL + ((idx + 1) / numRollers);
         } else {
             // Device has 1 input per relay: 0=off, 1+2 depend on switch mode
             return numRelays <= 1 ? CHANNEL_GROUP_RELAY_CONTROL : CHANNEL_GROUP_RELAY_CONTROL + idx;
@@ -279,9 +282,12 @@ public class ShellyDeviceProfile {
         int idx = i + 1; // channel names are 1-based
         if (isRGBW2 || isIX) {
             return ""; // RGBW2 has only 1 channel
-        } else if (isRoller || isDimmer) {
-            // Roller has 2 relays, but it will be mapped to 1 roller with 2 inputs
+        } else if (isDimmer) {
             return String.valueOf(idx);
+        } else if (isRoller) {
+            // Roller has 2 relays, but it will be mapped to 1 roller with 2 inputs
+            // Pro Dual Cover has 4 relays, which will be represented by 2 cover with 2x2 inputs
+            return String.valueOf(idx % numRollers == 0 ? numRollers : idx % numRollers);
         } else if (hasRelays) {
             return numRelays == 1 && numInputs >= 2 ? String.valueOf(idx) : "";
         }

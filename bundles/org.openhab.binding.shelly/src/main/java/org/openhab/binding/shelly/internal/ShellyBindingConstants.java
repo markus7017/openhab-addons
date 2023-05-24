@@ -67,10 +67,19 @@ public class ShellyBindingConstants {
             THING_TYPE_SHELLYBUTTON1, //
             THING_TYPE_SHELLYBUTTON2, //
             THING_TYPE_SHELLMOTION, //
+
             THING_TYPE_SHELLYPLUS1, //
             THING_TYPE_SHELLYPLUS1PM, //
             THING_TYPE_SHELLYPLUS2PM_RELAY, //
             THING_TYPE_SHELLYPLUS2PM_ROLLER, //
+            THING_TYPE_SHELLYPLUSI4, //
+            THING_TYPE_SHELLYPLUSI4DC, //
+            THING_TYPE_SHELLYPLUSHT, //
+            THING_TYPE_SHELLYPLUSSMOKE, //
+            THING_TYPE_SHELLYPLUSPLUGS, //
+            THING_TYPE_SHELLYPLUSPLUGUS, //
+            THING_TYPE_SHELLYWALLDISPLAY, //
+
             THING_TYPE_SHELLYPRO1, //
             THING_TYPE_SHELLYPRO1PM, //
             THING_TYPE_SHELLYPRO2_RELAY, //
@@ -79,12 +88,8 @@ public class ShellyBindingConstants {
             THING_TYPE_SHELLYPRO3, //
             THING_TYPE_SHELLYPRO3EM, //
             THING_TYPE_SHELLYPRO4PM, //
-            THING_TYPE_SHELLYPLUSI4, //
-            THING_TYPE_SHELLYPLUSI4DC, //
-            THING_TYPE_SHELLYPLUSHT, //
-            THING_TYPE_SHELLYPLUSSMOKE, //
-            THING_TYPE_SHELLYPLUSPLUGS, //
-            THING_TYPE_SHELLYPLUSPLUGUS, //
+            THING_TYPE_SHELLYPRODUALCOVER, //
+
             THING_TYPE_SHELLYPROTECTED, //
             THING_TYPE_SHELLYUNKNOWN);
 

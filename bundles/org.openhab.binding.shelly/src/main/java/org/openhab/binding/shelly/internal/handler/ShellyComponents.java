@@ -295,19 +295,17 @@ public class ShellyComponents {
                 double totalWatts = 0.0;
                 double lastMin1 = 0.0;
                 long timestamp = 0l;
-                String groupName = CHANNEL_GROUP_METER;
 
-                if (!thingHandler.areChannelsCreated()) {
-                    ShellySettingsMeter m = status.meters.get(0);
-                    if (getBool(m.isValid)) {
-                        // Create channels for 1 Meter
-                        thingHandler.updateChannelDefinitions(
-                                ShellyChannelDefinitions.createMeterChannels(thingHandler.getThing(), m, groupName));
-                    }
-                }
-
+                int m = 0;
                 for (ShellySettingsMeter meter : status.meters) {
+                    String groupName = profile.getMeterGroup(m);
                     if (getBool(meter.isValid)) {
+                        if (!thingHandler.areChannelsCreated()) {
+                            // Create channels for 1 Meter
+                            thingHandler.updateChannelDefinitions(ShellyChannelDefinitions
+                                    .createMeterChannels(thingHandler.getThing(), meter, groupName));
+                        }
+
                         currentWatts += getDouble(meter.power);
                         totalWatts += getDouble(meter.total);
                         if (meter.counters != null) {
@@ -317,21 +315,34 @@ public class ShellyComponents {
                             timestamp = getLong(meter.timestamp); // newest one
                         }
                     }
+
+                    if (profile.isGen2) {
+                        // for Gen 2 devices we update meters individually (the device has 2x2 meters)
+                        updated |= thingHandler.updateChannel(groupName, CHANNEL_METER_CURRENTWATTS,
+                                toQuantityType(getDouble(meter.power), DIGITS_WATT, Units.WATT));
+                        updated |= thingHandler.updateChannel(groupName, CHANNEL_METER_TOTALKWH,
+                                toQuantityType(getDouble(meter.total), DIGITS_KWH, Units.KILOWATT_HOUR));
+                        updated |= thingHandler.updateChannel(groupName, CHANNEL_METER_LASTMIN1, toQuantityType(
+                                getDouble(meter.counters[0]) / 60 / 1000, DIGITS_KWH, Units.KILOWATT_HOUR));
+                        if (updated && timestamp > 0) {
+                            thingHandler.updateChannel(groupName, CHANNEL_LAST_UPDATE,
+                                    getTimestamp(getString(profile.settings.timezone), timestamp));
+                        }
+                    }
+
+                    m++;
                 }
 
-                updated |= thingHandler.updateChannel(groupName, CHANNEL_METER_LASTMIN1,
-                        toQuantityType(getDouble(lastMin1), DIGITS_WATT, Units.WATT));
-
-                // convert totalWatts into kw/h
-                totalWatts = totalWatts / (60.0 * 1000.0);
-                updated |= thingHandler.updateChannel(groupName, CHANNEL_METER_CURRENTWATTS,
-                        toQuantityType(getDouble(currentWatts), DIGITS_WATT, Units.WATT));
-                updated |= thingHandler.updateChannel(groupName, CHANNEL_METER_TOTALKWH,
-                        toQuantityType(getDouble(totalWatts), DIGITS_KWH, Units.KILOWATT_HOUR));
-
-                if (updated && timestamp > 0) {
-                    thingHandler.updateChannel(groupName, CHANNEL_LAST_UPDATE,
-                            getTimestamp(getString(profile.settings.timezone), timestamp));
+                if (!profile.isGen2) {
+                    // For Gen1 devices we aggregate meters into a single one
+                    String groupName = groupName = profile.getMeterGroup(0);
+                    updated |= thingHandler.updateChannel(groupName, CHANNEL_METER_LASTMIN1,
+                            toQuantityType(getDouble(lastMin1), DIGITS_WATT, Units.WATT));
+                    totalWatts = totalWatts / (60.0 * 1000.0); // convert totalWatts into kw/h
+                    updated |= thingHandler.updateChannel(groupName, CHANNEL_METER_CURRENTWATTS,
+                            toQuantityType(getDouble(currentWatts), DIGITS_WATT, Units.WATT));
+                    updated |= thingHandler.updateChannel(groupName, CHANNEL_METER_TOTALKWH,
+                            toQuantityType(getDouble(totalWatts), DIGITS_KWH, Units.KILOWATT_HOUR));
                 }
             }
 

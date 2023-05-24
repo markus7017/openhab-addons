@@ -78,7 +78,7 @@ public class ShellyChannelDefinitions {
     public static final String ITEMT_POWER = "Number:Power";
     public static final String ITEMT_ENERGY = "Number:Energy";
     public static final String ITEMT_VOLT = "Number:ElectricPotential";
-    public static final String ITEMT_AMP = "Number:ElectricPotential";
+    public static final String ITEMT_AMP = "Number:ElectricCurrent";
     public static final String ITEMT_ANGLE = "Number:Angle";
     public static final String ITEMT_DISTANCE = "Number:Length";
     public static final String ITEMT_SPEED = "Number:Speed";
@@ -203,7 +203,8 @@ public class ShellyChannelDefinitions {
 
                 // Sensors
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_TEMP, "sensorTemp", ITEMT_TEMP))
-                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_HUM, "sensorHumidity", ITEMT_PERCENT))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_HUM,
+                        /* "sensorHumidity" */ "system.atmospheric-humidity", ITEMT_PERCENT))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_LUX, "sensorLux", ITEMT_LUX))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_ILLUM, "sensorIllumination", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_VOLTAGE, "sensorADC", ITEMT_VOLT))
@@ -266,7 +267,9 @@ public class ShellyChannelDefinitions {
         if (group.contains(CHANNEL_GROUP_METER)) {
             group = CHANNEL_GROUP_METER; // map meter1..n to meter
         } else if (group.contains(CHANNEL_GROUP_RELAY_CONTROL)) {
-            group = CHANNEL_GROUP_RELAY_CONTROL; // map meter1..n to meter
+            group = CHANNEL_GROUP_RELAY_CONTROL; // map relay1..n to relay
+        } else if (group.contains(CHANNEL_GROUP_ROL_CONTROL)) {
+            group = CHANNEL_GROUP_ROL_CONTROL; // map roller1..n to roller
         } else if (group.contains(CHANNEL_GROUP_LIGHT_CHANNEL)) {
             group = CHANNEL_GROUP_LIGHT_CHANNEL;
         } else if (group.contains(CHANNEL_GROUP_STATUS)) {
@@ -429,20 +432,23 @@ public class ShellyChannelDefinitions {
         return add;
     }
 
-    public static Map<String, Channel> createRollerChannels(Thing thing, final ShellyRollerStatus roller) {
+    public static Map<String, Channel> createRollerChannels(Thing thing, final ShellyDeviceProfile profile,
+            final ShellyRollerStatus roller, int idx) {
         Map<String, Channel> add = new LinkedHashMap<>();
-        addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_ROL_CONTROL_CONTROL);
-        addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE);
-        addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER);
-        addChannel(thing, add, roller.currentPos != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_POS);
-        addChannel(thing, add, roller.stopReason != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STOPR);
-        addChannel(thing, add, roller.safetySwitch != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_SAFETY);
+        String group = profile.getControlGroup(idx);
+
+        addChannel(thing, add, true, group, CHANNEL_ROL_CONTROL_CONTROL);
+        addChannel(thing, add, true, group, CHANNEL_ROL_CONTROL_STATE);
+        addChannel(thing, add, true, group, CHANNEL_EVENT_TRIGGER);
+        addChannel(thing, add, roller.currentPos != null, group, CHANNEL_ROL_CONTROL_POS);
+        addChannel(thing, add, roller.stopReason != null, group, CHANNEL_ROL_CONTROL_STOPR);
+        addChannel(thing, add, roller.safetySwitch != null, group, CHANNEL_ROL_CONTROL_SAFETY);
 
         ShellyThingInterface handler = (ShellyThingInterface) thing.getHandler();
         if (handler != null) {
             ShellySettingsGlobal settings = handler.getProfile().settings;
             if (getBool(settings.favoritesEnabled) && settings.favorites != null) {
-                addChannel(thing, add, roller.currentPos != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_FAV);
+                addChannel(thing, add, roller.currentPos != null, group, CHANNEL_ROL_CONTROL_FAV);
             }
         }
         return add;

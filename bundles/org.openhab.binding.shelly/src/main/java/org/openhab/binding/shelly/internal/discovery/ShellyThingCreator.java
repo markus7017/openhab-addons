@@ -79,6 +79,7 @@ public class ShellyThingCreator {
     public static final String SHELLYDT_PLUSI4DC = "SNSN-0D24X";
     public static final String SHELLYDT_PLUSHT = "SNSN-0013A";
     public static final String SHELLYDT_PLUSSMOKE = "SNSN-0031Z";
+    public static final String SHELLYDT_WALLDISPLAY = "SAWD-0A1XX10EU1";
 
     // Shelly Pro Series
     public static final String SHELLYDT_PRO1 = "SPSW-001XE16EU";
@@ -100,6 +101,7 @@ public class ShellyThingCreator {
     public static final String SHELLYDT_PRO3EM = "SPEM-003CEBEU";
     public static final String SHELLYDT_PRO4PM = "SPSW-004PE16EU";
     public static final String SHELLYDT_PRO4PM_2 = "SPSW-104PE16EU";
+    public static final String SHELLYDT_PRODUALCOVER = "SPSH-002PE16EU";
 
     // Thing names
     public static final String THING_TYPE_SHELLY1_STR = "shelly1";
@@ -153,6 +155,7 @@ public class ShellyThingCreator {
     public static final String THING_TYPE_SHELLYPLUSSMOKE_STR = "shellyplussmoke";
     public static final String THING_TYPE_SHELLYPLUSPLUGS_STR = "shellyplusplug";
     public static final String THING_TYPE_SHELLYPLUSPLUGUS_STR = "shellyplusplugus";
+    public static final String THING_TYPE_SHELLYWALLDISPLAY_STR = "shellywalldisplay";
 
     // Shelly Pro Series
     public static final String THING_TYPE_SHELLYPRO1_STR = "shellypro1";
@@ -163,6 +166,7 @@ public class ShellyThingCreator {
     public static final String THING_TYPE_SHELLYPRO3_STR = "shellypro3";
     public static final String THING_TYPE_SHELLYPRO3EM_STR = "shellypro3em";
     public static final String THING_TYPE_SHELLYPRO4PM_STR = "shellypro4pm";
+    public static final String THING_TYPE_SHELLYPRODUALCOVER_STR = "shellyprodualcover-roller";
 
     public static final String THING_TYPE_SHELLYPROTECTED_STR = "shellydevice";
     public static final String THING_TYPE_SHELLYUNKNOWN_STR = "shellyunknown";
@@ -223,7 +227,7 @@ public class ShellyThingCreator {
     public static final ThingTypeUID THING_TYPE_SHELLYUNKNOWN = new ThingTypeUID(BINDING_ID,
             THING_TYPE_SHELLYUNKNOWN_STR);
 
-    // Shelly Plus/Pro
+    // Shelly Plus series
     public static final ThingTypeUID THING_TYPE_SHELLYPLUS1 = new ThingTypeUID(BINDING_ID, THING_TYPE_SHELLYPLUS1_STR);
     public static final ThingTypeUID THING_TYPE_SHELLYPLUS1PM = new ThingTypeUID(BINDING_ID,
             THING_TYPE_SHELLYPLUS1PM_STR);
@@ -243,6 +247,10 @@ public class ShellyThingCreator {
             THING_TYPE_SHELLYPLUSPLUGS_STR);
     public static final ThingTypeUID THING_TYPE_SHELLYPLUSPLUGUS = new ThingTypeUID(BINDING_ID,
             THING_TYPE_SHELLYPLUSPLUGUS_STR);
+    public static final ThingTypeUID THING_TYPE_SHELLYWALLDISPLAY = new ThingTypeUID(BINDING_ID,
+            THING_TYPE_SHELLYWALLDISPLAY_STR);
+
+    // Shelly Pro series
     public static final ThingTypeUID THING_TYPE_SHELLYPRO1 = new ThingTypeUID(BINDING_ID, THING_TYPE_SHELLYPRO1_STR);
     public static final ThingTypeUID THING_TYPE_SHELLYPRO1PM = new ThingTypeUID(BINDING_ID,
             THING_TYPE_SHELLYPRO1PM_STR);
@@ -257,6 +265,8 @@ public class ShellyThingCreator {
             THING_TYPE_SHELLYPRO3EM_STR);
     public static final ThingTypeUID THING_TYPE_SHELLYPRO4PM = new ThingTypeUID(BINDING_ID,
             THING_TYPE_SHELLYPRO4PM_STR);
+    public static final ThingTypeUID THING_TYPE_SHELLYPRODUALCOVER = new ThingTypeUID(BINDING_ID,
+            THING_TYPE_SHELLYPRODUALCOVER_STR);
 
     private static final Map<String, String> THING_TYPE_MAPPING = new LinkedHashMap<>();
     static {
@@ -302,6 +312,7 @@ public class ShellyThingCreator {
         THING_TYPE_MAPPING.put(SHELLYDT_PLUSI4, THING_TYPE_SHELLYPLUSI4_STR);
         THING_TYPE_MAPPING.put(SHELLYDT_PLUSHT, THING_TYPE_SHELLYPLUSHT_STR);
         THING_TYPE_MAPPING.put(SHELLYDT_PLUSSMOKE, THING_TYPE_SHELLYPLUSSMOKE_STR);
+        THING_TYPE_MAPPING.put(SHELLYDT_WALLDISPLAY, THING_TYPE_SHELLYWALLDISPLAY_STR);
 
         // Pro Series
         THING_TYPE_MAPPING.put(SHELLYDT_PRO1, THING_TYPE_SHELLYPRO1_STR);
@@ -323,6 +334,7 @@ public class ShellyThingCreator {
         THING_TYPE_MAPPING.put(SHELLYDT_PRO3EM, THING_TYPE_SHELLYPRO3EM_STR);
         THING_TYPE_MAPPING.put(SHELLYDT_PRO4PM, THING_TYPE_SHELLYPRO4PM_STR);
         THING_TYPE_MAPPING.put(SHELLYDT_PRO4PM_2, THING_TYPE_SHELLYPRO4PM_STR);
+        THING_TYPE_MAPPING.put(SHELLYDT_PRODUALCOVER, THING_TYPE_SHELLYPRODUALCOVER_STR);
 
         // mapping by thing type
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLY1_STR, THING_TYPE_SHELLY1_STR);
@@ -366,6 +378,7 @@ public class ShellyThingCreator {
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPLUSI4_STR, THING_TYPE_SHELLYPLUSI4_STR);
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPLUSHT_STR, THING_TYPE_SHELLYPLUSHT_STR);
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPLUSSMOKE_STR, THING_TYPE_SHELLYPLUSSMOKE_STR);
+        THING_TYPE_MAPPING.put(THING_TYPE_SHELLYWALLDISPLAY_STR, THING_TYPE_SHELLYWALLDISPLAY_STR);
 
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPRO1_STR, THING_TYPE_SHELLYPRO1_STR);
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPRO1PM_STR, THING_TYPE_SHELLYPRO1PM_STR);
@@ -375,6 +388,7 @@ public class ShellyThingCreator {
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPRO3EM_STR, THING_TYPE_SHELLYPRO3EM_STR);
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPRO3_STR, THING_TYPE_SHELLYPRO3_STR);
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPRO4PM_STR, THING_TYPE_SHELLYPRO4PM_STR);
+        THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPRODUALCOVER_STR, THING_TYPE_SHELLYPRODUALCOVER_STR);
 
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPROTECTED_STR, THING_TYPE_SHELLYPROTECTED_STR);
     }

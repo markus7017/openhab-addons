@@ -49,6 +49,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSe
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyExtVoltage;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorBat;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorHum;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorLux;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2AuthRequest;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2AuthResponse;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2DevConfigCover;
@@ -59,6 +60,7 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceS
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2CoverStatus;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2DeviceStatusEm;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2DeviceStatusHumidity;
+import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2DeviceStatusIlluminance;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2DeviceStatusPower;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2DeviceStatusSmoke;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2DeviceStatusTempId;
@@ -188,12 +190,14 @@ public class Shelly2ApiClient extends ShellyHttpClient {
         updated |= updateRelayStatus(status, result.switch3, channelUpdate);
         updated |= updateEmStatus(status, result.em0, channelUpdate);
         updated |= updateRollerStatus(status, result.cover0, channelUpdate);
+        updated |= updateRollerStatus(status, result.cover1, channelUpdate);
         if (channelUpdate) {
             updated |= ShellyComponents.updateMeters(getThing(), status);
         }
 
         updateHumidityStatus(sensorData, result.humidity0);
         updateTemperatureStatus(sensorData, result.temperature0);
+        updateIlluminanceStatus(sensorData, result.illuminance0);
         updateSmokeStatus(sensorData, result.smoke0);
         updateBatteryStatus(sensorData, result.devicepower0);
         updateAddonStatus(status, result);
@@ -365,6 +369,7 @@ public class Shelly2ApiClient extends ShellyHttpClient {
         ArrayList<@Nullable ShellySettingsRoller> rollers = new ArrayList<>();
 
         addRollerSettings(rollers, dc.cover0);
+        addRollerSettings(rollers, dc.cover1);
         fillRollerFavorites(profile, dc);
         return rollers;
     }
@@ -520,6 +525,18 @@ public class Shelly2ApiClient extends ShellyHttpClient {
             sdata.hum = new ShellySensorHum();
         }
         sdata.hum.value = getDouble(value.rh);
+    }
+
+    protected void updateIlluminanceStatus(ShellyStatusSensor sdata, @Nullable Shelly2DeviceStatusIlluminance value) {
+        if (value == null) {
+            return;
+        }
+        if (sdata.lux == null) {
+            sdata.lux = new ShellySensorLux();
+        }
+        sdata.lux.isValid = value.lux != null;
+        sdata.lux.value = value.lux;
+        sdata.lux.illumination = value.illumination;
     }
 
     protected void updateTemperatureStatus(ShellyStatusSensor sdata, @Nullable Shelly2DeviceStatusTempId value) {

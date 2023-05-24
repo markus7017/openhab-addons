@@ -401,6 +401,8 @@ public class Shelly2ApiJsonDTO {
 
             @SerializedName("cover:0")
             public Shelly2DevConfigCover cover0;
+            @SerializedName("cover:1")
+            public Shelly2DevConfigCover cover1;
 
             @SerializedName("smoke:0")
             public Shelly2ConfigSmoke smoke0;
@@ -484,6 +486,12 @@ public class Shelly2ApiJsonDTO {
             public class Shelly2DeviceStatusHumidity {
                 public Integer id;
                 public Double rh;
+            }
+
+            public class Shelly2DeviceStatusIlluminance {
+                public Integer id;
+                public Double lux;
+                public String illumination;
             }
 
             public class Shelly2DeviceStatusVoltage {
@@ -595,6 +603,8 @@ public class Shelly2ApiJsonDTO {
 
             @SerializedName("cover:0")
             public Shelly2CoverStatus cover0;
+            @SerializedName("cover:1")
+            public Shelly2CoverStatus cover1;
 
             @SerializedName("temperature:0")
             public Shelly2DeviceStatusTempId temperature0;
@@ -613,6 +623,8 @@ public class Shelly2ApiJsonDTO {
             public Shelly2DeviceStatusHumidity humidity0;
             @SerializedName("humidity:100")
             public Shelly2DeviceStatusHumidity humidity100;
+            @SerializedName("illuminance:0")
+            Shelly2DeviceStatusIlluminance illuminance0;
             @SerializedName("smoke:0")
             public Shelly2DeviceStatusSmoke smoke0;
 
