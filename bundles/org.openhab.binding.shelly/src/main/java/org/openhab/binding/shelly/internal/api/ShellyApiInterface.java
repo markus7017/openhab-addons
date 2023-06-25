@@ -46,7 +46,7 @@ public interface ShellyApiInterface {
 
     ShellySettingsStatus getStatus() throws ShellyApiException;
 
-    void setLedStatus(String ledName, Boolean value) throws ShellyApiException;
+    void setLedStatus(String ledName, boolean value) throws ShellyApiException;
 
     void setSleepTime(int value) throws ShellyApiException;
 
