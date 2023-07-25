@@ -4,7 +4,7 @@
  * Version 0.2
  */
 
-let ALLTERCO_DEVICE_NAME_PREFIX = ["SBBT", "SBDW"];
+let ALLTERCO_DEVICE_NAME_PREFIX = ["SBBT", "SBDW", "SBMO"];
 let ALLTERCO_MFD_ID_STR = "0ba9";
 let BTHOME_SVC_ID_STR = "fcd2";
 
@@ -28,11 +28,12 @@ BTH[0x01] = { n: "Battery", t: uint8, u: "%" };
 BTH[0x05] = { n: "Illuminance", t: uint24, f: 0.01 };
 BTH[0x1a] = { n: "Door", t: uint8 };
 BTH[0x20] = { n: "Moisture", t: uint8 };
+BTH[0x21] = { n: "Motion", t: uint8 };
 BTH[0x2d] = { n: "Window", t: uint8 };
 BTH[0x3a] = { n: "Button", t: uint8 };
 BTH[0x3f] = { n: "Rotation", t: int16, f: 0.1 };
 
-function getByteSize(type) {
+ffunction getByteSize(type) {
   if (type === uint8 || type === int8) return 1;
   if (type === uint16 || type === int16) return 2;
   if (type === uint24 || type === int24) return 3;
@@ -40,6 +41,7 @@ function getByteSize(type) {
   return 255;
 }
 
+// functions for decoding and unpacking the service data from Shelly BLU devices
 let BTHomeDecoder = {
   utoi: function (num, bitsz) {
     let mask = 1 << (bitsz - 1);
@@ -76,15 +78,17 @@ let BTHomeDecoder = {
     if (type === int24) res = this.getInt24LE(buffer);
     return res;
   },
+  
+  // Unpacks the service data buffer from a Shelly BLU device
   unpack: function (buffer) {
-    // beacons might not provide BTH service data
+    //beacons might not provide BTH service data
     if (typeof buffer !== "string" || buffer.length === 0) return null;
     let result = {};
     let _dib = buffer.at(0);
     result["encryption"] = _dib & 0x1 ? true : false;
     result["BTHome_version"] = _dib >> 5;
     if (result["BTHome_version"] !== 2) return null;
-    //Can not handle encrypted data
+    //can not handle encrypted data
     if (result["encryption"]) return result;
     buffer = buffer.slice(1);
 
@@ -92,8 +96,8 @@ let BTHomeDecoder = {
     let _value;
     while (buffer.length > 0) {
       _bth = BTH[buffer.at(0)];
-      if (_bth === "undefined") {
-        console.log("BTH: unknown type");
+      if (typeof _bth === "undefined") {
+        logger("unknown type", "BTH");
         break;
       }
       buffer = buffer.slice(1);
@@ -106,6 +110,7 @@ let BTHomeDecoder = {
     return result;
   },
 };
+
 
 let ShellyBLUParser = {
   getData: function (res) {
@@ -135,7 +140,7 @@ function scanCB(ev, res) {
   }
   
   let BTHparsed = ShellyBLUParser.getData(res); // skip if parsing failed
-    if (BTHparsed === null) {
+    if (BTHparsed === null || typeof BTHparsed === "undefined") {
     console.log("Failed to parse BTH data");
     return;
   }

@@ -277,6 +277,9 @@ public class ShellyBluApi extends Shelly2ApiRpc {
                             }
                             sensorData.accel.tilt = e.data.rotation.intValue();
                         }
+                        if (e.data.motionState != null) {
+                            sensorData.motion = e.data.motionState == 1;
+                        }
 
                         if (e.data.buttonEvent != null) {
                             ShellyInputState input = deviceStatus.inputs != null ? deviceStatus.inputs.get(0)

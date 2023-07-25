@@ -1084,6 +1084,8 @@ public class Shelly2ApiJsonDTO {
         public Integer windowState;
         @SerializedName("Rotation")
         public Double rotation;
+        @SerializedName("Motion")
+        public Integer motionState;
 
         public Integer rssi;
         public Integer tx_power;
