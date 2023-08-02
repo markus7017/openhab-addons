@@ -28,11 +28,13 @@ BTH[0x01] = { n: "Battery", t: uint8, u: "%" };
 BTH[0x02] = { n: "Temperature", t: int16, f: 0.01 };
 BTH[0x05] = { n: "Illuminance", t: uint24, f: 0.01 };
 BTH[0x1a] = { n: "Door", t: uint8 };
+BTH[0x21] = { n: "Motion", t: uint8 };
 BTH[0x20] = { n: "Moisture", t: uint8 };
 BTH[0x21] = { n: "Motion", t: uint8 };
 BTH[0x2d] = { n: "Window", t: uint8 };
 BTH[0x3a] = { n: "Button", t: uint8 };
 BTH[0x3f] = { n: "Rotation", t: int16, f: 0.1 };
+
 
 function getByteSize(type) {
   if (type === uint8 || type === int8) return 1;
@@ -161,7 +163,7 @@ function startBLEScan() {
         console.log('Success: OH-BLU Event Gateway running');
     }
  }
- 
+
 let BLEConfig = Shelly.getComponentConfig('ble');
 if(BLEConfig.enable === false) {
     console.log('Error: BLE not enabled, unable to start OH-BLU Scanner');
