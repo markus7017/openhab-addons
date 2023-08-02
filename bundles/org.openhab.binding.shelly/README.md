@@ -29,6 +29,8 @@ The binding supports both hardware generations
 
 - Generation 1: The original Shelly devices like the Shelly 1, Shelly 2.5, Shelly Flood etc.
 - Generation 2: The new Plus / Pro series of devices
+- Shelly Plus Mini: Shelly Plus devices in compact format
+- Shelly BLU: Bluetooth based series of devices
 
 The binding provides the same feature set across all devices as good as possible and depending on device specific features.
 
@@ -120,6 +122,7 @@ The binding provides the same feature set across all devices as good as possible
 | ----------------- | ------------------------------------------------------ | --------- |
 | shellyblubutton   | Shelly BLU Button 1                                    | SBBT      |
 | shellybludw       | Shelly BLU Door/Windows                                | SBDW      |
+| shellyblumotion   | Shelly BLU Motion                                      | SBM       |
 
 
 ## Binding Configuration
@@ -1464,6 +1467,18 @@ See notes on discovery of Shelly BLU devices above.
 | battery | batteryLevel  | Number   | yes       | Battery Level in %                                                                  |
 |         | lowBattery    | Switch   | yes       | Low battery alert (< 20%)                                                           |
 | device  | gatewayDevice | String   | yes       | Shelly forwarded last status update (BLU gateway), could vary from packet to packet |
+
+### Shelly BLU Motion Sensor (thing-type: shellyblumotion)
+
+See notes on discovery of Shelly BLU devices above.
+
+| Group   | Channel       | Type     | read-only | Description                                                                         |
+| ------- | ------------- | -------- | --------- | ----------------------------------------------------------------------------------- |
+| sensors | motion        | Switch   | yes       | ON: Motion detected                            d                                    |
+| battery | batteryLevel  | Number   | yes       | Battery Level in %                                                                  |
+|         | lowBattery    | Switch   | yes       | Low battery alert (< 20%)                                                           |
+| device  | gatewayDevice | String   | yes       | Shelly forwarded last status update (BLU gateway), could vary from packet to packet |
+
 
 ## Shelly Wall Displays
 
