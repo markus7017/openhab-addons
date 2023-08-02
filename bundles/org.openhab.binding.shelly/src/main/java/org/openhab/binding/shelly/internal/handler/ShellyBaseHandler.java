@@ -794,7 +794,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
     private boolean checkRestarted(ShellySettingsStatus status) {
         if (profile.isInitialized() && profile.alwaysOn /* exclude battery powered devices */
                 && (status.uptime != null && status.uptime < stats.lastUptime
-                        || (!profile.status.update.oldVersion.isEmpty()
+                        || (profile.status.update != null && !getString(profile.status.update.oldVersion).isEmpty()
                                 && !status.update.oldVersion.equals(profile.status.update.oldVersion)))) {
             logger.debug("{}: Device has been restarted, uptime={}/{}, firmware={}/{}", thingName, stats.lastUptime,
                     getLong(status.uptime), profile.status.update.oldVersion, status.update.oldVersion);
@@ -1044,6 +1044,10 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
 
     private void checkVersion(ShellyDeviceProfile prf, ShellySettingsStatus status) {
         try {
+            if (prf.fwVersion.isEmpty()) {
+                // no fw version available (e.g. BLU device)
+                return;
+            }
             ShellyVersionDTO version = new ShellyVersionDTO();
             if (version.checkBeta(getString(prf.fwVersion))) {
                 logger.info("{}: {}", prf.hostname, messages.get("versioncheck.beta", prf.fwVersion, prf.fwDate));
