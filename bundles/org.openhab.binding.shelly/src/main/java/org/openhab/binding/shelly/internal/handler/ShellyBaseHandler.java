@@ -1014,10 +1014,15 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         config.serviceName = getString(properties.get(PROPERTY_SERVICE_NAME));
         config.localIp = bindingConfig.localIP;
         config.localPort = String.valueOf(bindingConfig.httpPort);
-        if (config.userId.isEmpty() && !bindingConfig.defaultUserId.isEmpty()) {
+        if (!profile.isGen2 && config.userId.isEmpty() && !bindingConfig.defaultUserId.isEmpty()) { // Gen2 has hard
+                                                                                                    // coded user
+                                                                                                    // "admin"
             config.userId = bindingConfig.defaultUserId;
+            logger.debug("{}: Using default userId {} from binding config", thingName, config.userId);
+        }
+        if (config.password.isEmpty() && !bindingConfig.defaultPassword.isEmpty()) {
             config.password = bindingConfig.defaultPassword;
-            logger.debug("{}: Using userId {} from bindingConfig", thingName, config.userId);
+            logger.debug("{}: Using default password from bindingConfig (userId={})", thingName, config.userId);
         }
         if (config.updateInterval == 0) {
             config.updateInterval = UPDATE_STATUS_INTERVAL_SECONDS * UPDATE_SKIP_COUNT;
