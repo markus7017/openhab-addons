@@ -82,7 +82,7 @@ public class Shelly2ApiJsonDTO {
 
     // Component types
     public static final String SHELLY2_PROFILE_RELAY = "switch";
-    public static final String SHELLY2_PROFILE_ROLLER = "cover";
+    public static final String SHELLY2_PROFILE_COVER = "cover";
 
     // Button types/modes
     public static final String SHELLY2_BTNT_MOMENTARY = "momentary";
@@ -182,7 +182,8 @@ public class Shelly2ApiJsonDTO {
         public String name;
         public String id;
         public String mac;
-        public String model;
+        public String model; // Gen1
+        public String profile; // Gen2
         public Integer gen;
         @SerializedName("fw_id")
         public String firmware;
