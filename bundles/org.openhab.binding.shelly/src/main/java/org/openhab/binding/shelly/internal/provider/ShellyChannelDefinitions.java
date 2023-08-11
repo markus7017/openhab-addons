@@ -768,6 +768,9 @@ public class ShellyChannelDefinitions {
         }
 
         public ChannelTypeUID getChannelTypeUID() {
+            if (typeId.contains("system:")) {
+                return new ChannelTypeUID("system", substringAfter(typeId, ":"));
+            }
             return new ChannelTypeUID(BINDING_ID, typeId);
         }
     }

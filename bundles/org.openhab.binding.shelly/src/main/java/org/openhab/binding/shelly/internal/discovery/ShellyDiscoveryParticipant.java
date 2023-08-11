@@ -149,6 +149,10 @@ public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
                 api.initialize();
                 devInfo = api.getDeviceInfo();
                 model = devInfo.type;
+                if (devInfo.name != null) {
+                    deviceName = devInfo.name;
+                }
+
                 profile = api.getDeviceProfile(thingType, devInfo);
                 api.close();
                 logger.debug("{}: Shelly settings : {}", name, profile.settingsJson);
