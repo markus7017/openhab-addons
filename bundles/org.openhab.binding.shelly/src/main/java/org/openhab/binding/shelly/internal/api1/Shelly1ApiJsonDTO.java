@@ -267,7 +267,8 @@ public class Shelly1ApiJsonDTO {
         public String profile; // Gen 2
         public String mac;
         public String hostname;
-        public String fw;
+        public String fw; // firmware id
+        public String ver; // Gen2: version
         public Boolean auth;
         public Integer gen;
         public String coiot;

@@ -191,18 +191,20 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 start = initializeThing();
             } catch (ShellyApiException e) {
                 ShellyApiResult res = e.getApiResult();
+                ThingStatusDetail errorCode = ThingStatusDetail.COMMUNICATION_ERROR;
                 String mid = "";
                 if (e.isJsonError()) { // invalid JSON format
                     mid = "offline.status-error-unexpected-error";
                     start = false;
                 } else if (isAuthorizationFailed(res)) {
                     mid = "offline.conf-error-access-denied";
+                    errorCode = ThingStatusDetail.CONFIGURATION_ERROR;
                     start = false;
                 } else if (profile.alwaysOn && e.isConnectionError()) {
                     mid = "offline.status-error-connect";
                 }
                 if (!mid.isEmpty()) {
-                    setThingOffline(ThingStatusDetail.COMMUNICATION_ERROR, mid, e.toString());
+                    setThingOffline(errorCode, mid, e.toString());
                 } else {
                     logger.debug("{}: Unable to initialize: {}, retrying later", thingName, e.toString());
                 }
@@ -638,7 +640,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         }
         if (prf.isRoller && prf.settings.favorites != null) {
             String channelId = mkChannelId(CHANNEL_GROUP_ROL_CONTROL, CHANNEL_ROL_CONTROL_FAV);
-            logger.debug("{}: Adding {} roler favorite(s) to channel description", thingName,
+            logger.debug("{}: Adding {} roler favorite(s) to channel description", thingName,
                     prf.settings.favorites.size());
             channelDefinitions.clearStateOptions(channelId);
             int fid = 1;
@@ -1363,7 +1365,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                     }
                     if (upgrade) {
                         logger.debug(
-                                "{}: Updating channel definition for channel {} (typeId {} -> {}, acceptedItemType {} -> {})",
+                                "{}: Upgrade channel definition for channel {} (typeId {} -> {}, acceptedItemType {} -> {})",
                                 thingName, channelId, typeId, channelDef.typeId, acceptedItemType, channelDef.itemType);
                         removeChannels.add(channel);
                         upgradeChannels.add(channelBuilder.build());

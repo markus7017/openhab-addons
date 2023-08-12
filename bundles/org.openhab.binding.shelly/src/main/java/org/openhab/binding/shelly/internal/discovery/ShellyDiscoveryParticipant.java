@@ -143,9 +143,9 @@ public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
             config.password = bindingConfig.defaultPassword;
             boolean gen2 = "2".equals(service.getPropertyString("gen"));
             ShellySettingsDevice devInfo;
+            ShellyApiInterface api = gen2 ? new Shelly2ApiRpc(name, config, httpClient)
+                    : new Shelly1HttpApi(name, config, httpClient);
             try {
-                ShellyApiInterface api = gen2 ? new Shelly2ApiRpc(name, config, httpClient)
-                        : new Shelly1HttpApi(name, config, httpClient);
                 api.initialize();
                 devInfo = api.getDeviceInfo();
                 model = devInfo.type;
@@ -176,6 +176,10 @@ public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
                 }
             } catch (IllegalArgumentException e) { // maybe some format description was buggy
                 logger.debug("{}: Discovery failed!", name, e);
+            } finally {
+                if (api.isInitialized()) {
+                    api.close();
+                }
             }
 
             if (thingUID != null) {
