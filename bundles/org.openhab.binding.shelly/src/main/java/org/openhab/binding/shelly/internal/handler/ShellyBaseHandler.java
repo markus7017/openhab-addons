@@ -1371,7 +1371,6 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
             ThingBuilder thingBuilder = editThing();
             thingBuilder.withChannels(channelMap);
             updateThing(thingBuilder.build());
-            logger.debug("{}: Channel definitions updated", thingName);
         }
     }
 
