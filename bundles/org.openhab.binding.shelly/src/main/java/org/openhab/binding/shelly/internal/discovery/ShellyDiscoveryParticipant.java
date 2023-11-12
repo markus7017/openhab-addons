@@ -181,7 +181,9 @@ public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
             } catch (IllegalArgumentException e) { // maybe some format description was buggy
                 logger.debug("{}: Discovery failed!", name, e);
             } finally {
-                api.close();
+                if (api != null) {
+                    api.close();
+                }
             }
 
             if (thingUID != null) {
