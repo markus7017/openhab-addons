@@ -151,6 +151,7 @@ public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
             ShellyApiInterface api = gen2 ? new Shelly2ApiRpc(name, config, httpClient)
                     : new Shelly1HttpApi(name, config, httpClient);
             try {
+                api = gen2 ? new Shelly2ApiRpc(name, config, httpClient) : new Shelly1HttpApi(name, config, httpClient);
                 api.initialize();
                 devInfo = api.getDeviceInfo();
                 model = devInfo.type;
@@ -184,7 +185,9 @@ public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
             } catch (IllegalArgumentException e) { // maybe some format description was buggy
                 logger.debug("{}: Discovery failed!", name, e);
             } finally {
-                api.close();
+                if (api != null) {
+                    api.close();
+                }
             }
 
             if (thingUID != null) {
