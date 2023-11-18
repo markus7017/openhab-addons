@@ -284,6 +284,13 @@ public class Shelly1CoapHandler implements Shelly1CoapListener {
                 return;
             }
 
+            if (thingHandler.getThingStatusDetail() == ThingStatusDetail.CONFIGURATION_ERROR) {
+                logger.debug("{}: The device is not configuired correctly, skip Coap packet", thingName);
+                return;
+            }
+            // If we received a CoAP message successful the thing must be online
+            thingHandler.setThingOnline();
+
             // fixed malformed JSON :-(
             payload = fixJSON(payload);
 

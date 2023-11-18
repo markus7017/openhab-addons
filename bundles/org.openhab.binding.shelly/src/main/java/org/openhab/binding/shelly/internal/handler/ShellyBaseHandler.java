@@ -1345,7 +1345,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                     }
                     if (upgrade) {
                         logger.debug(
-                                "{}: Updating channel definition for channel {} (typeId {} -> {}, acceptedItemType {} -> {})",
+                                "{}: Upgrade channel definition for channel {} (typeId {} -> {}, acceptedItemType {} -> {})",
                                 thingName, channelId, typeId, channelDef.typeId, acceptedItemType, channelDef.itemType);
                         removeChannels.add(channel);
                         upgradeChannels.add(channelBuilder.build());
