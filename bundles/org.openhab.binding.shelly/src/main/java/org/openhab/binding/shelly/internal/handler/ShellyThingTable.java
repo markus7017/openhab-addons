@@ -34,7 +34,7 @@ import org.osgi.service.component.annotations.Deactivate;
 @Component(service = ShellyThingTable.class, configurationPolicy = ConfigurationPolicy.OPTIONAL)
 public class ShellyThingTable {
     private Map<String, ShellyThingInterface> thingTable = new ConcurrentHashMap<>();
-    private @Nullable ShellyBluDiscoveryService bluDiscoveryService;
+    private @Nullable ShellyBluDiscoveryService discoveryService;
 
     public void addThing(String key, ShellyThingInterface thing) {
         if (thingTable.containsKey(key)) {
@@ -80,9 +80,9 @@ public class ShellyThingTable {
     }
 
     public void startDiscoveryService(BundleContext bundleContext) {
-        if (bluDiscoveryService == null) {
-            bluDiscoveryService = new ShellyBluDiscoveryService(bundleContext, this);
-            bluDiscoveryService.registerDeviceDiscoveryService();
+        if (discoveryService == null) {
+            discoveryService = new ShellyBluDiscoveryService(bundleContext, this);
+            discoveryService.registerDeviceDiscoveryService();
         }
     }
 
@@ -93,16 +93,16 @@ public class ShellyThingTable {
     }
 
     public void stopDiscoveryService() {
-        if (bluDiscoveryService != null) {
-            bluDiscoveryService.unregisterDeviceDiscoveryService();
-            bluDiscoveryService = null;
+        if (discoveryService != null) {
+            discoveryService.unregisterDeviceDiscoveryService();
+            discoveryService = null;
         }
     }
 
     public void discoveredResult(ThingTypeUID uid, String model, String serviceName, String address,
             Map<String, Object> properties) {
-        if (bluDiscoveryService != null) {
-            bluDiscoveryService.discoveredResult(uid, model, serviceName, address, properties);
+        if (discoveryService != null) {
+            discoveryService.discoveredResult(uid, model, serviceName, address, properties);
         }
     }
 

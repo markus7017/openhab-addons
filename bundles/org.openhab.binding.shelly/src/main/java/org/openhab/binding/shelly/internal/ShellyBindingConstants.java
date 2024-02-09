@@ -32,7 +32,12 @@ public class ShellyBindingConstants {
     public static final String BINDING_ID = "shelly";
     public static final String SYSTEM_ID = "system";
 
-    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_SHELLY1, //
+    public static final Set<ThingTypeUID> SUPPORTED_BRIDGE_TYPES_UIDS = Set.of(//
+            BRIDGE_TYPE_SHELLYREBRIDGE // Range Extender Bridge
+    );
+
+    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(//
+            THING_TYPE_SHELLY1, //
             THING_TYPE_SHELLY1L, //
             THING_TYPE_SHELLY1PM, //
             THING_TYPE_SHELLYEM, //

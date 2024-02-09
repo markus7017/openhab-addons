@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
 @NonNullByDefault
 @Component(service = MDNSDiscoveryParticipant.class)
 public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
-    private final Logger logger = LoggerFactory.getLogger(ShellyDiscoveryParticipant.class);
+    private static final Logger logger = LoggerFactory.getLogger(ShellyDiscoveryParticipant.class);
     private final ShellyBindingConfiguration bindingConfig = new ShellyBindingConfiguration();
     private final ShellyTranslationProvider messages;
     private final HttpClient httpClient;
@@ -101,119 +101,124 @@ public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
         bindingConfig.updateFromProperties(componentContext.getProperties());
     }
 
-    @Nullable
     @Override
-    public DiscoveryResult createResult(final ServiceInfo service) {
+    public @Nullable DiscoveryResult createResult(final ServiceInfo service) {
         String name = service.getName().toLowerCase(); // Shelly Duo: Name starts with" Shelly" rather than "shelly"
         if (!name.startsWith("shelly")) {
             return null;
         }
 
         String address = "";
+        name = service.getName().toLowerCase();
+        Inet4Address[] hostAddresses = service.getInet4Addresses();
+        if ((hostAddresses != null) && (hostAddresses.length > 0)) {
+            address = substringAfter(hostAddresses[0].toString(), "/");
+        }
+        if (!service.getQualifiedName().contains(SERVICE_TYPE) || address.isEmpty() || !name.contains("-")) {
+            logger.trace("{}: Shelly device discovered with empty IP address (service-name={})", name, service);
+            return null;
+        }
+        String thingType = substringBeforeLast(name, "-");
+        logger.debug("{}: Shelly device discovered: IP-Adress={}, type={}", name, address, thingType);
+
         try {
-            String mode = "";
-            String model = "unknown";
-            String deviceName = "";
-            ThingUID thingUID = null;
-            ShellyDeviceProfile profile;
-            Map<String, Object> properties = new TreeMap<>();
-
-            name = service.getName().toLowerCase();
-            Inet4Address[] hostAddresses = service.getInet4Addresses();
-            if ((hostAddresses != null) && (hostAddresses.length > 0)) {
-                address = substringAfter(hostAddresses[0].toString(), "/");
-            }
-            if (address.isEmpty()) {
-                logger.trace("{}: Shelly device discovered with empty IP address (service-name={})", name, service);
-                return null;
-            }
-            String thingType = service.getQualifiedName().contains(SERVICE_TYPE) && name.contains("-")
-                    ? substringBeforeLast(name, "-")
-                    : name;
-            logger.debug("{}: Shelly device discovered: IP-Adress={}, type={}", name, address, thingType);
-
-            // Get device settings
             Configuration serviceConfig = configurationAdmin.getConfiguration("binding.shelly");
             if (serviceConfig.getProperties() != null) {
                 bindingConfig.updateFromProperties(serviceConfig.getProperties());
             }
-
-            ShellyThingConfiguration config = new ShellyThingConfiguration();
-            config.deviceIp = address;
-            config.userId = bindingConfig.defaultUserId;
-            config.password = bindingConfig.defaultPassword;
-
-            String gen = getString(service.getPropertyString("gen"));
-            boolean gen2 = "2".equals(gen) || "3".equals(gen);
-            boolean auth = false;
-            ShellySettingsDevice devInfo;
-
-            ShellyApiInterface api = gen2 ? new Shelly2ApiRpc(name, config, httpClient)
-                    : new Shelly1HttpApi(name, config, httpClient);
-            try {
-                api = gen2 ? new Shelly2ApiRpc(name, config, httpClient) : new Shelly1HttpApi(name, config, httpClient);
-                api.initialize();
-                devInfo = api.getDeviceInfo();
-                model = devInfo.type;
-                gen2 = !(devInfo.gen == 1); // gen 2+3
-                auth = getBool(devInfo.auth);
-                if (devInfo.name != null) {
-                    deviceName = devInfo.name;
-                }
-
-                profile = api.getDeviceProfile(thingType, devInfo);
-                api.close();
-                logger.debug("{}: Shelly settings : {}", name, profile.settingsJson);
-                deviceName = profile.name;
-                mode = devInfo.mode;
-                properties = ShellyBaseHandler.fillDeviceProperties(profile);
-                logger.trace("{}: thingType={}, deviceType={}, mode={}, symbolic name={}", name, thingType,
-                        devInfo.type, mode.isEmpty() ? "<standard>" : mode, deviceName);
-
-                // get thing type from device name
-                thingUID = ShellyThingCreator.getThingUID(name, model, mode, false);
-            } catch (ShellyApiException e) {
-                ShellyApiResult result = e.getApiResult();
-                if (result.isHttpAccessUnauthorized()) {
-                    logger.info("{}: {}", name, messages.get("discovery.protected", address));
-
-                    // create shellyunknown thing - will be changed during thing initialization with valid credentials
-                    thingUID = ShellyThingCreator.getThingUID(name, model, mode, true);
-                } else {
-                    logger.debug("{}: {}", name, messages.get("discovery.failed", address, e.toString()));
-                }
-            } catch (IllegalArgumentException e) { // maybe some format description was buggy
-                logger.debug("{}: Discovery failed!", name, e);
-            } finally {
-                if (api != null) {
-                    api.close();
-                }
-            }
-
-            if (thingUID != null) {
-                addProperty(properties, CONFIG_DEVICEIP, address);
-                addProperty(properties, PROPERTY_MODEL_ID, model);
-                addProperty(properties, PROPERTY_SERVICE_NAME, name);
-                addProperty(properties, PROPERTY_DEV_NAME, deviceName);
-                addProperty(properties, PROPERTY_DEV_TYPE, thingType);
-                addProperty(properties, PROPERTY_DEV_GEN, gen2 ? "2" : "1");
-                addProperty(properties, PROPERTY_DEV_MODE, mode);
-                addProperty(properties, PROPERTY_DEV_AUTH, auth ? "yes" : "no");
-
-                logger.debug("{}: Adding Shelly {}, UID={}", name, deviceName, thingUID.getAsString());
-                String thingLabel = deviceName.isEmpty() ? name + " - " + address
-                        : deviceName + " (" + name + "@" + address + ")";
-                return DiscoveryResultBuilder.create(thingUID).withProperties(properties).withLabel(thingLabel)
-                        .withRepresentationProperty(PROPERTY_SERVICE_NAME).build();
-            }
-        } catch (IOException | NullPointerException e) {
-            // maybe some format description was buggy
-            logger.debug("{}: Exception on processing serviceInfo '{}'", name, service.getNiceTextString(), e);
+        } catch (IOException e) {
         }
+
+        return discoverShelly("2".equals(service.getPropertyString("gen")), name, address, "", bindingConfig,
+                httpClient, messages);
+
+    }
+
+    public static @Nullable DiscoveryResult discoverShelly(boolean gen2, String name, String ipAddress, String port,
+            ShellyBindingConfiguration bindingConfig, HttpClient httpClient, ShellyTranslationProvider messages) {
+        ThingUID thingUID = null;
+        ShellyDeviceProfile profile;
+        ShellySettingsDevice devInfo;
+        ShellyApiInterface api = null;
+        boolean auth = false;
+        String model = "";
+        String mode = "";
+        String deviceName = "";
+        String thingType = "";
+        String address = port.isEmpty() ? ipAddress : ipAddress + ":" + port;
+        Map<String, Object> properties = new TreeMap<>();
+
+        try {
+
+            ShellyThingConfiguration config = fillConfig(bindingConfig, address);
+            api = gen2 ? new Shelly2ApiRpc(name, config, httpClient) : new Shelly1HttpApi(name, config, httpClient);
+            api.initialize();
+            devInfo = api.getDeviceInfo();
+            model = devInfo.type;
+            auth = devInfo.auth;
+            if (devInfo.name != null) {
+                deviceName = devInfo.name;
+            }
+
+            thingType = substringBeforeLast(name, "-");
+            profile = api.getDeviceProfile(thingType, devInfo);
+            api.close();
+            deviceName = profile.name;
+            mode = devInfo.mode;
+            properties = ShellyBaseHandler.fillDeviceProperties(profile);
+            logger.trace("{}: thingType={}, deviceType={}, mode={}, symbolic name={}", name, thingType, devInfo.type,
+                    mode.isEmpty() ? "<standard>" : mode, deviceName);
+
+            // get thing type from device name
+            thingUID = ShellyThingCreator.getThingUID(name, model, mode, false);
+        } catch (ShellyApiException e) {
+            ShellyApiResult result = e.getApiResult();
+            if (result.isHttpAccessUnauthorized()) {
+                logger.info("{}: {}", name, messages.get("discovery.protected", address));
+
+                // create shellyunknown thing - will be changed during thing initialization with valid credentials
+                thingUID = ShellyThingCreator.getThingUID(name, model, mode, true);
+            } else {
+                logger.debug("{}: {}", name, messages.get("discovery.failed", address, e.toString()));
+            }
+        } catch (IllegalArgumentException | IOException e) { // maybe some format description was buggy
+            logger.debug("{}: Discovery failed!", name, e);
+        } finally {
+            if (api != null) {
+                api.close();
+            }
+        }
+
+        if (thingUID != null) {
+            addProperty(properties, CONFIG_DEVICEIP, address);
+            addProperty(properties, PROPERTY_MODEL_ID, model);
+            addProperty(properties, PROPERTY_SERVICE_NAME, name);
+            addProperty(properties, PROPERTY_DEV_NAME, deviceName);
+            addProperty(properties, PROPERTY_DEV_TYPE, thingType);
+            addProperty(properties, PROPERTY_DEV_GEN, gen2 ? "2" : "1");
+            addProperty(properties, PROPERTY_DEV_MODE, mode);
+            addProperty(properties, PROPERTY_DEV_AUTH, auth ? "yes" : "no");
+
+            logger.debug("{}: Adding Shelly {}, UID={}", name, deviceName, thingUID.getAsString());
+            String thingLabel = deviceName.isEmpty() ? name + " - " + address
+                    : deviceName + " (" + name + "@" + address + ")";
+            return DiscoveryResultBuilder.create(thingUID).withProperties(properties).withLabel(thingLabel)
+                    .withRepresentationProperty(PROPERTY_SERVICE_NAME).build();
+        }
+
         return null;
     }
 
-    private void addProperty(Map<String, Object> properties, String key, @Nullable String value) {
+    public static ShellyThingConfiguration fillConfig(ShellyBindingConfiguration bindingConfig, String address)
+            throws IOException {
+        ShellyThingConfiguration config = new ShellyThingConfiguration();
+        config.deviceIp = address;
+        config.userId = bindingConfig.defaultUserId;
+        config.password = bindingConfig.defaultPassword;
+        return config;
+    }
+
+    private static void addProperty(Map<String, Object> properties, String key, @Nullable String value) {
         properties.put(key, value != null ? value : "");
     }
 

@@ -28,6 +28,7 @@ import org.openhab.binding.shelly.internal.handler.ShellyBluSensorHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyLightHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyManagerInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyProtectedHandler;
+import org.openhab.binding.shelly.internal.handler.ShellyRangeExtenderBridgeHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyRelayHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
@@ -36,6 +37,7 @@ import org.openhab.binding.shelly.internal.util.ShellyUtils;
 import org.openhab.core.io.net.http.HttpClientFactory;
 import org.openhab.core.net.HttpServiceUtil;
 import org.openhab.core.net.NetworkAddressService;
+import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.binding.BaseThingHandlerFactory;
@@ -118,7 +120,10 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
         String thingType = thingTypeUID.getId();
         ShellyBaseHandler handler = null;
 
-        if (thingType.equals(THING_TYPE_SHELLYPROTECTED_STR)) {
+        if (thingType.equals(THING_TYPE_SHELLYREBRIDGE_STR)) {
+            ShellyRangeExtenderBridgeHandler bridge = new ShellyRangeExtenderBridgeHandler((Bridge) thing, messages);
+            return bridge;
+        } else if (thingType.equals(THING_TYPE_SHELLYPROTECTED_STR)) {
             logger.debug("{}: Create new thing of type {} using ShellyProtectedHandler", thing.getLabel(),
                     thingTypeUID.toString());
             handler = new ShellyProtectedHandler(thing, messages, bindingConfig, thingTable, coapServer, httpClient);

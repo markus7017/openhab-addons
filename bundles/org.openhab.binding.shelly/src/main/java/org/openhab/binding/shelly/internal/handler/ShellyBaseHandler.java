@@ -190,6 +190,10 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                         thingName, config.eventsButton, config.eventsSwitch, config.eventsPush, config.eventsRoller,
                         config.eventsSensorReport, config.eventsCoIoT, bindingConfig.autoCoIoT);
                 start = initializeThing();
+
+                if (getBool(profile.settings.rangeExtender)) {
+
+                }
             } catch (ShellyApiException e) {
                 start = handleApiException(e);
             } catch (IllegalArgumentException e) {

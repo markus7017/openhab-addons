@@ -124,6 +124,8 @@ public class ShellyThingCreator {
     public static final String SHELLYDT_BLUGW = "SNGW-BT01";
 
     // Thing names
+    public static final String THING_TYPE_SHELLYREBRIDGE_STR = "shellyrange";
+
     public static final String THING_TYPE_SHELLY1_STR = "shelly1";
     public static final String THING_TYPE_SHELLY1L_STR = "shelly1l";
     public static final String THING_TYPE_SHELLY1PM_STR = "shelly1pm";
@@ -209,6 +211,9 @@ public class ShellyThingCreator {
     public static final String THING_TYPE_SHELLYUNKNOWN_STR = "shellyunknown";
 
     // List of all Thing Type UIDs
+    public static final ThingTypeUID BRIDGE_TYPE_SHELLYREBRIDGE = new ThingTypeUID(BINDING_ID,
+            THING_TYPE_SHELLYREBRIDGE_STR);
+
     public static final ThingTypeUID THING_TYPE_SHELLY1 = new ThingTypeUID(BINDING_ID, THING_TYPE_SHELLY1_STR);
     public static final ThingTypeUID THING_TYPE_SHELLY1L = new ThingTypeUID(BINDING_ID, THING_TYPE_SHELLY1L_STR);
     public static final ThingTypeUID THING_TYPE_SHELLY1PM = new ThingTypeUID(BINDING_ID, THING_TYPE_SHELLY1PM_STR);
