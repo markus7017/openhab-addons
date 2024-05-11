@@ -44,6 +44,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySensorSl
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsDevice;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsDimmer;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsEMeter;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsLight;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsLogin;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsMeter;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRelay;
@@ -53,6 +54,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettings
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortLightStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortStatusRelay;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLight;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLightChannel;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusRelay;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2AuthChallenge;
@@ -189,8 +191,9 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
         profile.isRoller = dc.cover0 != null;
         profile.settings.relays = fillRelaySettings(profile, dc);
-        profile.settings.inputs = fillInputSettings(profile, dc);
         profile.settings.rollers = fillRollerSettings(profile, dc);
+        profile.settings.inputs = fillInputSettings(profile, dc);
+        profile.settings.lights = fillLightSettings(profile, dc);
 
         profile.isEMeter = true;
         profile.numInputs = profile.settings.inputs != null ? profile.settings.inputs.size() : 0;
@@ -198,11 +201,11 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         profile.numRollers = profile.settings.rollers != null ? profile.settings.rollers.size() : 0;
         profile.hasRelays = profile.numRelays > 0 || profile.numRollers > 0;
         if (getString(profile.device.mode).isEmpty() && profile.hasRelays) {
-            profile.device.mode = profile.isRoller ? SHELLY_CLASS_ROLLER : SHELLY_CLASS_RELAY;
+            profile.device.mode = profile.isRoller ? SHELLY_MODE_ROLLER : SHELLY_MODE_RELAY;
         }
-
         ShellySettingsDevice device = profile.device;
         profile.isGen2 = device.gen == 2;
+        profile.settings.mode = device.mode;
         if (config.serviceName.isEmpty()) {
             config.serviceName = getString(profile.device.hostname);
         }
@@ -289,9 +292,19 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             profile.status.dimmers.add(new ShellyShortLightStatus());
             fillDimmerSettings(profile, dc);
         }
-        profile.status.lights = profile.isBulb ? new ArrayList<>() : null;
+
+        if (profile.isLight) {
+            profile.status.lights = new ArrayList<>();
+            lightStatus.lights = new ArrayList<>();
+            for (int i = 0; i < profile.settings.lights.size(); i++) {
+                profile.status.lights.add(new ShellySettingsLight());
+                lightStatus.lights.add(new ShellyStatusLightChannel());
+            }
+        }
+
         profile.status.thermostats = profile.isTRV ? new ArrayList<>() : null;
 
+        // Check for WebSocket callback url
         if (profile.hasBattery) {
             profile.settings.sleepMode = new ShellySensorSleepMode();
             profile.settings.sleepMode.unit = "m";
@@ -742,7 +755,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         info.mac = getString(device.mac);
         info.auth = getBool(device.auth);
         info.gen = getInteger(device.gen);
-        info.mode = mapValue(MAP_PROFILE, device.profile);
+        info.mode = mapValue(MAP_DEVICE_PROFILE, device.profile);
         return info;
     }
 
@@ -863,7 +876,8 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public ShellyStatusLight getLightStatus() throws ShellyApiException {
-        throw new ShellyApiException("API call not implemented");
+        lightStatus.meters = getProfile().status.meters;
+        return lightStatus;
     }
 
     @Override
@@ -1122,7 +1136,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public void sendIRKey(String keyCode) throws ShellyApiException, IllegalArgumentException {
-        throw new ShellyApiException("API call not implemented");
+        throw new ShellyApiException("API2: sendIRKey not implemented");
     }
 
     @Override

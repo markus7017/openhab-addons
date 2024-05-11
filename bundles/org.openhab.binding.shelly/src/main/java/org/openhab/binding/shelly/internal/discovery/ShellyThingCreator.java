@@ -83,6 +83,8 @@ public class ShellyThingCreator {
     public static final String SHELLYDT_PLUSUNI = "SNSN-0043X";
     public static final String SHELLYDT_PLUSDIMMERUS = "SNDM-0013US";
     public static final String SHELLYDT_PLUSDIMMER10V = "SNGW-0A11WW010";
+    public static final String SHELLYDT_PLUSRGBWPM_COLOR = "SNDC-0D4P10WW-color";
+    public static final String SHELLYDT_PLUSRGBWPM_WHITE = "SNDC-0D4P10WW-white";
     public static final String SHELLYDT_PLUSWALLDISPLAY = "SAWD-0A1XX10EU1";
 
     // Shelly Pro Series
@@ -178,6 +180,9 @@ public class ShellyThingCreator {
     public static final String THING_TYPE_SHELLYPLUSPLUGUS_STR = "shellyplusplugus";
     public static final String THING_TYPE_SHELLYPLUSDIMMERUS_STR = "shellypluswdus";
     public static final String THING_TYPE_SHELLYPLUSDIMMER10V_STR = "shellyplus10v";
+    public static final String THING_TYPE_SHELLYPLUSRGBWPM_PREFIX = "shellyplusrgbwpm";
+    public static final String THING_TYPE_SHELLYPLUSRGBWPM_COLOR_STR = THING_TYPE_SHELLYPLUSRGBWPM_PREFIX + "-color";
+    public static final String THING_TYPE_SHELLYPLUSRGBWPM_WHITE_STR = THING_TYPE_SHELLYPLUSRGBWPM_PREFIX + "-white";
 
     // Shelly Wall Display
     public static final String THING_TYPE_SHELLYPLUSWALLDISPLAY_STR = "shellywalldisplay";
@@ -290,6 +295,10 @@ public class ShellyThingCreator {
             THING_TYPE_SHELLYPLUSDIMMERUS_STR);
     public static final ThingTypeUID THING_TYPE_SHELLYPLUSDIMMER10V = new ThingTypeUID(BINDING_ID,
             THING_TYPE_SHELLYPLUSDIMMER10V_STR);
+    public static final ThingTypeUID THING_TYPE_SHELLYPLUSRGBWPM_COLOR = new ThingTypeUID(BINDING_ID,
+            THING_TYPE_SHELLYPLUSRGBWPM_COLOR_STR);
+    public static final ThingTypeUID THING_TYPE_SHELLYPLUSRGBWPM_WHITE = new ThingTypeUID(BINDING_ID,
+            THING_TYPE_SHELLYPLUSRGBWPM_WHITE_STR);
 
     // Shelly Wall Display
     public static final ThingTypeUID THING_TYPE_SHELLYPLUSWALLDISPLAY = new ThingTypeUID(BINDING_ID,
@@ -377,6 +386,8 @@ public class ShellyThingCreator {
         THING_TYPE_MAPPING.put(SHELLYDT_PLUSSMOKE, THING_TYPE_SHELLYPLUSSMOKE_STR);
         THING_TYPE_MAPPING.put(SHELLYDT_PLUSDIMMERUS, THING_TYPE_SHELLYPLUSDIMMERUS_STR);
         THING_TYPE_MAPPING.put(SHELLYDT_PLUSDIMMER10V, THING_TYPE_SHELLYPLUSDIMMER10V_STR);
+        THING_TYPE_MAPPING.put(SHELLYDT_PLUSRGBWPM_COLOR, THING_TYPE_SHELLYPLUSRGBWPM_COLOR_STR);
+        THING_TYPE_MAPPING.put(SHELLYDT_PLUSRGBWPM_WHITE, THING_TYPE_SHELLYPLUSRGBWPM_WHITE_STR);
 
         // Plus Mini Series
         THING_TYPE_MAPPING.put(SHELLYDT_MINI1, THING_TYPE_SHELLYMINI1_STR);
@@ -462,6 +473,8 @@ public class ShellyThingCreator {
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPLUSSMOKE_STR, THING_TYPE_SHELLYPLUSSMOKE_STR);
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPLUSDIMMERUS_STR, THING_TYPE_SHELLYPLUSDIMMERUS_STR);
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPLUSDIMMER10V_STR, THING_TYPE_SHELLYPLUSDIMMER10V_STR);
+        THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPLUSRGBWPM_COLOR_STR, THING_TYPE_SHELLYPLUSRGBWPM_COLOR_STR);
+        THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPLUSRGBWPM_WHITE_STR, THING_TYPE_SHELLYPLUSRGBWPM_WHITE_STR);
 
         THING_TYPE_MAPPING.put(THING_TYPE_SHELLYPLUSWALLDISPLAY_STR, THING_TYPE_SHELLYPLUSWALLDISPLAY_STR);
 
@@ -530,6 +543,10 @@ public class ShellyThingCreator {
         }
         if (name.startsWith(THING_TYPE_SHELLYRGBW2_PREFIX)) {
             return mode.equals(SHELLY_MODE_COLOR) ? THING_TYPE_SHELLYRGBW2_COLOR_STR : THING_TYPE_SHELLYRGBW2_WHITE_STR;
+        }
+        if (name.startsWith(THING_TYPE_SHELLYPLUSRGBWPM_PREFIX)) {
+            return mode.equals(SHELLY_MODE_COLOR) ? THING_TYPE_SHELLYPLUSRGBWPM_COLOR_STR
+                    : THING_TYPE_SHELLYPLUSRGBWPM_WHITE_STR;
         }
         if (name.startsWith(THING_TYPE_SHELLYMOTION_STR)) {
             // depending on firmware release the Motion advertises under shellymotion-xxx or shellymotionsensor-xxxx

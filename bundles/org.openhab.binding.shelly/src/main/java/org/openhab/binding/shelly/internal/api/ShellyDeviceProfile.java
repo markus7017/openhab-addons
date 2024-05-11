@@ -145,7 +145,9 @@ public class ShellyDeviceProfile {
             device.hostname = device.mac.length() >= 12 ? "shelly-" + device.mac.toUpperCase().substring(6, 11)
                     : "unknown";
         }
-        device.mode = getString(settings.mode).toLowerCase();
+        if (device.mode.isEmpty()) {
+            device.mode = getString(settings.mode);
+        }
         name = getString(settings.name);
         hwRev = settings.hwinfo != null ? getString(settings.hwinfo.hwRevision) : "";
         hwBatchId = settings.hwinfo != null ? getString(settings.hwinfo.batchId.toString()) : "";
@@ -207,7 +209,8 @@ public class ShellyDeviceProfile {
         isBulb = thingType.equals(THING_TYPE_SHELLYBULB_STR);
         isDuo = thingType.equals(THING_TYPE_SHELLYDUO_STR) || thingType.equals(THING_TYPE_SHELLYVINTAGE_STR)
                 || thingType.equals(THING_TYPE_SHELLYDUORGBW_STR);
-        isRGBW2 = thingType.startsWith(THING_TYPE_SHELLYRGBW2_PREFIX);
+        isRGBW2 = thingType.startsWith(THING_TYPE_SHELLYRGBW2_PREFIX)
+                || thingType.startsWith(THING_TYPE_SHELLYPLUSRGBWPM_PREFIX);
         isLight = isBulb || isDuo || isRGBW2;
         if (isLight) {
             minTemp = isBulb ? MIN_COLOR_TEMP_BULB : MIN_COLOR_TEMP_DUO;
@@ -348,7 +351,7 @@ public class ShellyDeviceProfile {
             }
         } else if (isRGBW2 && (settings.lights != null) && (idx < settings.lights.size())) {
             ShellySettingsRgbwLight light = settings.lights.get(idx);
-            btnType = light.btnType;
+            btnType = getString(light.btnType);
         }
 
         return btnType.equalsIgnoreCase(SHELLY_BTNT_MOMENTARY) || btnType.equalsIgnoreCase(SHELLY_BTNT_MOM_ON_RELEASE)

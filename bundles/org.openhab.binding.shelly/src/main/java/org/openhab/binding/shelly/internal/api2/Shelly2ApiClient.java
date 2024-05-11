@@ -34,12 +34,16 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySensorTm
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsDimmer;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsEMeter;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsInput;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsLight;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsMeter;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRelay;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRgbwLight;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRoller;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortLightStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortStatusRelay;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLight;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLightChannel;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusRelay;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyExtAnalogInput;
@@ -55,6 +59,7 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2AuthRsp
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2DevConfigCover;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2DevConfigInput;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2DevConfigSwitch;
+import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2GetConfigLight;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2GetConfigResult;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusLight;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult;
@@ -71,6 +76,7 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2RpcBase
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2StatusEm1;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
+import org.openhab.binding.shelly.internal.handler.ShellyColorUtils;
 import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.core.types.State;
@@ -87,6 +93,7 @@ public class Shelly2ApiClient extends ShellyHttpClient {
     private final Logger logger = LoggerFactory.getLogger(Shelly2ApiClient.class);
     protected final Random random = new Random();
     protected final ShellyStatusRelay relayStatus = new ShellyStatusRelay();
+    protected final ShellyStatusLight lightStatus = new ShellyStatusLight();
     protected final ShellyStatusSensor sensorData = new ShellyStatusSensor();
     protected final ArrayList<ShellyRollerStatus> rollerStatus = new ArrayList<>();
     protected @Nullable ShellyThingInterface thing;
@@ -138,9 +145,13 @@ public class Shelly2ApiClient extends ShellyHttpClient {
             SHELLY2_RSTATE_STOPPED, SHELLY_RSTATE_STOP, //
             SHELLY2_RSTATE_CALIB, SHELLY2_RSTATE_CALIB); // Gen2-only
 
-    protected static final Map<String, String> MAP_PROFILE = Map.of(//
-            SHELLY_CLASS_RELAY, SHELLY2_PROFILE_RELAY, //
-            SHELLY_CLASS_ROLLER, SHELLY2_PROFILE_COVER);
+    protected static final Map<String, String> MAP_DEVICE_PROFILE = Map.of(//
+            SHELLY2_PROFILE_RELAY, SHELLY_MODE_RELAY, //
+            SHELLY2_PROFILE_COVER, SHELLY_MODE_ROLLER, //
+            SHELLY2_PROFILE_LIGHT, SHELLY_MODE_WHITE, //
+            SHELLY2_PROFILE_RGB, SHELLY_MODE_COLOR, //
+            SHELLY2_PROFILE_RGBW, SHELLY_MODE_COLOR, //
+            "", "");
 
     protected @Nullable ArrayList<@Nullable ShellySettingsRelay> fillRelaySettings(ShellyDeviceProfile profile,
             Shelly2GetConfigResult dc) {
@@ -194,6 +205,11 @@ public class Shelly2ApiClient extends ShellyHttpClient {
         updated |= updateEmStatus(status, result.em11, channelUpdate);
         updated |= updateRollerStatus(status, result.cover0, channelUpdate);
         updated |= updateDimmerStatus(status, result.light0, channelUpdate);
+        updated |= updateDimmerStatus(status, result.light1, channelUpdate);
+        updated |= updateDimmerStatus(status, result.light2, channelUpdate);
+        updated |= updateDimmerStatus(status, result.light3, channelUpdate);
+        updated |= updateDimmerStatus(status, result.rgb0, channelUpdate);
+        updated |= updateDimmerStatus(status, result.rgbw0, channelUpdate);
         if (channelUpdate) {
             updated |= ShellyComponents.updateMeters(getThing(), status);
         }
@@ -306,6 +322,33 @@ public class Shelly2ApiClient extends ShellyHttpClient {
             }
         }
         return -1;
+    }
+
+    protected @Nullable ArrayList<@Nullable ShellySettingsRgbwLight> fillLightSettings(ShellyDeviceProfile profile,
+            Shelly2GetConfigResult dc) {
+        ArrayList<@Nullable ShellySettingsRgbwLight> lights = new ArrayList<>();
+        addLightSettings(lights, dc.light0);
+        addLightSettings(lights, dc.light1);
+        addLightSettings(lights, dc.light2);
+        addLightSettings(lights, dc.light3);
+        addLightSettings(lights, dc.rgb0);
+        addLightSettings(lights, dc.rgbw0);
+        return !lights.isEmpty() ? lights : null;
+    }
+
+    private void addLightSettings(ArrayList<@Nullable ShellySettingsRgbwLight> lights,
+            @Nullable Shelly2GetConfigLight cl) {
+        if (cl == null) {
+            return;
+        }
+
+        ShellySettingsRgbwLight ls = new ShellySettingsRgbwLight();
+        ls.defaultState = cl.initialState;
+        ls.name = cl.name;
+        ls.ison = false;
+        ls.autoOn = getBool(cl.autoOn) ? cl.autoOnDelay : 0;
+        ls.autoOff = getBool(cl.autoOff) ? cl.autoOffDelay : 0;
+        lights.add(ls);
     }
 
     private void updateMeter(ShellySettingsStatus status, int id, ShellySettingsMeter sm, ShellySettingsEMeter emeter,
@@ -577,15 +620,43 @@ public class Shelly2ApiClient extends ShellyHttpClient {
             return false;
         }
 
-        ShellyShortLightStatus ds = status.dimmers.get(0);
-        if (value.brightness != null) {
-            ds.brightness = value.brightness.intValue();
+        int id = getInteger(value.id);
+        if (profile.isDimmer) {
+            ShellyShortLightStatus ds = status.dimmers.get(id);
+            if (value.brightness != null) {
+                ds.brightness = value.brightness.intValue();
+            }
+            ds.ison = value.output;
+            ds.hasTimer = value.timerStartedAt != null;
+            ds.timerDuration = getDuration(value.timerStartedAt, value.timerDuration);
+            status.dimmers.set(id, ds);
+            return channelUpdate ? ShellyComponents.updateDimmers(getThing(), status) : false;
         }
-        ds.ison = value.output;
-        ds.hasTimer = value.timerStartedAt != null;
-        ds.timerDuration = getDuration(value.timerStartedAt, value.timerDuration);
-        status.dimmers.set(0, ds);
-        return channelUpdate ? ShellyComponents.updateDimmers(getThing(), status) : false;
+        if (profile.isLight) {
+            ShellySettingsLight ls = status.lights.get(id);
+            ShellyStatusLightChannel lc = new ShellyStatusLightChannel();
+            ls.mode = profile.device.mode;
+            ls.ison = lc.ison = value.output;
+            ls.dcpower = getDouble(value.apower).intValue();
+            if (value.brightness != null) {
+                ls.brightness = lc.brightness = getDouble(value.brightness).intValue();
+            }
+            if (value.rgb != null && value.rgb.length >= 3) {
+                ls.red = lc.red = getInteger(value.rgb[0].intValue());
+                ls.green = lc.green = getInteger(value.rgb[1].intValue());
+                ls.blue = lc.blue = getInteger(value.rgb[2].intValue());
+            }
+
+            // public Integer white; // white brightness, 0..255, applies in mode="color"
+            // public Integer gain; // gain for all channels, 0..100, applies in mode="color"
+            // public Integer temp; // color temperature in K, 3000..6500, applies in mode="white"
+            status.lights.set(id, ls);
+            lightStatus.lights.set(id, lc);
+
+            return channelUpdate ? ShellyComponents.updateLights(getThing(), lc, value.id, new ShellyColorUtils())
+                    : false;
+        }
+        return false;
     }
 
     protected @Nullable Integer getDuration(@Nullable Double timerStartedAt, @Nullable Integer timerDuration) {

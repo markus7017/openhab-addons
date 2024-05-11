@@ -166,7 +166,7 @@ public class ShellyDiscoveryParticipant implements MDNSDiscoveryParticipant {
                 mode = devInfo.mode;
                 properties = ShellyBaseHandler.fillDeviceProperties(profile);
                 logger.trace("{}: thingType={}, deviceType={}, mode={}, symbolic name={}", name, thingType,
-                        devInfo.type, mode.isEmpty() ? "<standard>" : mode, deviceName);
+                        devInfo.type, getString(mode).isEmpty() ? "<standard>" : mode, deviceName);
 
                 // get thing type from device name
                 thingUID = ShellyThingCreator.getThingUID(name, model, mode, false);

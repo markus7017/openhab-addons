@@ -83,6 +83,9 @@ public class Shelly2ApiJsonDTO {
     // Component types
     public static final String SHELLY2_PROFILE_RELAY = "switch";
     public static final String SHELLY2_PROFILE_COVER = "cover";
+    public static final String SHELLY2_PROFILE_LIGHT = "light";
+    public static final String SHELLY2_PROFILE_RGB = "rgb";
+    public static final String SHELLY2_PROFILE_RGBW = "rgbw";
 
     // Button types/modes
     public static final String SHELLY2_BTNT_MOMENTARY = "momentary";
@@ -395,10 +398,25 @@ public class Shelly2ApiJsonDTO {
             public static class Shelly2GetConfigLightNightMode {
                 public boolean enable;
                 public Integer brightness;
+                public Double[] rgb;
+                public Double white;
+                // active_between[]
+            }
+
+            public static class Shelly2ConfigLightPresets {
+                public static class Shelly2ConfigLightButtonPreset {
+                    Double brightness;
+                    public Double[] rgb;
+                }
+
+                @SerializedName("button_doublepush")
+                public Shelly2ConfigLightButtonPreset buttonDoublePush;
             }
 
             public Integer id;
             public String name;
+            @SerializedName("in_mode")
+            public String inMode;
             @SerializedName("initial_state")
             public String initialState;
             @SerializedName("auto_on")
@@ -409,10 +427,20 @@ public class Shelly2ApiJsonDTO {
             public Double autoOnDelay;
             @SerializedName("auto_off_delay")
             public Double autoOffDelay;
+            @SerializedName("transition_duration")
+            public Double transitionDuration;
+            @SerializedName("min_brightness_on_toggle")
+            public Double minBrightnessOnToggle;
+            @SerializedName("button_fade_rate")
+            public Integer buttonFadeRate;
+            @SerializedName("button_presets")
+            public Shelly2ConfigLightPresets buttonPresets;
             @SerializedName("default")
             public Shelly2GetConfigLightDefault defaultCfg;
             @SerializedName("night_mode")
             public Shelly2GetConfigLightNightMode nightMode;
+            @SerializedName("range_map")
+            public Double[] rangeMap;
         }
 
         public class Shelly2DeviceConfigLed {
@@ -484,6 +512,16 @@ public class Shelly2ApiJsonDTO {
 
             @SerializedName("light:0")
             public Shelly2GetConfigLight light0;
+            @SerializedName("light:1")
+            public Shelly2GetConfigLight light1;
+            @SerializedName("light:2")
+            public Shelly2GetConfigLight light2;
+            @SerializedName("light:3")
+            public Shelly2GetConfigLight light3;
+            @SerializedName("rgb:0")
+            public Shelly2GetConfigLight rgb0;
+            @SerializedName("rgbw:0")
+            public Shelly2GetConfigLight rgbw0;
 
             @SerializedName("smoke:0")
             public Shelly2ConfigSmoke smoke0;
@@ -547,11 +585,19 @@ public class Shelly2ApiJsonDTO {
             public Integer id;
             public String source;
             public Boolean output;
+            public Double[] rgb;
             public Double brightness;
+            public Shelly2Energy aenergy;
+            public Double apower;
+            public Double current;
+            public Double voltage;
+
+            Shelly2DeviceStatusTemp temperature;
             @SerializedName("timer_started_at")
             public Double timerStartedAt;
             @SerializedName("timer_duration")
             public Integer timerDuration;
+            String[] flags;
         }
 
         public static class Shelly2DeviceStatusResult {
@@ -731,6 +777,16 @@ public class Shelly2ApiJsonDTO {
 
             @SerializedName("light:0")
             public Shelly2DeviceStatusLight light0;
+            @SerializedName("light:1")
+            public Shelly2DeviceStatusLight light1;
+            @SerializedName("light:2")
+            public Shelly2DeviceStatusLight light2;
+            @SerializedName("light:3")
+            public Shelly2DeviceStatusLight light3;
+            @SerializedName("rgb:0")
+            public Shelly2DeviceStatusLight rgb0;
+            @SerializedName("rgbw:0")
+            public Shelly2DeviceStatusLight rgbw0;
 
             @SerializedName("temperature:0")
             public Shelly2DeviceStatusTempId temperature0;
