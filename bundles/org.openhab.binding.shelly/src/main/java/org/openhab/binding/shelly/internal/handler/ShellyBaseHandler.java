@@ -14,6 +14,7 @@ package org.openhab.binding.shelly.internal.handler;
 
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
+import static org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.discovery.ShellyThingCreator.*;
 import static org.openhab.binding.shelly.internal.handler.ShellyComponents.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
@@ -45,7 +46,6 @@ import org.openhab.binding.shelly.internal.api1.Shelly1CoapHandler;
 import org.openhab.binding.shelly.internal.api1.Shelly1CoapJSonDTO;
 import org.openhab.binding.shelly.internal.api1.Shelly1CoapServer;
 import org.openhab.binding.shelly.internal.api1.Shelly1HttpApi;
-import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2APClientList.Shelly2APClient;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiRpc;
 import org.openhab.binding.shelly.internal.api2.ShellyBluApi;
@@ -822,9 +822,9 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 case SHELLY_WAKEUPT_POWERON:
                 case SHELLY_WAKEUPT_EXT_POWER:
                 case SHELLY_WAKEUPT_UNKNOWN:
-                case Shelly2ApiJsonDTO.SHELLY2_EVENT_OTASTART:
-                case Shelly2ApiJsonDTO.SHELLY2_EVENT_OTAPROGRESS:
-                case Shelly2ApiJsonDTO.SHELLY2_EVENT_OTADONE:
+                case SHELLY2_EVENT_OTASTART:
+                case SHELLY2_EVENT_OTAPROGRESS:
+                case SHELLY2_EVENT_OTADONE:
                 case SHELLY_EVENT_ROLLER_CALIB:
                     logger.debug("{}: {}", thingName, messages.get("event.filtered", event));
                 case ALARM_TYPE_NONE:
