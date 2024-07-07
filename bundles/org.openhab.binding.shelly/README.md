@@ -127,12 +127,11 @@ The binding provides the same feature set across all devices as good as possible
 | shellyblumotion   | Shelly BLU Motion                                      | SBMO      |
 | shellybluht       | Shelly BLU H&T                                         | SBMO      |
 
-### Special Thing Types
 
-| thing-type        | Model                                                  | Vendor ID |
-| ----------------- | ------------------------------------------------------ | --------- |
-| shellydevice      | A password protected Shelly device or an unknown type  |           |
-| shellyunknown     | An unknown Shelly device / model has been detected     |           |
+| thing-type        | Model                                                  |
+| ----------------- | ------------------------------------------------------ |
+| shellydevice      | A password protected Shelly device or an unknown type  |
+| shellyunknown     | An unknown Shelly device / model has been detected     |
 
 ## Binding Configuration
 
@@ -1561,7 +1560,7 @@ See notes on discovery of Shelly BLU devices above.
 
 ## Shelly BLU Gateway (thing-type: shellyblugw)
 
-There are no additional channels beside the device group.
+There are no additional channels beside device group.
 
 ## Shelly Wall Displays
 
