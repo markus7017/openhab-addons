@@ -127,7 +127,7 @@ The binding provides the same feature set across all devices as good as possible
 | shellyblumotion   | Shelly BLU Motion                                      | SBMO      |
 | shellybluht       | Shelly BLU H&T                                         | SBMO      |
 
-### Special thing types
+### Special Thing Types
 
 | thing-type        | Model                                                  |
 | ----------------- | ------------------------------------------------------ |
