@@ -11,6 +11,8 @@ let BTHOME_SVC_ID_STR = "fcd2";
 let ALLTERCO_MFD_ID = JSON.parse("0x" + ALLTERCO_MFD_ID_STR);
 let BTHOME_SVC_ID = JSON.parse("0x" + BTHOME_SVC_ID_STR);
 let SCAN_DURATION = BLE.Scanner.INFINITE_SCAN;
+let INTERVAL_MS = 320;
+let WINDOW_MS = 30;
 
 let SHELLY_BLU_CACHE = {};
 let LAST_PID = {};
@@ -136,6 +138,8 @@ let ShellyBLUParser = {
     let result = BTHomeDecoder.unpack(res.service_data[BTHOME_SVC_ID_STR]);
     result.addr = res.addr;
     result.rssi = res.rssi;
+    result.advData = btoa(res.advData);
+    result.scanRsp = btoa(res.scanRsp);
     return result;
   },
 };
@@ -160,16 +164,20 @@ function scanCB(ev, res) {
     }
   }
   
+  console.log('New data', res);
+
   let BTHparsed = ShellyBLUParser.getData(res); // skip if parsing failed
   if (BTHparsed === null) {
     console.log("Failed to parse BTH data");
     return;
   }
+  console.log('New BTH parsed', BTHparsed);
   
   // skip, we are deduping results
   if (typeof LAST_PID[res.addr] === 'undefined' ||
       BTHparsed.pid !== LAST_PID[res.addr]) {
     Shelly.emitEvent("oh-blu.data", BTHparsed);
+    Shelly.emitEvent("oh-blu.scan_result", {"addr":res.addr, "name":res.local_name, "rssi":res.rssi, "tx_power":res.tx_power_level});
     LAST_PID[res.addr] = BTHparsed.pid;
   }
 }
@@ -190,6 +198,16 @@ let BLEConfig = Shelly.getComponentConfig('ble');
 if(BLEConfig.enable === false) {
     console.log('Error: BLE not enabled, unable to start OH-BLU Scanner');
 } else {
-    Timer.set(1000, false, startBLEScan);
+    // Skip starting if scanner is active
+    if (!BLE.Scanner.isRunning()) {
+      BLE.Scanner.Start({
+        duration_ms: SCAN_DURATION,
+        active: true,
+        interval_ms: INTERVAL_MS,
+        window_ms: WINDOW_MS,
+    });
+}
+
+BLE.Scanner.Subscribe(scanCB);
 }
  

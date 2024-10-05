@@ -1142,6 +1142,8 @@ public class Shelly2ApiJsonDTO {
 
         public Integer rssi;
         public Integer tx_power;
+        public String advData;
+        public String scanRsp;
     }
 
     public class Shelly2NotifyEvent {
