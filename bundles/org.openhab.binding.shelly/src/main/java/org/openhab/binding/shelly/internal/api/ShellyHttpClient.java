@@ -70,6 +70,7 @@ public class ShellyHttpClient {
     protected int timeoutsRecovered = 0;
     private ShellyDeviceProfile profile;
     protected boolean basicAuth = false;
+    protected Shelly2AuthRsp authRsp = new Shelly2AuthRsp();
 
     public ShellyHttpClient(String thingName, ShellyThingInterface thing) {
         this(thingName, thing.getThingConfig(), thing.getHttpClient());
@@ -171,6 +172,7 @@ public class ShellyHttpClient {
                 if (auth != null) { // only if we received an Auth challenge
                     authHeader = formatAuthResponse(uri,
                             buildAuthResponse(uri, auth, SHELLY2_AUTHDEF_USER, config.password));
+
                 } else {
                     if (basicAuth) {
                         String bearer = config.userId + ":" + config.password;
@@ -236,19 +238,20 @@ public class ShellyHttpClient {
                 || !SHELLY2_AUTHALG_SHA256.equalsIgnoreCase(challenge.algorithm)) {
             throw new IllegalArgumentException("Unsupported Auth type/algorithm requested by device");
         }
-        Shelly2AuthRsp response = new Shelly2AuthRsp();
-        response.username = user;
-        response.realm = challenge.realm;
-        response.nonce = challenge.nonce;
-        response.cnonce = Long.toHexString((long) Math.floor(Math.random() * 10e8));
-        response.nc = "00000001";
-        response.authType = challenge.authType;
-        response.algorithm = challenge.algorithm;
-        String ha1 = sha256(response.username + ":" + response.realm + ":" + password);
-        String ha2 = sha256(HttpMethod.POST + ":" + uri);// SHELLY2_AUTH_NOISE;
-        response.response = sha256(
-                ha1 + ":" + response.nonce + ":" + response.nc + ":" + response.cnonce + ":" + "auth" + ":" + ha2);
-        return response;
+
+        authRsp.username = user;
+        authRsp.realm = challenge.realm;
+        authRsp.nonce = challenge.nonce;
+        authRsp.opaque = challenge.opaque;
+        authRsp.cnonce = Long.toHexString((long) Math.floor(Math.random() * 10e8));
+        authRsp.nc = challenge.nc != null ? challenge.nc : "1"; // "00000001";
+        authRsp.authType = challenge.authType;
+        authRsp.algorithm = challenge.algorithm;
+        String ha1 = sha256(authRsp.username + ":" + authRsp.realm + ":" + password);
+        String ha2 = sha256(HttpMethod.POST + ":" + uri);
+        authRsp.response = sha256(
+                ha1 + ":" + authRsp.nonce + ":" + authRsp.nc + ":" + authRsp.cnonce + ":" + "auth" + ":" + ha2);
+        return authRsp;
     }
 
     protected String formatAuthResponse(String uri, @Nullable Shelly2AuthRsp rsp) {

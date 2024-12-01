@@ -45,9 +45,11 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettings
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsDimmer;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsEMeter;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsInput;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsLight;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsLogin;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsMeter;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRelay;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRgbwLight;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRoller;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsUpdate;
@@ -55,6 +57,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettings
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortLightStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortStatusRelay;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLight;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLightChannel;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusRelay;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2APClientList;
@@ -168,6 +171,9 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
         if (devInfo != null) {
             profile.device = devInfo;
+            if (devInfo.type.equalsIgnoreCase("SAWD-0A1XX10EU1")) {
+                int i = 1;
+            }
         }
         if (profile.device.type == null) {
             profile.device = getDeviceInfo();
@@ -711,7 +717,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                     case SHELLY2_EVENT_OTADONE:
                         logger.debug("{}: Firmware update completed with status {}", thingName, getString(e.msg));
                         getThing().setThingStatus(ThingStatus.OFFLINE, ThingStatusDetail.DUTY_CYCLE,
-                                "message.offline.status-error-fwcompleted");
+                                "offline.status-error-fwcompleted");
                         break;
                     case SHELLY2_EVENT_RESTART:
                         logger.debug("{}: Device was restarted: {}", thingName, getString(e.msg));
@@ -1271,20 +1277,31 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                     String value = substringAfter(o, "=").replace("\"", "").trim();
                     switch (key) {
                         case "Digest qop":
-                            authInfo.authType = SHELLY2_AUTHTTYPE_DIGEST;
+                        case "qop":
+                            authRsp.algorithm = authInfo.authType = SHELLY2_AUTHTTYPE_DIGEST;
                             break;
+                        case "Digest realm":
                         case "realm":
-                            authInfo.realm = value;
+                            authRsp.realm = authInfo.realm = value;
                             break;
                         case "nonce":
-                            // authInfo.nonce = Long.parseLong(value, 16);
-                            authInfo.nonce = value;
+                            authRsp.nonce = authInfo.nonce = value;
+                            break;
+                        case "nc":
+                            authRsp.nc = authInfo.nc = value;
+                            break;
+                        case "opaque":
+                            authRsp.opaque = authInfo.opaque = value;
                             break;
                         case "algorithm":
-                            authInfo.algorithm = value;
+                            authRsp.algorithm = authInfo.algorithm = value;
                             break;
                     }
                 }
+                if (authRsp.nc == null) {
+                    authRsp.nc = "1";
+                }
+                req.auth = authRsp;
                 json = rpcPost(gson.toJson(req));
             } else {
                 throw e;

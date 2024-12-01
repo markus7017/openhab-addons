@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.shelly.internal.api2;
 
-import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
+import static org.openhab.binding.shelly.internal.ShellyBindingConstants.CHANNEL_INPUT;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
@@ -36,8 +36,10 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySensorTm
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsDimmer;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsEMeter;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsInput;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsLight;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsMeter;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRelay;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRgbwLight;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRoller;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortLightStatus;
@@ -53,7 +55,6 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSe
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorBat;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorHum;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorLux;
-import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2AuthRsp;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2DevConfigCover;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2DevConfigInput;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2DevConfigSwitch;
@@ -94,7 +95,6 @@ public class Shelly2ApiClient extends ShellyHttpClient {
     protected final ShellyStatusSensor sensorData = new ShellyStatusSensor();
     protected final ArrayList<ShellyRollerStatus> rollerStatus = new ArrayList<>();
     protected @Nullable ShellyThingInterface thing;
-    protected @Nullable Shelly2AuthRsp authReq;
 
     public Shelly2ApiClient(String thingName, ShellyThingInterface thing) {
         super(thingName, thing);
@@ -836,10 +836,15 @@ public class Shelly2ApiClient extends ShellyHttpClient {
     protected Shelly2RpcBaseMessage buildRequest(String method, @Nullable Object params) throws ShellyApiException {
         Shelly2RpcBaseMessage request = new Shelly2RpcBaseMessage();
         request.id = Math.abs(random.nextInt());
-        request.src = "openhab-" + config.localIp; // use a unique identifier;
+
+        request.src = getProfile().device.hostname; // use a unique identifier;
         request.method = !method.contains(".") ? SHELLYRPC_METHOD_CLASS_SHELLY + "." + method : method;
         request.params = params;
-        request.auth = authReq;
+        if (authRsp.algorithm != null) {
+            authRsp.username = "admin";
+            authRsp.authType = SHELLY2_AUTHTTYPE_DIGEST;
+            request.auth = authRsp;
+        }
         return request;
     }
 

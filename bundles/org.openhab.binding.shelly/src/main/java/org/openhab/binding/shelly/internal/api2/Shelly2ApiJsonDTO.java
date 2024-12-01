@@ -1118,6 +1118,7 @@ public class Shelly2ApiJsonDTO {
         @SerializedName("auth_type")
         public String authType;
         public String nonce;
+        public String opaque;
         public String nc;
         public String realm;
         public String algorithm;
@@ -1127,6 +1128,7 @@ public class Shelly2ApiJsonDTO {
         public String username;
         public String nonce;
         public String cnonce;
+        public String opaque;
         public String nc;
         public String realm;
         public String algorithm;
