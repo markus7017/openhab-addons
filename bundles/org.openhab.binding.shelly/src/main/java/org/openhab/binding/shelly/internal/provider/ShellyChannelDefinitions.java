@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -721,10 +720,6 @@ public class ShellyChannelDefinitions {
         public String category = "";
         public Set<String> tags = new HashSet<>();
         public @Nullable Unit<?> unit;
-        public Optional<Integer> min = Optional.empty();
-        public Optional<Integer> max = Optional.empty();
-        public Optional<Integer> step = Optional.empty();
-        public Optional<String> pattern = Optional.empty();
 
         public ShellyChannel(ShellyTranslationProvider messages, String group, String channel, String typeId,
                 String itemType, String... category) {

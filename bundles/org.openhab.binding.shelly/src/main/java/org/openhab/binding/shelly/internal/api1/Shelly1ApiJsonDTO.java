@@ -136,6 +136,7 @@ public class Shelly1ApiJsonDTO {
     public static final String SHELLY_BTNT_TOGGLE = "toggle";
     public static final String SHELLY_BTNT_EDGE = "edge";
     public static final String SHELLY_BTNT_DETACHED = "detached";
+    public static final String SHELLY_BTNT_ACTIVATE = "activate";
 
     public static final String SHELLY_STATE_LAST = "last";
     public static final String SHELLY_STATE_STOP = "stop";
