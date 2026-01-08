@@ -305,7 +305,8 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
 
         if (profile.alwaysOn || !profile.isInitialized()) {
             ThingStatusDetail detail = getThingStatusDetail();
-            if (detail != ThingStatusDetail.DUTY_CYCLE) {
+            if (detail != ThingStatusDetail.CONFIGURATION_PENDING && detail != ThingStatusDetail.COMMUNICATION_ERROR
+                    && detail != ThingStatusDetail.DUTY_CYCLE) {
                 updateStatus(ThingStatus.ONLINE, ThingStatusDetail.CONFIGURATION_PENDING,
                         messages.get("status.config_pending"));
             }
