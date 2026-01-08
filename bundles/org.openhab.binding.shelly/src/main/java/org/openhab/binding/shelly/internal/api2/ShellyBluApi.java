@@ -290,7 +290,8 @@ public class ShellyBluApi extends Shelly2ApiRpc {
                                     String btnEvent = mapIntValue(MAP_BLU_INPUT_EVENT_TYPE, e.blu.buttons[bttnIdx]);
                                     if (!btnEvent.isEmpty()) {
                                         // ignore HOLDING events for counter and trigger
-                                        if (!SHELLY_BTNEVENT_HOLDING.equals(btnEvent) || !profile.isMultiButton) {
+                                        if (!profile.isMultiButton || (!SHELLY_BTNEVENT_NONE.equals(btnEvent)
+                                                && !SHELLY_BTNEVENT_HOLDING.equals(btnEvent))) {
                                             input.event = btnEvent;
                                             input.eventCount++;
                                             String group = getProfile().getInputGroup(bttnIdx);
@@ -303,7 +304,7 @@ public class ShellyBluApi extends Shelly2ApiRpc {
                                                     getDecimal(input.eventCount));
                                             t.triggerButton(profile.getInputGroup(bttnIdx), bttnIdx, input.event);
                                         } else {
-                                            logger.debug("{}: Ignore button event HOLDING, pid={}", message.src,
+                                            logger.debug("{}: Ignore button event NONE/HOLDING, pid={}", message.src,
                                                     e.blu.pid);
                                         }
                                         deviceStatus.inputs.set(bttnIdx, input);

@@ -123,10 +123,12 @@ public class Shelly2ApiClient extends ShellyHttpClient {
             Map.entry(SHELLY2_EVENT_LPUSH, SHELLY_BTNEVENT_LONGPUSH),
             Map.entry(SHELLY2_EVENT_LSPUSH, SHELLY_BTNEVENT_LONGSHORTPUSH),
             Map.entry(SHELLY2_EVENT_SLPUSH, SHELLY_BTNEVENT_SHORTLONGPUSH),
-            Map.entry(SHELLY_BTNEVENT_HOLDING, SHELLY_BTNEVENT_HOLDING));
+            Map.entry(SHELLY_BTNEVENT_HOLDING, SHELLY_BTNEVENT_HOLDING),
+            Map.entry(SHELLY_BTNEVENT_NONE, SHELLY_BTNEVENT_NONE));
 
     public static final Map<Integer, String> MAP_BLU_INPUT_EVENT_TYPE = Map.ofEntries(//
             // BTHome
+            Map.entry(0, SHELLY_BTNEVENT_NONE), // none
             Map.entry(1, SHELLY_BTNEVENT_1SHORTPUSH), // press
             Map.entry(2, SHELLY_BTNEVENT_2SHORTPUSH), // double_press
             Map.entry(3, SHELLY_BTNEVENT_3SHORTPUSH), // triple_press
@@ -145,7 +147,8 @@ public class Shelly2ApiClient extends ShellyHttpClient {
             SHELLY2_EVENT_LPUSH, SHELLY_EVENT_LONGPUSH, //
             SHELLY2_EVENT_LSPUSH, SHELLY_EVENT_LONG_SHORTPUSH, //
             SHELLY2_EVENT_SLPUSH, SHELLY_EVENT_SHORT_LONGTPUSH, //
-            SHELLY2_EVENT_HOLDING, SHELLY_EVENT_HOLDING);
+            SHELLY2_EVENT_HOLDING, SHELLY_EVENT_HOLDING, //
+            SHELLY2_EVENT_NONE, SHELLY_EVENT_NONE);
 
     protected static final Map<String, String> MAP_INPUT_MODE = Map.of(//
             SHELLY2_RMODE_SINGLE, SHELLY_INP_MODE_ONEBUTTON, //
