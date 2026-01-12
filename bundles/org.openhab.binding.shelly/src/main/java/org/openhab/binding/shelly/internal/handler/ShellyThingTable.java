@@ -34,8 +34,8 @@ import org.osgi.service.component.annotations.Deactivate;
 @NonNullByDefault
 @Component(service = ShellyThingTable.class, configurationPolicy = ConfigurationPolicy.OPTIONAL)
 public class ShellyThingTable {
-    private Map<String, ShellyThingInterface> thingTable = new ConcurrentHashMap<>();
-    private @Nullable ShellyBasicDiscoveryService discoveryService;
+    private final Map<String, ShellyThingInterface> thingTable = new ConcurrentHashMap<>();
+    private @Nullable ShellyBasicDiscoveryService discoveryService; // TODO: Must be made thread-safe
 
     public void addThing(String key, ShellyThingInterface thing) {
         if (thingTable.containsKey(key)) {

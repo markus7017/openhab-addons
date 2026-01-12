@@ -108,10 +108,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     private final Logger logger = LoggerFactory.getLogger(Shelly2ApiRpc.class);
     private final ShellyThingTable thingTable;
 
-    protected boolean initialized = false;
-    private boolean discovery = false;
-    private Shelly2RpcSocket rpcSocket = new Shelly2RpcSocket();
-    private @Nullable Shelly2AuthChallenge authInfo;
+    protected boolean initialized = false; // TODO: Must be made thread-safe
+    private boolean discovery = false; // TODO: Must be made thread-safe
+    private @Nullable Shelly2RpcSocket rpcSocket; // TODO: Must be made thread-safe
+    private @Nullable Shelly2AuthChallenge authInfo; // TODO: Must be made thread-safe
 
     // Plus devices support up to 3 scripts, Pro devices up to 10
     // We need to find a free script id when uploading our script
@@ -141,6 +141,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     public Shelly2ApiRpc(String thingName, ShellyThingConfiguration config, HttpClient httpClient) {
         super(thingName, config, httpClient);
         this.thingName = thingName;
+        // TODO: Cannot do this - it's a component, so it can't also be created manually. Either pass it in via the constructor, or set it to null (and make it nullable) if it's not needed
         this.thingTable = new ShellyThingTable(); // create empty table;
         this.discovery = true;
     }
@@ -152,8 +153,13 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             disconnect();
         }
         setConfig(thingName, config);
+        Shelly2RpcSocket rpcSocket = this.rpcSocket;
+        if (rpcSocket != null) {
+            rpcSocket.disconnect();
+        }
         rpcSocket = new Shelly2RpcSocket(thingName, thingTable, config.deviceIp);
         rpcSocket.addMessageHandler(this);
+        this.rpcSocket = rpcSocket;
         initialized = true;
     }
 
@@ -607,7 +613,6 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public void onConnect(String deviceIp, boolean connected) {
-        ShellyThingTable thingTable = this.thingTable;
         thing = thingTable.getThing(deviceIp);
         logger.debug("{}: Get thing from thingTable", thingName);
     }
@@ -1278,7 +1283,12 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     private void asyncApiRequest(String method) throws ShellyApiException {
         Shelly2RpcBaseMessage request = buildRequest(method, null);
         reconnect();
-        rpcSocket.sendMessage(gson.toJson(request)); // submit, result will be async
+        Shelly2RpcSocket rpcSocket = this.rpcSocket;
+        if (rpcSocket != null) {
+            rpcSocket.sendMessage(gson.toJson(request)); // submit, result will be async
+        } else {
+            // TODO: Fail somehow
+        }
     }
 
     public <T> T apiRequest(String method, @Nullable Object params, Class<T> classOfT) throws ShellyApiException {
@@ -1351,13 +1361,22 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     }
 
     private void reconnect() throws ShellyApiException {
-        if (!rpcSocket.isConnected()) {
-            logger.debug("{}: Connect Rpc Socket (discovery = {})", thingName, discovery);
-            rpcSocket.connect();
+        Shelly2RpcSocket rpcSocket = this.rpcSocket;
+        if (rpcSocket != null) {
+            if (!rpcSocket.isConnected()) {
+                logger.debug("{}: Connect Rpc Socket (discovery = {})", thingName, discovery);
+                rpcSocket.connect();
+            }
+        } else {
+            // TODO: Fail somehow
         }
     }
 
     private void disconnect() {
+        Shelly2RpcSocket rpcSocket = this.rpcSocket;
+        if (rpcSocket == null) {
+            return;
+        }
         if (rpcSocket.isConnected()) {
             logger.trace("{}: Disconnect Rpc Socket", thingName);
         }
@@ -1370,6 +1389,12 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public void close() {
+        Shelly2RpcSocket rpcSocket = this.rpcSocket;
+        if (rpcSocket == null) {
+            // TODO: Fail somehow
+            initialized = false;
+            return;
+        }
         if (initialized || rpcSocket.isConnected()) {
             logger.debug("{}: Closing Rpc API (socket is {}, discovery={})", thingName,
                     rpcSocket.isConnected() ? "connected" : "disconnected", discovery);
