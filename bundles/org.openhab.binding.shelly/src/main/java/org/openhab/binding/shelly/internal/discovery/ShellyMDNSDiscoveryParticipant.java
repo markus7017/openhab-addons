@@ -20,7 +20,12 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.util.Dictionary;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import javax.jmdns.ServiceInfo;
@@ -31,8 +36,9 @@ import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
+import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
 import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
-import org.openhab.binding.shelly.internal.util.ShellyCacheList;
+import org.openhab.core.common.ThreadPoolManager;
 import org.openhab.core.config.discovery.DiscoveryResult;
 import org.openhab.core.config.discovery.mdns.MDNSDiscoveryParticipant;
 import org.openhab.core.io.net.http.HttpClientFactory;
@@ -66,7 +72,6 @@ public class ShellyMDNSDiscoveryParticipant implements MDNSDiscoveryParticipant 
      * <code>_shelly._tcp.local.</code> as well.
      */
     private static final String SERVICE_TYPE = "_http._tcp.local.";
-    private static final long MDNS_CACHE_TIMEOUT_SEC = 10;
 
     private final Logger logger = LoggerFactory.getLogger(ShellyMDNSDiscoveryParticipant.class);
     private final ShellyBindingConfiguration bindingConfig = new ShellyBindingConfiguration();
@@ -74,6 +79,12 @@ public class ShellyMDNSDiscoveryParticipant implements MDNSDiscoveryParticipant 
     private final HttpClient httpClient;
     private final ConfigurationAdmin configurationAdmin;
     private final NetworkAddressService networkAddressService;
+    private final ShellyThingTable thingTable;
+
+    private static final long SCAN_INTERVAL_SEC = 3; // check every 3sec for discovery results
+    private final ScheduledExecutorService scheduler = ThreadPoolManager.getScheduledPool("ShellyCacheListThreadpool");
+    private volatile @Nullable ScheduledFuture<?> discoveryJob;
+    private final ConcurrentHashMap<String, ServiceInfo> discoveryQueue = new ConcurrentHashMap<>();
 
     public static final Pattern SHELLY_SERVICE_NAME_PATTERN = Pattern
             .compile("^([a-z0-9]*shelly[a-z0-9]*)-([a-z0-9]+)$", Pattern.CASE_INSENSITIVE);
@@ -82,26 +93,20 @@ public class ShellyMDNSDiscoveryParticipant implements MDNSDiscoveryParticipant 
         return SHELLY_SERVICE_NAME_PATTERN.matcher(serviceName).matches();
     }
 
-    private static final class MDNSCacheEntry {
-        private final String ipAddress;
-
-        MDNSCacheEntry(String ipAddress) {
-            this.ipAddress = ipAddress;
-        }
-    }
-
-    private final ShellyCacheList<String, MDNSCacheEntry> MDNSCache = new ShellyCacheList<>(MDNS_CACHE_TIMEOUT_SEC);
-
     @Activate
     public ShellyMDNSDiscoveryParticipant(@Reference ConfigurationAdmin configurationAdmin,
             @Reference NetworkAddressService networkAddressService, @Reference HttpClientFactory httpClientFactory,
-            @Reference ShellyTranslationProvider translationProvider, ComponentContext componentContext) {
+            @Reference ShellyTranslationProvider translationProvider, ComponentContext componentContext,
+            @Reference ShellyThingTable thingTable) {
         logger.debug("Activating Shelly mDNS discovery service");
         this.configurationAdmin = configurationAdmin;
         this.networkAddressService = networkAddressService;
         this.messages = translationProvider;
         this.httpClient = httpClientFactory.getCommonHttpClient();
+        this.thingTable = thingTable;
         updateBindingConfig(componentContext);
+
+        startJob();
     }
 
     @Override
@@ -173,33 +178,56 @@ public class ShellyMDNSDiscoveryParticipant implements MDNSDiscoveryParticipant 
         }
 
         // Shelly might send multiple mDNS annoucements in a row, those trigger multiple (parallel) discoveries on the
-        // OH side, which is inefficent and causes side effects -> ignore duplicates within MDNS_CACHE_TIMEOUT_SEC secs
-        boolean newEntry = MDNSCache.putIfAbsent(serviceName, new MDNSCacheEntry(address),
-                (oldV, newV) -> oldV.ipAddress.equals(newV.ipAddress));
-        if (!newEntry) {
-            logger.trace("{}: Discovered  device with IP address {} is already known", serviceName, address);
-            return null;
+        // OH side, which is inefficent and causes side effects -> build queue, ignore duplicates
+        if (discoveryQueue.put(serviceName, service) == null) {
+            logger.debug("{}: Shelly device with IP address {} queued for discovery (now {})", serviceName, address,
+                    discoveryQueue.size());
         }
 
-        logger.debug("{}: Shelly device with IP address {} discovered)", serviceName, address);
+        return null; // discovery result will by created by discovery job
+    }
 
-        try {
-            // Get device settings
-            String gen = getString(service.getPropertyString("gen"));
-            boolean gen2 = "2".equals(gen) || "3".equals(gen) || "4".equals(gen)
-                    || ShellyDeviceProfile.isGeneration2(serviceName);
+    private void discoveryJob() {
+        Map<String, ServiceInfo> queue;
+        synchronized (this) {
+            queue = Map.copyOf(discoveryQueue);
+            discoveryQueue.clear();
+        }
 
-            final ShellyThingConfiguration thingConfig;
-            synchronized (bindingConfig) {
-                thingConfig = ShellyBasicDiscoveryService.fillConfig(bindingConfig, address, serviceName);
+        for (Map.Entry<String, ServiceInfo> entry : queue.entrySet()) {
+            try {
+                String serviceName = entry.getKey();
+                ServiceInfo service = entry.getValue();
+                String address = getIpAddress(service);
+
+                // Get device settings;
+                String gen = getString(service.getPropertyString("gen"));
+                boolean gen2 = "2".equals(gen) || "3".equals(gen) || "4".equals(gen)
+                        || ShellyDeviceProfile.isGeneration2(serviceName);
+
+                final ShellyThingConfiguration thingConfig;
+                synchronized (bindingConfig) {
+                    thingConfig = ShellyBasicDiscoveryService.fillConfig(bindingConfig, address, serviceName);
+                }
+                DiscoveryResult result = ShellyBasicDiscoveryService.createResult(gen2, serviceName, address,
+                        thingConfig, httpClient, messages);
+                if (result != null) {
+                    thingTable.discoveredResult(result);
+                    logger.debug("{}: Shelly device with IP address {} discovered)", serviceName, address);
+                }
+            } catch (Exception e) {
+                logger.debug("{}: Exception on processing serviceInfo '{}'", entry.getKey(), e);
             }
-
-            return ShellyBasicDiscoveryService.createResult(gen2, serviceName, address, thingConfig, httpClient,
-                    messages);
-        } catch (Exception e) {
-            logger.debug("{}: Exception on processing serviceInfo '{}'", serviceName, service.getNiceTextString(), e);
-            return null;
         }
+    }
+
+    private String getIpAddress(ServiceInfo service) {
+        String address = "";
+        Inet4Address[] hostAddresses = service.getInet4Addresses();
+        if (hostAddresses != null && hostAddresses.length > 0) {
+            address = hostAddresses[0].getHostAddress();
+        }
+        return address;
     }
 
     @Override
@@ -220,9 +248,26 @@ public class ShellyMDNSDiscoveryParticipant implements MDNSDiscoveryParticipant 
     @Deactivate
     protected void deactivate() {
         try {
-            MDNSCache.dispose();
+            cancelJob();
         } catch (Exception e) {
             logger.debug("Error during deactivation", e);
         }
     }
+
+    private synchronized void startJob() {
+        if (discoveryJob == null) {
+            discoveryJob = scheduler.scheduleWithFixedDelay(this::discoveryJob, SCAN_INTERVAL_SEC, SCAN_INTERVAL_SEC,
+                    TimeUnit.SECONDS);
+        }
+    }
+
+    private synchronized void cancelJob() {
+        ScheduledFuture<?> discoveryJob = this.discoveryJob;
+        if (discoveryJob != null) {
+            discoveryJob.cancel(true);
+            this.discoveryJob = null;
+            discoveryQueue.clear();
+        }
+    }
+
 }

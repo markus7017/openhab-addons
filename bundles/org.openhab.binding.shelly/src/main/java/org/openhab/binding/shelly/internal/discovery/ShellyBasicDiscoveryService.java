@@ -209,7 +209,7 @@ public class ShellyBasicDiscoveryService extends AbstractDiscoveryService {
                 // create shellyunknown thing - will be changed during thing initialization with valid credentials
                 thingUID = ShellyThingCreator.getThingUIDForUnknown(name, model, mode);
             } else {
-                logger.debug("{}: Unable to discover device: {}", name, e.getMessage());
+                logger.debug("{}: Unable to discover device with IP {}: {}", name, ipAddress, e.getMessage());
             }
         } catch (IllegalArgumentException e) { // maybe some format description was buggy
             logger.debug("Discovery: Unable to discover thing", e);
