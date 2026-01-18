@@ -195,12 +195,11 @@ public class ShellyMDNSDiscoveryParticipant implements MDNSDiscoveryParticipant 
         }
 
         for (Map.Entry<String, ServiceInfo> entry : queue.entrySet()) {
+            ServiceInfo service = entry.getValue();
+            String serviceName = entry.getKey();
             try {
-                String serviceName = entry.getKey();
-                ServiceInfo service = entry.getValue();
-                String address = getIpAddress(service);
-
                 // Get device settings;
+                String address = getIpAddress(service);
                 String gen = getString(service.getPropertyString("gen"));
                 boolean gen2 = "2".equals(gen) || "3".equals(gen) || "4".equals(gen)
                         || ShellyDeviceProfile.isGeneration2(serviceName);
@@ -213,10 +212,11 @@ public class ShellyMDNSDiscoveryParticipant implements MDNSDiscoveryParticipant 
                         thingConfig, httpClient, messages);
                 if (result != null) {
                     thingTable.discoveredResult(result);
-                    logger.debug("{}: Shelly device with IP address {} discovered)", serviceName, address);
+                    logger.trace("{}: Shelly device with IP address {} discovered)", serviceName, address);
                 }
             } catch (Exception e) {
-                logger.debug("{}: Exception on processing serviceInfo '{}'", entry.getKey(), e);
+                logger.debug("{}: Exception on processing serviceInfo '{}'", entry.getKey(),
+                        service.getNiceTextString(), e);
             }
         }
     }
@@ -269,5 +269,4 @@ public class ShellyMDNSDiscoveryParticipant implements MDNSDiscoveryParticipant 
             discoveryQueue.clear();
         }
     }
-
 }
