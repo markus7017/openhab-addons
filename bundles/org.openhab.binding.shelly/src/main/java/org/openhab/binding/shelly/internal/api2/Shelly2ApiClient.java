@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -94,10 +95,11 @@ import org.slf4j.LoggerFactory;
 @NonNullByDefault
 public class Shelly2ApiClient extends ShellyHttpClient {
     private final Logger logger = LoggerFactory.getLogger(Shelly2ApiClient.class);
+    protected final Random random = new Random();
     protected final ShellyStatusRelay relayStatus = new ShellyStatusRelay();
     protected final ShellyStatusSensor sensorData = new ShellyStatusSensor();
     protected final ArrayList<ShellyRollerStatus> rollerStatus = new ArrayList<>();
-    protected volatile @Nullable ShellyThingInterface thing;
+    protected @Nullable ShellyThingInterface thing;
 
     private static final String RPC_SRC_PREFIX = "ohshelly-";
     private static final int MAX_ID = 10000;
@@ -1009,7 +1011,7 @@ public class Shelly2ApiClient extends ShellyHttpClient {
             suffix = config.localIp; // use a unique identifier;
         }
         request.jsonrpc = SHELLY2_JSONRPC_VERSION;
-        request.src = RPC_SRC_PREFIX + suffix + "-" + request.id; // use a unique identifier;
+        request.src = RPC_SRC_PREFIX + suffix + "-" + request.id;
         request.method = !method.contains(".") ? SHELLYRPC_METHOD_CLASS_SHELLY + "." + method : method;
         request.params = params;
         return request;
@@ -1048,9 +1050,9 @@ public class Shelly2ApiClient extends ShellyHttpClient {
     }
 
     protected ShellyThingInterface getThing() throws ShellyApiException {
-        ShellyThingInterface thing = this.thing;
-        if (thing != null) {
-            return thing;
+        ShellyThingInterface t = thing;
+        if (t != null) {
+            return t;
         }
         throw new ShellyApiException("Thing/profile not initialized!");
     }
