@@ -615,7 +615,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 String secondaryIp = config.deviceIp + ":" + client.mport.toString();
                 String name = SERVICE_NAME_SHELLYPLUSRANGE_PREFIX + "-" + client.mac.replaceAll(":", "");
                 DiscoveryResult result = ShellyBasicDiscoveryService.createResult(true, name, secondaryIp, config,
-                        httpClient, messages);
+                        httpClient, messages, thingTable);
                 if (result != null) {
                     thingTable.discoveredResult(result);
                 }
@@ -1503,7 +1503,9 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                     logger.debug("{}: Device profile re-initialized (thingType={})", thingName, thingType);
                 }
             }
-        } catch (ShellyApiException | RuntimeException e) {
+        } catch (RuntimeException e) {
+            logger.debug("{}: Unable to initialize Device Profile", thingName, e);
+        } catch (ShellyApiException e) {
             logger.debug("{}: Unable to initialize Device Profile: {}", thingName, e.toString());
         } finally {
             refreshSettings = false;

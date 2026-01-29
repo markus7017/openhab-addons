@@ -165,7 +165,7 @@ public class ShellyEventServlet extends WebSocketServlet {
         @Override
         public Object createWebSocket(@Nullable ServletUpgradeRequest req, @Nullable ServletUpgradeResponse resp) {
             logger.debug("WebSocket: Create socket from servlet");
-            return new Shelly2RpcSocket(thingTable, true);
+            return new Shelly2RpcSocket(thingTable, true, false);
         }
     }
 }

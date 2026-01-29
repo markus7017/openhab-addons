@@ -76,10 +76,10 @@ public class ShellyMDNSDiscoveryParticipant implements MDNSDiscoveryParticipant 
     private final Logger logger = LoggerFactory.getLogger(ShellyMDNSDiscoveryParticipant.class);
     private final ShellyBindingConfiguration bindingConfig = new ShellyBindingConfiguration();
     private final ShellyTranslationProvider messages;
+    private final ShellyThingTable thingTable;
     private final HttpClient httpClient;
     private final ConfigurationAdmin configurationAdmin;
     private final NetworkAddressService networkAddressService;
-    private final ShellyThingTable thingTable;
 
     private static final long SCAN_INTERVAL_SEC = 3; // check every 3sec for discovery results
     private final ScheduledExecutorService scheduler = ThreadPoolManager.getScheduledPool("ShellyCacheListThreadpool");
@@ -209,7 +209,7 @@ public class ShellyMDNSDiscoveryParticipant implements MDNSDiscoveryParticipant 
                     thingConfig = ShellyBasicDiscoveryService.fillConfig(bindingConfig, address, serviceName);
                 }
                 DiscoveryResult result = ShellyBasicDiscoveryService.createResult(gen2, serviceName, address,
-                        thingConfig, httpClient, messages);
+                        thingConfig, httpClient, messages, thingTable);
                 if (result != null) {
                     thingTable.discoveredResult(result);
                     logger.trace("{}: Shelly device with IP address {} discovered)", serviceName, address);

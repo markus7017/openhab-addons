@@ -20,6 +20,7 @@ import static org.openhab.core.thing.Thing.*;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -152,7 +153,8 @@ public class ShellyBasicDiscoveryService extends AbstractDiscoveryService {
     }
 
     public static @Nullable DiscoveryResult createResult(boolean gen2, String hostname, String ipAddress,
-            ShellyThingConfiguration config, HttpClient httpClient, ShellyTranslationProvider messages) {
+            ShellyThingConfiguration config, HttpClient httpClient, ShellyTranslationProvider messages,
+            ShellyThingTable thingTable) {
         Logger logger = LoggerFactory.getLogger(ShellyBasicDiscoveryService.class);
         ThingUID thingUID = null;
         ShellyDeviceProfile profile;
@@ -168,7 +170,8 @@ public class ShellyBasicDiscoveryService extends AbstractDiscoveryService {
         Map<String, Object> properties;
 
         try {
-            api = gen2 ? new Shelly2ApiRpc(name, config, httpClient) : new Shelly1HttpApi(name, config, httpClient);
+            api = gen2 ? new Shelly2ApiRpc(name, thingTable, config, httpClient)
+                    : new Shelly1HttpApi(name, config, httpClient);
             api.initialize(name, config);
             devInfo = api.getDeviceInfo();
             mac = getString(devInfo.mac);
@@ -209,7 +212,12 @@ public class ShellyBasicDiscoveryService extends AbstractDiscoveryService {
                 // create shellyunknown thing - will be changed during thing initialization with valid credentials
                 thingUID = ShellyThingCreator.getThingUIDForUnknown(name, model, mode);
             } else {
-                logger.debug("{}: Unable to discover device with IP {}: {}", name, ipAddress, e.getMessage());
+                Throwable cause = e.getCause();
+                if (cause instanceof TimeoutException) {
+                    logger.debug("{}: Unable to discover device with IP {}", name, ipAddress, e);
+                } else {
+                    logger.debug("{}: Unable to discover device with IP {}: {}", name, ipAddress, e.getMessage());
+                }
             }
         } catch (IllegalArgumentException e) { // maybe some format description was buggy
             logger.debug("Discovery: Unable to discover thing", e);
