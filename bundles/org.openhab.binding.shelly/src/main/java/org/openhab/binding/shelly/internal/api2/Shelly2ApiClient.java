@@ -55,7 +55,6 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSe
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorBat;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorHum;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorLux;
-import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2AuthRsp;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2CBStatus;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2DevConfigCover;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2DevConfigInput;
@@ -99,8 +98,9 @@ public class Shelly2ApiClient extends ShellyHttpClient {
     protected final ShellyStatusRelay relayStatus = new ShellyStatusRelay();
     protected final ShellyStatusSensor sensorData = new ShellyStatusSensor();
     protected final ArrayList<ShellyRollerStatus> rollerStatus = new ArrayList<>();
+
+    // Access needs to be synchronized with "this"
     protected @Nullable ShellyThingInterface thing;
-    protected @Nullable Shelly2AuthRsp authReq;
 
     public Shelly2ApiClient(String thingName, ShellyThingInterface thing) {
         super(thingName, thing);
@@ -1015,7 +1015,6 @@ public class Shelly2ApiClient extends ShellyHttpClient {
         request.src = "openhab-" + config.localIp; // use a unique identifier;
         request.method = !method.contains(".") ? SHELLYRPC_METHOD_CLASS_SHELLY + "." + method : method;
         request.params = params;
-        request.auth = authReq;
         return request;
     }
 
@@ -1049,7 +1048,7 @@ public class Shelly2ApiClient extends ShellyHttpClient {
         return getThing().updateChannel(group, channel, value);
     }
 
-    protected ShellyThingInterface getThing() throws ShellyApiException {
+    protected synchronized ShellyThingInterface getThing() throws ShellyApiException {
         ShellyThingInterface t = thing;
         if (t != null) {
             return t;
@@ -1057,8 +1056,7 @@ public class Shelly2ApiClient extends ShellyHttpClient {
         throw new ShellyApiException("Thing/profile not initialized!");
     }
 
-    protected ShellyDeviceProfile getProfile() throws ShellyApiException {
-        ShellyThingInterface thing = this.thing;
+    protected synchronized ShellyDeviceProfile getProfile() throws ShellyApiException {
         if (thing != null) {
             return thing.getProfile();
         }
