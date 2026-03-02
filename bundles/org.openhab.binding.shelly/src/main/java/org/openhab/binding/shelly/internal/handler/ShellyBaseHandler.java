@@ -1461,17 +1461,19 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
      */
     public static Map<String, Object> fillDeviceProperties(ShellyDeviceProfile profile) {
         Map<String, Object> properties = new TreeMap<>();
+        ShellySettingsDevice devInfo = profile.device;
+
         properties.put(PROPERTY_VENDOR, VENDOR);
         if (profile.isInitialized()) {
-            properties.put(PROPERTY_MODEL_ID, getString(profile.device.type));
-            properties.put(PROPERTY_MAC_ADDRESS, profile.device.mac);
+            properties.put(PROPERTY_MODEL_ID, getString(devInfo.type));
+            properties.put(PROPERTY_MAC_ADDRESS, devInfo.mac);
             properties.put(PROPERTY_FIRMWARE_VERSION, profile.fwVersion + "/" + profile.fwDate);
-            properties.put(PROPERTY_DEV_MODE, profile.device.mode);
-            if (profile.hasRelays) {
-                properties.put(PROPERTY_NUM_RELAYS, String.valueOf(profile.numRelays));
-                properties.put(PROPERTY_NUM_ROLLERS, String.valueOf(profile.numRollers));
-                properties.put(PROPERTY_NUM_METER, String.valueOf(profile.numMeters));
-            }
+            properties.put(PROPERTY_DEV_MODE, devInfo.mode);
+
+            properties.put(PROPERTY_NUM_RELAYS, String.valueOf(getInteger(devInfo.numOutputs)));
+            properties.put(PROPERTY_NUM_ROLLERS, String.valueOf(getInteger(devInfo.numRollers)));
+            properties.put(PROPERTY_NUM_METER, String.valueOf(
+                    devInfo.numEMeters != null ? getInteger(devInfo.numEMeters) : getInteger(devInfo.numMeters)));
             properties.put(PROPERTY_UPDATE_PERIOD, String.valueOf(profile.updatePeriod));
             if (!profile.hwRev.isEmpty()) {
                 properties.put(PROPERTY_HWREV, profile.hwRev);

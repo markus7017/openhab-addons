@@ -107,10 +107,16 @@ import org.slf4j.LoggerFactory;
 public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscoveryInterface {
     private final Logger logger = LoggerFactory.getLogger(Shelly2ApiClient.class);
     protected final Random random = new Random();
-    protected final ShellyStatusRelay relayStatus = new ShellyStatusRelay();
-    protected final ShellyStatusSensor sensorData = new ShellyStatusSensor();
-    protected final ArrayList<ShellyRollerStatus> rollerStatus = new ArrayList<>();
     protected @Nullable ShellyThingInterface thing;
+
+    // All access must be guarded by "this"
+    protected final ShellyStatusRelay relayStatus = new ShellyStatusRelay(); // works as cache
+
+    // All access must be guarded by "this"
+    protected final ShellyStatusSensor sensorData = new ShellyStatusSensor(); // works as cache
+
+    // All access must be guarded by "this"
+    protected final ArrayList<ShellyRollerStatus> rollerStatus = new ArrayList<>();// works as cache
 
     private static final String RPC_SRC_PREFIX = "ohshelly-";
     private static final int MAX_ID = 10000;

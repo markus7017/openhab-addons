@@ -107,11 +107,15 @@ import org.slf4j.LoggerFactory;
 public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterface, Shelly2RpctInterface {
     private final Logger logger = LoggerFactory.getLogger(Shelly2ApiRpc.class);
     private final ShellyThingTable thingTable;
-
-    protected boolean initialized = false;
-    private @Nullable Shelly2RpcSocket rpcSocket;
-    private @Nullable Shelly2AuthChallenge authInfo;
     private final WebSocketClient client;
+
+    protected volatile boolean initialized = false;
+
+    // All access must be guarded by "this"
+    private @Nullable Shelly2RpcSocket rpcSocket;
+
+    // All access must be guarded by "this"
+    private @Nullable Shelly2AuthChallenge authInfo;
 
     // Plus devices support up to 3 scripts, Pro devices up to 10
     // We need to find a free script id when uploading our script
@@ -138,14 +142,17 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             logger.debug("{}: Disconnect Rpc Socket on initialize", thingName);
             disconnect();
         }
-        Shelly2RpcSocket rpcSocket = this.rpcSocket;
-        if (rpcSocket != null) {
-            rpcSocket.disconnect();
+        Shelly2RpcSocket rpcSocket;
+        synchronized (this) {
+            rpcSocket = this.rpcSocket;
+            if (rpcSocket != null) {
+                rpcSocket.disconnect();
+            }
+            rpcSocket = new Shelly2RpcSocket(thingName, thingTable, config.deviceIp, client);
+            rpcSocket.addMessageHandler(this);
+            this.rpcSocket = rpcSocket;
+            initialized = true;
         }
-        rpcSocket = new Shelly2RpcSocket(thingName, thingTable, config.deviceIp, client);
-        rpcSocket.addMessageHandler(this);
-        this.rpcSocket = rpcSocket;
-        initialized = true;
     }
 
     @Override
@@ -617,7 +624,9 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                 Shelly2AuthChallenge auth = gson.fromJson(message.error.message, Shelly2AuthChallenge.class);
                 if (auth != null && auth.realm == null) {
                     logger.debug("{}: Authentication data received: {}", thingName, message.error.message);
-                    authInfo = auth;
+                    synchronized (this) {
+                        authInfo = auth;
+                    }
                 }
             } else {
                 logger.debug("{}: Error status received - {} {}", thingName, message.error.code, message.error.message);
@@ -1270,7 +1279,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     private void asyncApiRequest(String method) throws ShellyApiException {
         Shelly2RpcBaseMessage request = buildRequest(method, null);
         reconnect();
-        Shelly2RpcSocket rpcSocket = this.rpcSocket;
+        Shelly2RpcSocket rpcSocket;
+        synchronized (this) {
+            rpcSocket = this.rpcSocket;
+        }
         if (rpcSocket != null) {
             rpcSocket.sendMessage(gson.toJson(request)); // submit, result will be async
         } else {
@@ -1290,7 +1302,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             String auth = getString(res.authChallenge);
             if (res.isHttpAccessUnauthorized() && !auth.isEmpty()) {
                 String[] options = auth.split(",");
-                Shelly2AuthChallenge authInfo = this.authInfo = new Shelly2AuthChallenge();
+                Shelly2AuthChallenge authInfo = new Shelly2AuthChallenge();
                 for (String o : options) {
                     String key = substringBefore(o, "=").stripLeading().trim();
                     String value = substringAfter(o, "=").replace("\"", "").trim();
@@ -1309,6 +1321,9 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                             authInfo.algorithm = value;
                             break;
                     }
+                }
+                synchronized (this) {
+                    this.authInfo = authInfo;
                 }
                 req = buildRequest(method, params); // update RPC message id
                 json = rpcPost(gson.toJson(req));
@@ -1346,11 +1361,18 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     }
 
     private String rpcPost(String postData) throws ShellyApiException {
+        Shelly2AuthChallenge authInfo;
+        synchronized (this) {
+            authInfo = this.authInfo;
+        }
         return httpPost(authInfo, postData);
     }
 
     private void reconnect() throws ShellyApiException {
-        Shelly2RpcSocket rpcSocket = this.rpcSocket;
+        Shelly2RpcSocket rpcSocket;
+        synchronized (this) {
+            rpcSocket = this.rpcSocket;
+        }
         if (rpcSocket != null) {
             if (!rpcSocket.isConnected()) {
                 logger.debug("{}: Connect RPC Socket", thingName);
@@ -1362,7 +1384,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     }
 
     private void disconnect() {
-        Shelly2RpcSocket rpcSocket = this.rpcSocket;
+        Shelly2RpcSocket rpcSocket;
+        synchronized (this) {
+            rpcSocket = this.rpcSocket;
+        }
         if (rpcSocket == null) {
             return;
         }
@@ -1378,7 +1403,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public void close() {
-        Shelly2RpcSocket rpcSocket = this.rpcSocket;
+        Shelly2RpcSocket rpcSocket;
+        synchronized (this) {
+            rpcSocket = this.rpcSocket;
+        }
         if (rpcSocket == null) {
             logger.debug("{}: Cannot close RPC socket since it's null", thingName);
             initialized = false;

@@ -154,10 +154,10 @@ public class ShellyDeviceProfile {
         }
         device.mode = getString(settings.mode).toLowerCase();
         name = getString(settings.name);
-        hwRev = settings.hwinfo != null ? getString(settings.hwinfo.hwRevision) : "";
-        hwBatchId = settings.hwinfo != null ? getString(settings.hwinfo.batchId.toString()) : "";
-        fwDate = substringBefore(device.fw, "-");
-        fwVersion = extractFwVersion(device.fw);
+        hwRev = getString(settings.hwinfo.hwRevision);
+        hwBatchId = settings.hwinfo.batchId != null ? String.valueOf(settings.hwinfo.batchId) : "";
+        fwDate = getFwDate(device);
+        fwVersion = getFwVersion(device);
         ShellyVersionDTO version = new ShellyVersionDTO();
         extFeatures = version.compare(fwVersion, SHELLY_API_FW_110) >= 0;
         discoverable = (settings.discoverable == null) || settings.discoverable;
@@ -183,6 +183,14 @@ public class ShellyDeviceProfile {
 
         initialized = true;
         return this;
+    }
+
+    public static String getFwDate(ShellySettingsDevice devInfo) {
+        return substringBefore(devInfo.fw, "-");
+    }
+
+    public static String getFwVersion(ShellySettingsDevice device) {
+        return extractFwVersion(device.fw);
     }
 
     public boolean containsEventUrl(String eventType) {
