@@ -276,7 +276,7 @@ public class ShellyComponents {
                                         .createEMeterChannels(thingHandler.getThing(), profile, emeter, groupName));
                             }
 
-                            // convert Watt/h to KW/h
+                            // convert Wh to kWh
                             double total = getDouble(emeter.total) / 1000;
                             double totalReturned = getDouble(emeter.totalReturned) / 1000;
                             updated |= thingHandler.updateChannel(groupName, CHANNEL_METER_CURRENTWATTS,

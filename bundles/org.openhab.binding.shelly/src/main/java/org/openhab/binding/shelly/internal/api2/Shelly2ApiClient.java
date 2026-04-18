@@ -624,7 +624,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
             sm.power = emeter.power = rs.apower;
         }
         if (rs.aenergy != null) {
-            // Gen2 reports Watt, needs to be converted to W/h
+            // aenergy.total is in Wh (accumulated energy since last reset)
             sm.total = emeter.total = rs.aenergy.total;
             sm.counters = rs.aenergy.byMinute;
             sm.timestamp = rs.aenergy.minuteTs;
@@ -757,9 +757,6 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         if (em.actPower != null) {
             sm.power = emeter.power = em.actPower;
         }
-        if (em.aptrPower != null) {
-            emeter.totalReturned = em.aptrPower;
-        }
         if (em.voltage != null) {
             emeter.voltage = em.voltage;
         }
@@ -789,8 +786,6 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         if (em.totalActPower != null) {
             status.totalPower = em.totalActPower;
         }
-        // Note: em.totalCurrent is RMS current (A), not accumulated energy — do not assign to status.totalCurrent
-        // Note: em.totalAprtPower is apparent power (VA), not returned energy — do not assign to status.totalReturned
         // Accumulated total energy (Wh) from emdata:0; absent in WebSocket push updates but present in polling
         if (emData != null && emData.totalKWH != null) {
             status.totalKWH = emData.totalKWH;
