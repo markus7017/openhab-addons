@@ -727,6 +727,9 @@ public class Shelly2ApiJsonDTO {
                 public Double totalActPower;
                 @SerializedName("total_aprt_power")
                 public Double totalAprtPower;
+
+                @SerializedName("freq")
+                public Double freq;
             }
 
             public static class Shelly2DeviceStatusEmData {
