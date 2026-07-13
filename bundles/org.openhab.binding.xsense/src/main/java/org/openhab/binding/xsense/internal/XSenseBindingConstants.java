@@ -30,6 +30,30 @@ public class XSenseBindingConstants {
 
     // Bridge Thing Type UIDs
     public static final ThingTypeUID THING_TYPE_ACCOUNT = new ThingTypeUID(BINDING_ID, "account");
+    public static final ThingTypeUID THING_TYPE_HOME = new ThingTypeUID(BINDING_ID, "home");
+    public static final ThingTypeUID THING_TYPE_STATION = new ThingTypeUID(BINDING_ID, "station");
 
-    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Set.of(THING_TYPE_ACCOUNT);
+    // Sensor Thing Type UIDs
+    public static final ThingTypeUID THING_TYPE_SMOKE = new ThingTypeUID(BINDING_ID, "smoke");
+    public static final ThingTypeUID THING_TYPE_CO = new ThingTypeUID(BINDING_ID, "co");
+    public static final ThingTypeUID THING_TYPE_SMOKECO = new ThingTypeUID(BINDING_ID, "smokeco");
+    public static final ThingTypeUID THING_TYPE_HEAT = new ThingTypeUID(BINDING_ID, "heat");
+    public static final ThingTypeUID THING_TYPE_WATER = new ThingTypeUID(BINDING_ID, "water");
+    public static final ThingTypeUID THING_TYPE_THERMOHYGRO = new ThingTypeUID(BINDING_ID, "thermohygro");
+
+    public static final Set<ThingTypeUID> SENSOR_THING_TYPES = Set.of(THING_TYPE_SMOKE, THING_TYPE_CO,
+            THING_TYPE_SMOKECO, THING_TYPE_HEAT, THING_TYPE_WATER, THING_TYPE_THERMOHYGRO);
+
+    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Set.of(THING_TYPE_ACCOUNT, THING_TYPE_HOME,
+            THING_TYPE_STATION, THING_TYPE_SMOKE, THING_TYPE_CO, THING_TYPE_SMOKECO, THING_TYPE_HEAT, THING_TYPE_WATER,
+            THING_TYPE_THERMOHYGRO);
+
+    // Thing properties
+    public static final String PROPERTY_HOUSE_ID = "houseId";
+    public static final String PROPERTY_HOUSE_NAME = "houseName";
+    public static final String PROPERTY_ROOM_NAME = "roomName";
+    public static final String PROPERTY_UNIQUE_ID = "uniqueId";
+
+    // Channels
+    public static final String CHANNEL_PATH = "info#path";
 }
