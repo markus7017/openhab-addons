@@ -461,6 +461,7 @@
 /bundles/org.openhab.binding.worxlandroid/ @clinique
 /bundles/org.openhab.binding.wundergroundupdatereceiver/ @danieldemus
 /bundles/org.openhab.binding.x/ @computergeek1507
+/bundles/org.openhab.binding.xsense/ @markus7017
 /bundles/org.openhab.binding.xmltv/ @clinique
 /bundles/org.openhab.binding.xmppclient/ @pavel-gololobov
 /bundles/org.openhab.binding.yamahamusiccast/ @coop-git
