@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="xsense"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<!-- Account Bridge -->
+	<bridge-type id="account">
+		<label>X-Sense Account</label>
+		<description>Connects to the X-Sense cloud account and provides access to the registered base stations and
+			sensors.</description>
+
+		<config-description>
+			<parameter name="email" type="text" required="true">
+				<label>Email Address</label>
+				<description>Email address of the X-Sense account.</description>
+			</parameter>
+			<parameter name="password" type="text" required="true">
+				<context>password</context>
+				<label>Password</label>
+				<description>Password of the X-Sense account.</description>
+			</parameter>
+			<parameter name="refreshInterval" type="integer" unit="s" min="30">
+				<label>Refresh Interval</label>
+				<description>Interval in seconds for polling the device inventory from the X-Sense cloud. If not set, the
+					default
+					from the binding configuration applies.</description>
+				<advanced>true</advanced>
+			</parameter>
+		</config-description>
+	</bridge-type>
+
+</thing:thing-descriptions>

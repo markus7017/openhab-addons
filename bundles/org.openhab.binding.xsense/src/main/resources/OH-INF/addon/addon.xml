@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon:addon id="xsense" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:addon="https://openhab.org/schemas/addon/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/addon/v1.0.0 https://openhab.org/schemas/addon-1.0.0.xsd">
+
+	<type>binding</type>
+	<name>X-Sense Binding</name>
+	<description>Integrates X-Sense smoke, carbon monoxide, heat and water leak detectors, thermo-hygrometers and security
+		accessories (door/window and motion sensors, keypads, alarm listeners, driveway, mailbox and strobe alarms)
+		connected
+		through an X-Sense base station (e.g. SBS50) using the X-Sense cloud, including arming and disarming
+		the base station.</description>
+	<connection>cloud</connection>
+
+	<config-description>
+		<parameter name="refreshInterval" type="integer" unit="s" min="30">
+			<label>Default Refresh Interval</label>
+			<description>Default interval in seconds for polling the device inventory from the X-Sense cloud. Used by all
+				accounts that do not configure an own interval.</description>
+			<default>300</default>
+		</parameter>
+	</config-description>
+
+</addon:addon>
