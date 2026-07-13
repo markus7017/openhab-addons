@@ -12,9 +12,11 @@
  */
 package org.openhab.binding.xsense.internal;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.core.thing.ThingTypeUID;
 
 /**
@@ -48,6 +50,32 @@ public class XSenseBindingConstants {
             THING_TYPE_STATION, THING_TYPE_SMOKE, THING_TYPE_CO, THING_TYPE_SMOKECO, THING_TYPE_HEAT, THING_TYPE_WATER,
             THING_TYPE_THERMOHYGRO);
 
+    /**
+     * Maps the X-Sense device type (model code as reported by the cloud API) to the thing type.
+     * Models not listed here are reported by the discovery service as unsupported.
+     */
+    private static final Map<String, ThingTypeUID> DEVICE_TYPE_TO_THING_TYPE = Map.ofEntries(
+            Map.entry("XS01-M", THING_TYPE_SMOKE), //
+            Map.entry("XS0B-MR", THING_TYPE_SMOKE), //
+            Map.entry("XS0D-MR", THING_TYPE_SMOKE), //
+            Map.entry("XC01-M", THING_TYPE_CO), //
+            Map.entry("SC07-MR", THING_TYPE_SMOKECO), //
+            Map.entry("XP0A-MR", THING_TYPE_SMOKECO), //
+            Map.entry("XH02-M", THING_TYPE_HEAT), //
+            Map.entry("SWS51", THING_TYPE_WATER), //
+            Map.entry("SWS54", THING_TYPE_WATER), //
+            Map.entry("STH51", THING_TYPE_THERMOHYGRO), //
+            Map.entry("STH0A", THING_TYPE_THERMOHYGRO), //
+            Map.entry("STH0B", THING_TYPE_THERMOHYGRO));
+
+    // Device type of the SBS50 base station as reported in the station "category" field
+    public static final String STATION_TYPE_SBS50 = "SBS50";
+
+    // Thing configuration parameters
+    public static final String CONFIG_DEVICE_SN = "deviceSn";
+    public static final String CONFIG_HOUSE_ID = "houseId";
+    public static final String CONFIG_STATION_SN = "stationSn";
+
     // Thing properties
     public static final String PROPERTY_HOUSE_ID = "houseId";
     public static final String PROPERTY_HOUSE_NAME = "houseName";
@@ -56,4 +84,11 @@ public class XSenseBindingConstants {
 
     // Channels
     public static final String CHANNEL_PATH = "info#path";
+
+    /**
+     * Returns the thing type for an X-Sense model code or null for unsupported models.
+     */
+    public static @Nullable ThingTypeUID thingTypeForDeviceType(String deviceType) {
+        return DEVICE_TYPE_TO_THING_TYPE.get(deviceType);
+    }
 }
