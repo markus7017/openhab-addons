@@ -104,3 +104,107 @@ Bridge xsense:account:myaccount "My X-Sense Account" [ email="user@example.com",
     }
 }
 ```
+
+## Channels
+
+Channels are organized in channel groups.
+The groups are identical across thing types, therefore they are described once here; the table below lists which groups each thing type provides.
+Live channel states are pushed by the X-Sense cloud and will be filled with the upcoming real-time (MQTT) support.
+
+### Channel Groups
+
+| Group    | Channel     | Type                 | Access | Description                                  |
+|----------|-------------|----------------------|--------|----------------------------------------------|
+| info     | path        | String               | R      | Hierarchy path as JSON (advanced, see below) |
+| device   | battery     | Number               | R      | Battery level in percent                     |
+| device   | lowBattery  | Switch               | R      | Low battery indication                       |
+| device   | signal      | Number               | R      | RF signal strength to the base station (0-3) |
+| alarm    | smoke       | Switch               | R      | Smoke alarm active                           |
+| alarm    | co          | Switch               | R      | CO alarm active                              |
+| alarm    | coPpm       | Number:Dimensionless | R      | Measured CO concentration                    |
+| alarm    | water       | Switch               | R      | Water leak alarm active                      |
+| alarm    | alarm       | Switch               | R      | Alarm active (listener, driveway, mailbox)   |
+| alarm    | selfTest    | Switch               | R      | Self test in progress (advanced)             |
+| alarm    | mailNotice  | Switch               | R      | New mail detected (mailbox)                  |
+| control  | light       | Switch               | R/W    | Strobe light on/off                          |
+| sensor   | temperature | Number:Temperature   | R      | Measured temperature                         |
+| sensor   | humidity    | Number:Dimensionless | R      | Measured relative humidity                   |
+| sensor   | contact     | Contact              | R      | Open/closed state (door/window sensor)       |
+| sensor   | motion      | Switch               | R      | Motion detected                              |
+| security | safeMode    | String               | R/W    | Station security mode (Disarmed, Home, Away) |
+| security | armed       | Switch               | R      | Keypad armed state                           |
+
+### Groups per Thing Type
+
+| Thing Type UID     | info | device | alarm channels    | control | sensor                | security |
+|--------------------|------|--------|-------------------|---------|-----------------------|----------|
+| xsense:home        | yes  | -      | -                 | -       | -                     | -        |
+| xsense:station     | yes  | -      | -                 | -       | -                     | safeMode |
+| xsense:smoke       | yes  | yes    | smoke             | -       | -                     | -        |
+| xsense:co          | yes  | yes    | co, coPpm         | -       | -                     | -        |
+| xsense:smokeco     | yes  | yes    | smoke, co, coPpm  | -       | -                     | -        |
+| xsense:heat        | yes  | yes    | -                 | -       | -                     | -        |
+| xsense:water       | yes  | yes    | water             | -       | -                     | -        |
+| xsense:thermohygro | yes  | yes    | -                 | -       | temperature, humidity | -        |
+| xsense:listener    | yes  | yes    | alarm, selfTest   | -       | -                     | -        |
+| xsense:driveway    | yes  | yes    | alarm             | -       | -                     | -        |
+| xsense:mailbox     | yes  | yes    | alarm, mailNotice | -       | -                     | -        |
+| xsense:door        | yes  | yes    | -                 | -       | contact               | -        |
+| xsense:motion      | yes  | yes    | -                 | -       | motion                | -        |
+| xsense:strobe      | yes  | -      | -                 | light   | -                     | -        |
+| xsense:keypad      | yes  | yes    | -                 | -       | -                     | armed    |
+
+The strobe light's `control#light` command channel is declared but not yet wired to the cloud; it becomes functional with the upcoming real-time (MQTT) support.
+Mute channels are added in the next section.
+
+### Arming and Disarming
+
+The `station` thing provides the writable channel `security#safeMode` with three modes matching the X-Sense app:
+
+| Mode     | Meaning                                                   |
+|----------|-----------------------------------------------------------|
+| Disarmed | Security sensors do not trigger the alarm                 |
+| Home     | Perimeter protection (e.g. door/window sensors) is active |
+| Away     | Full protection including motion sensors is active        |
+
+Sending one of these values (case-insensitive) to the channel arms or disarms the base station via the X-Sense cloud.
+The channel is not updated optimistically: the new mode is confirmed by the next inventory poll, which the binding triggers right after sending the command.
+If the cloud rejects the request, a warning is logged and the previous mode remains — the command path uses the same cloud interface as the X-Sense app but is still considered experimental, so please report failures.
+
+Example item and rule:
+
+```java
+String Station_SafeMode "Security Mode" { channel="xsense:station:myaccount:h1a2b3:sbs50:security#safeMode" }
+```
+
+```javascript
+items.getItem("Station_SafeMode").sendCommand("Away");
+```
+
+### Channel Labels and Item Auto-Naming
+
+The binding sets custom channel labels of the form `<Name>: <Function>` (e.g. "Kitchen: Smoke Alarm") using the names configured in the X-Sense app.
+When linking channels via "Add Equipment to Model", openHAB therefore proposes unique item names (e.g. `Kitchen_Smoke_Alarm`) without manual editing, even when several devices provide the same channel types.
+
+### Hierarchy Path Channel
+
+Every `home`, `station` and sensor thing provides the advanced channel `info#path`.
+Its value is a JSON string describing where the thing belongs in the account hierarchy, carrying both the stable technical id and the display name of each level.
+Levels below the thing are omitted, e.g. for a sensor:
+
+```json
+{"account":"user@example.com","home":{"id":"h1a2b3","name":"My Home"},"station":{"sn":"SBS50-1234","name":"Hallway"},"device":{"sn":"DEV567","name":"Kitchen"}}
+```
+
+Usage in a JavaScript (JS Scripting) rule:
+
+```javascript
+var path = JSON.parse(items.getItem("SmokeKitchen_Path").state);
+console.log("Sensor belongs to station " + path.station.name + " in home " + path.home.name);
+```
+
+Usage in a Rules DSL rule via the JSONPATH transformation:
+
+```java
+val stationName = transform("JSONPATH", "$.station.name", SmokeKitchen_Path.state.toString)
+```

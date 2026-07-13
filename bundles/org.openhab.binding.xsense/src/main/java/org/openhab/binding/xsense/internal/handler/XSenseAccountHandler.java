@@ -24,8 +24,11 @@ import java.util.function.Supplier;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
+import org.openhab.binding.xsense.internal.XSenseBindingConstants;
 import org.openhab.binding.xsense.internal.api.XSenseApiClient;
 import org.openhab.binding.xsense.internal.api.XSenseApiException;
+import org.openhab.binding.xsense.internal.api.XSenseSafeMode;
+import org.openhab.binding.xsense.internal.api.XSenseShadowRequests;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.House;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.Station;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.StationList;
@@ -232,6 +235,26 @@ public class XSenseAccountHandler extends BaseBridgeHandler {
      */
     public boolean isLoggedIn() {
         return apiClient.isLoggedIn();
+    }
+
+    /**
+     * Requests a new safe mode (arm/disarm) for a base station by writing the appMode device
+     * shadow through the AWS IoT REST API, the same request the X-Sense app issues. The new state
+     * is not applied optimistically; it is confirmed by the next inventory poll.
+     *
+     * @param house the house the station belongs to (provides the AWS IoT region)
+     * @param stationSn serial number of the station
+     * @param mode the requested safe mode
+     * @throws XSenseApiException if the house lacks the AWS IoT region or the request fails
+     */
+    public void setStationSafeMode(House house, String stationSn, XSenseSafeMode mode) throws XSenseApiException {
+        String mqttRegion = house.mqttRegion;
+        if (mqttRegion == null || mqttRegion.isBlank()) {
+            throw new XSenseApiException("Home provides no AWS IoT region (mqttRegion)");
+        }
+        String thingName = XSenseShadowRequests.stationThingName(XSenseBindingConstants.STATION_TYPE_SBS50, stationSn);
+        String body = XSenseShadowRequests.appModeDesiredState(mode, stationSn, apiClient.getUserId());
+        apiClient.updateStationShadow(mqttRegion, thingName, XSenseShadowRequests.SHADOW_NAME_APP_MODE, body);
     }
 
     /**

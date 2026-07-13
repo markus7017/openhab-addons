@@ -13,6 +13,7 @@
 package org.openhab.binding.xsense.internal.handler;
 
 import static org.openhab.binding.xsense.internal.XSenseBindingConstants.CHANNEL_PATH;
+import static org.openhab.binding.xsense.internal.XSenseBindingConstants.CHANNEL_SAFE_MODE;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +22,10 @@ import java.util.Map;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.xsense.internal.XSenseBindingConstants;
+import org.openhab.binding.xsense.internal.api.XSenseApiException;
+import org.openhab.binding.xsense.internal.api.XSenseSafeMode;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.Device;
+import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.House;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.Station;
 import org.openhab.binding.xsense.internal.config.XSenseStationConfiguration;
 import org.openhab.core.library.types.StringType;
@@ -37,6 +41,9 @@ import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.RefreshType;
 import org.openhab.core.types.State;
+import org.openhab.core.types.UnDefType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link XSenseStationHandler} represents an X-Sense base station (SBS50). It receives the
@@ -47,6 +54,8 @@ import org.openhab.core.types.State;
  */
 @NonNullByDefault
 public class XSenseStationHandler extends BaseBridgeHandler {
+
+    private final Logger logger = LoggerFactory.getLogger(XSenseStationHandler.class);
 
     // Written in initialize(), read via getStationSn() from the home handler's update path
     private volatile XSenseStationConfiguration config = new XSenseStationConfiguration();
@@ -74,7 +83,44 @@ public class XSenseStationHandler extends BaseBridgeHandler {
         if (command instanceof RefreshType) {
             channelState.invalidate(channelUID.getId());
             requestRefresh();
+            return;
         }
+        if (CHANNEL_SAFE_MODE.equals(channelUID.getId())) {
+            XSenseSafeMode mode = XSenseSafeMode.fromCommand(command.toString());
+            if (mode == null) {
+                logger.warn("xsense-{}: unsupported safeMode command {}, use Disarmed, Home or Away", config.stationSn,
+                        command);
+                return;
+            }
+            scheduler.execute(() -> sendSafeMode(mode));
+        }
+    }
+
+    /**
+     * Sends the safe mode change to the cloud. The channel is not updated optimistically: the new
+     * state is confirmed by the follow-up inventory refresh, and a failure only logs a warning so
+     * the thing stays usable.
+     */
+    private void sendSafeMode(XSenseSafeMode mode) {
+        XSenseHomeHandler homeHandler = homeHandler();
+        XSenseAccountHandler accountHandler = homeHandler != null ? homeHandler.getAccountHandler() : null;
+        House house = homeHandler != null ? homeHandler.getHouse() : null;
+        if (accountHandler == null || house == null) {
+            logger.warn("xsense-{}: cannot set safeMode {}, account or home data not available", config.stationSn,
+                    mode.getValue());
+            return;
+        }
+        try {
+            accountHandler.setStationSafeMode(house, config.stationSn, mode);
+            requestRefresh();
+        } catch (XSenseApiException e) {
+            logger.warn("xsense-{}: setting safeMode {} failed: {}", config.stationSn, mode.getValue(), e.getMessage());
+        }
+    }
+
+    private @Nullable XSenseHomeHandler homeHandler() {
+        Bridge bridge = getBridge();
+        return bridge != null && bridge.getHandler() instanceof XSenseHomeHandler handler ? handler : null;
     }
 
     @Override
@@ -125,7 +171,21 @@ public class XSenseStationHandler extends BaseBridgeHandler {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "@text/offline.station-offline");
         }
         updateChannel(CHANNEL_PATH, new StringType(path.toJson()));
+        updateSafeModeChannel(station.safeMode);
         notifySensorHandlers(station.devices, path);
+    }
+
+    /**
+     * Publishes the safe mode reported by the cloud; an unknown value maps to UNDEF and is
+     * debug-logged so it can be reported instead of being silently misinterpreted.
+     */
+    private void updateSafeModeChannel(@Nullable String safeMode) {
+        XSenseSafeMode mode = XSenseSafeMode.fromCloud(safeMode);
+        if (mode == null && safeMode != null) {
+            logger.debug("xsense-{}: unknown safeMode value {}, please report it to the binding developer",
+                    config.stationSn, safeMode);
+        }
+        updateChannel(CHANNEL_SAFE_MODE, mode != null ? new StringType(mode.getValue()) : UnDefType.UNDEF);
     }
 
     private void updateProperties(Station station, XSensePath path) {

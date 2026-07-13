@@ -12,10 +12,14 @@
  */
 package org.openhab.binding.xsense.internal.api;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -35,6 +39,7 @@ import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.ApiResponse;
+import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.AwsCredentials;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.ClientInfo;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.House;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.StationList;
@@ -63,6 +68,16 @@ public class XSenseApiClient {
     private static final String COGNITO_TARGET_PREFIX = "AWSCognitoIdentityProviderService.";
     private static final String COGNITO_CONTENT_TYPE = "application/x-amz-json-1.1";
 
+    // AWS IoT data plane (device shadow REST API), region taken from the house's mqttRegion
+    private static final String IOT_URL_FORMAT = "https://%s.x-sense-iot.com/things/%s/shadow?name=%s";
+    private static final String IOT_SERVICE = "iotdata";
+    private static final String IOT_CONTENT_TYPE = "application/x-amz-json-1.0";
+    // Mimics the X-Sense app; the same value is sent by the Home Assistant integration
+    private static final String IOT_USER_AGENT = "aws-sdk-iOS/2.26.5 iOS/17.3 nl_NL";
+    // Expiration format of the temporary AWS credentials, e.g. "2026-07-12 10:15:00+00:00"
+    private static final DateTimeFormatter AWS_EXPIRATION_FORMAT = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd HH:mm:ss[XXX][XX][X]");
+
     private static final String CLIENT_TYPE_ANDROID = "2";
     private static final String APP_VERSION = "v1.36.0_20260130";
     private static final String APP_CODE = "1360";
@@ -70,6 +85,7 @@ public class XSenseApiClient {
     private static final String UNAUTH_MAC = "abcdefg";
 
     private static final String BIZCODE_CLIENT_INFO = "101001";
+    private static final String BIZCODE_AWS_CREDENTIALS = "101003";
     private static final String BIZCODE_QUERY_HOUSES = "102007";
     private static final String BIZCODE_QUERY_STATIONS = "103007";
 
@@ -99,6 +115,11 @@ public class XSenseApiClient {
     private volatile @Nullable String accessToken;
     private @Nullable String refreshToken;
     private Instant accessTokenExpiry = Instant.MIN;
+
+    // Temporary AWS credentials for the IoT shadow API (bizCode 101003), cached until shortly
+    // before expiration; both fields are volatile as commands arrive on scheduler threads
+    private volatile @Nullable AwsCredentials awsCredentials;
+    private volatile Instant awsCredentialsExpiry = Instant.EPOCH;
 
     public XSenseApiClient(HttpClient httpClient) {
         this.httpClient = httpClient;
@@ -136,6 +157,133 @@ public class XSenseApiClient {
         JsonElement data = apiCall(BIZCODE_QUERY_STATIONS, orderedParams("houseId", houseId, "utctimestamp", "0"));
         StationList stations = fromJson(data, StationList.class);
         return stations != null ? stations : new StationList();
+    }
+
+    /**
+     * Returns the internal cloud user id (the Cognito USER_ID_FOR_SRP captured during login),
+     * required in shadow command payloads.
+     */
+    public String getUserId() throws XSenseApiException {
+        String userId;
+        synchronized (sessionLock) {
+            userId = cognitoUsername;
+        }
+        if (userId == null) {
+            throw new XSenseApiException("User id not available, not logged in", true);
+        }
+        return userId;
+    }
+
+    /**
+     * Returns temporary AWS credentials for AWS IoT shadow access, cached until shortly before
+     * their expiration.
+     */
+    public AwsCredentials getAwsCredentials() throws XSenseApiException {
+        AwsCredentials cached = awsCredentials;
+        if (cached != null && Instant.now().isBefore(awsCredentialsExpiry.minusSeconds(TOKEN_EXPIRY_MARGIN_SEC))) {
+            return cached;
+        }
+        return refreshAwsCredentials();
+    }
+
+    private AwsCredentials refreshAwsCredentials() throws XSenseApiException {
+        String userName;
+        synchronized (sessionLock) {
+            userName = email;
+        }
+        JsonElement data = apiCall(BIZCODE_AWS_CREDENTIALS, orderedParams("userName", userName));
+        AwsCredentials credentials = fromJson(data, AwsCredentials.class);
+        if (credentials == null || credentials.accessKeyId == null || credentials.secretAccessKey == null
+                || credentials.sessionToken == null) {
+            throw new XSenseApiException("Incomplete AWS credentials response (bizCode 101003)");
+        }
+        awsCredentialsExpiry = parseAwsExpiration(credentials.expiration);
+        awsCredentials = credentials;
+        return credentials;
+    }
+
+    /**
+     * Writes a named device shadow through the AWS IoT data plane REST API, SigV4-signed with the
+     * temporary AWS credentials. A 401/403 response is retried once with freshly fetched
+     * credentials (they may have been invalidated before their nominal expiration).
+     *
+     * @param mqttRegion AWS region of the house (House.mqttRegion)
+     * @param thingName AWS IoT thing name, e.g. {@link XSenseShadowRequests#stationThingName}
+     * @param shadowName named shadow, e.g. {@link XSenseShadowRequests#SHADOW_NAME_APP_MODE}
+     * @param body the shadow update JSON body
+     */
+    public void updateStationShadow(String mqttRegion, String thingName, String shadowName, String body)
+            throws XSenseApiException {
+        ContentResponse response = postSignedShadowRequest(mqttRegion, thingName, shadowName, body,
+                getAwsCredentials());
+        int status = response.getStatus();
+        if (status == 401 || status == 403) {
+            response = postSignedShadowRequest(mqttRegion, thingName, shadowName, body, refreshAwsCredentials());
+            status = response.getStatus();
+        }
+        if (status >= 400) {
+            throw new XSenseApiException("Shadow update " + shadowName + " for " + thingName + " failed: HTTP " + status
+                    + " " + response.getContentAsString());
+        }
+    }
+
+    private ContentResponse postSignedShadowRequest(String mqttRegion, String thingName, String shadowName, String body,
+            AwsCredentials credentials) throws XSenseApiException {
+        String accessKeyId = credentials.accessKeyId;
+        String secretAccessKey = credentials.secretAccessKey;
+        String sessionToken = credentials.sessionToken;
+        if (accessKeyId == null || secretAccessKey == null || sessionToken == null) {
+            throw new XSenseApiException("Incomplete AWS credentials (bizCode 101003)");
+        }
+        String url = shadowUrl(mqttRegion, thingName, shadowName);
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("Content-Type", IOT_CONTENT_TYPE);
+        headers.put("User-Agent", IOT_USER_AGENT);
+        headers.put("X-Amz-Security-Token", sessionToken);
+        Map<String, String> signature = new XSenseAwsSigV4(mqttRegion, IOT_SERVICE).sign("POST", URI.create(url),
+                headers, body, accessKeyId, secretAccessKey, Instant.now());
+        try {
+            var request = httpClient.newRequest(url).method(HttpMethod.POST)
+                    .content(new StringContentProvider(IOT_CONTENT_TYPE, body, StandardCharsets.UTF_8),
+                            IOT_CONTENT_TYPE)
+                    .agent(IOT_USER_AGENT).header("X-Amz-Security-Token", sessionToken)
+                    .timeout(REQUEST_TIMEOUT_SEC, TimeUnit.SECONDS);
+            for (Map.Entry<String, String> header : signature.entrySet()) {
+                if (!"Host".equals(header.getKey())) {
+                    // Jetty derives the Host header from the request URL
+                    request.header(header.getKey(), header.getValue());
+                }
+            }
+            return request.send();
+        } catch (ExecutionException | TimeoutException e) {
+            throw new XSenseApiException("Shadow request to " + url + " failed: " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new XSenseApiException("Shadow request to " + url + " interrupted", e);
+        }
+    }
+
+    /**
+     * Builds the shadow REST URL: https://{mqttRegion}.x-sense-iot.com/things/{thingName}/shadow?name={shadowName}.
+     */
+    static String shadowUrl(String mqttRegion, String thingName, String shadowName) {
+        return String.format(IOT_URL_FORMAT, mqttRegion, XSenseAwsSigV4.uriEncode(thingName),
+                XSenseAwsSigV4.uriEncode(shadowName));
+    }
+
+    /**
+     * Parses the AWS credential expiration ("yyyy-MM-dd HH:mm:ss" plus zone offset); an
+     * unparsable value yields the epoch so the credentials are simply never cached.
+     */
+    static Instant parseAwsExpiration(@Nullable String expiration) {
+        if (expiration == null) {
+            return Instant.EPOCH;
+        }
+        try {
+            return OffsetDateTime.parse(expiration.trim(), AWS_EXPIRATION_FORMAT).toInstant();
+        } catch (DateTimeParseException e) {
+            return Instant.EPOCH;
+        }
     }
 
     // === bizCode application API ===

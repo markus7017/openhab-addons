@@ -99,13 +99,16 @@ public class XSenseBindingConstants {
     public static final String CONFIG_STATION_SN = "stationSn";
 
     // Thing properties
+    public static final String PROPERTY_DEVICE_TYPE = "deviceType";
     public static final String PROPERTY_HOUSE_ID = "houseId";
     public static final String PROPERTY_HOUSE_NAME = "houseName";
     public static final String PROPERTY_ROOM_NAME = "roomName";
+    public static final String PROPERTY_STATION_SN = "stationSn";
     public static final String PROPERTY_UNIQUE_ID = "uniqueId";
 
     // Channels
     public static final String CHANNEL_PATH = "info#path";
+    public static final String CHANNEL_SAFE_MODE = "security#safeMode";
 
     /**
      * Returns the thing type for an X-Sense model code or null for unsupported models.
