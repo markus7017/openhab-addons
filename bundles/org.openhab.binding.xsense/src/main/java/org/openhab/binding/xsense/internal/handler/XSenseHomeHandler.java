@@ -24,6 +24,7 @@ import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.House;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.Station;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.StationList;
 import org.openhab.binding.xsense.internal.config.XSenseHomeConfiguration;
+import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Channel;
@@ -76,6 +77,26 @@ public class XSenseHomeHandler extends BaseBridgeHandler {
         if (command instanceof RefreshType) {
             channelState.invalidate(channelUID.getId());
             requestRefresh();
+            return;
+        }
+        if (CHANNEL_MUTE_ALL.equals(channelUID.getId()) && command == OnOffType.ON) {
+            scheduler.execute(this::muteAllStations);
+            // Momentary action: there is no cloud readback state, so bounce the switch back to
+            // OFF immediately rather than latching it on.
+            updateState(channelUID, OnOffType.OFF);
+        }
+    }
+
+    /**
+     * Cascades a mute-all request to every station below this home, which in turn mutes every
+     * mute-capable device attached to it.
+     */
+    private void muteAllStations() {
+        for (Thing thing : getThing().getThings()) {
+            ThingHandler handler = thing.getHandler();
+            if (handler instanceof XSenseStationHandler stationHandler) {
+                stationHandler.muteAllDevices();
+            }
         }
     }
 

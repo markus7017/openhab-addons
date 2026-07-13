@@ -42,6 +42,7 @@
 
 		<channel-groups>
 			<channel-group id="info" typeId="info"/>
+			<channel-group id="control" typeId="home-control"/>
 		</channel-groups>
 
 		<representation-property>houseId</representation-property>
@@ -94,6 +95,7 @@
 			<channel-group id="info" typeId="info"/>
 			<channel-group id="device" typeId="device"/>
 			<channel-group id="alarm" typeId="alarm-smoke"/>
+			<channel-group id="control" typeId="control"/>
 		</channel-groups>
 
 		<representation-property>serialNumber</representation-property>
@@ -119,6 +121,7 @@
 			<channel-group id="info" typeId="info"/>
 			<channel-group id="device" typeId="device"/>
 			<channel-group id="alarm" typeId="alarm-co"/>
+			<channel-group id="control" typeId="control"/>
 		</channel-groups>
 
 		<representation-property>serialNumber</representation-property>
@@ -144,6 +147,7 @@
 			<channel-group id="info" typeId="info"/>
 			<channel-group id="device" typeId="device"/>
 			<channel-group id="alarm" typeId="alarm-smokeco"/>
+			<channel-group id="control" typeId="control"/>
 		</channel-groups>
 
 		<representation-property>serialNumber</representation-property>
@@ -168,6 +172,7 @@
 		<channel-groups>
 			<channel-group id="info" typeId="info"/>
 			<channel-group id="device" typeId="device"/>
+			<channel-group id="control" typeId="control"/>
 		</channel-groups>
 
 		<representation-property>serialNumber</representation-property>
@@ -193,6 +198,7 @@
 			<channel-group id="info" typeId="info"/>
 			<channel-group id="device" typeId="device"/>
 			<channel-group id="alarm" typeId="alarm-water"/>
+			<channel-group id="control" typeId="control"/>
 		</channel-groups>
 
 		<representation-property>serialNumber</representation-property>
@@ -244,6 +250,7 @@
 			<channel-group id="info" typeId="info"/>
 			<channel-group id="device" typeId="device"/>
 			<channel-group id="alarm" typeId="alarm-listener"/>
+			<channel-group id="control" typeId="control"/>
 		</channel-groups>
 
 		<representation-property>serialNumber</representation-property>
@@ -269,6 +276,7 @@
 			<channel-group id="info" typeId="info"/>
 			<channel-group id="device" typeId="device"/>
 			<channel-group id="alarm" typeId="alarm-generic"/>
+			<channel-group id="control" typeId="control"/>
 		</channel-groups>
 
 		<representation-property>serialNumber</representation-property>
@@ -294,6 +302,7 @@
 			<channel-group id="info" typeId="info"/>
 			<channel-group id="device" typeId="device"/>
 			<channel-group id="alarm" typeId="alarm-mailbox"/>
+			<channel-group id="control" typeId="control"/>
 		</channel-groups>
 
 		<representation-property>serialNumber</representation-property>
@@ -467,6 +476,22 @@
 		<channels>
 			<channel id="temperature" typeId="temperature"/>
 			<channel id="humidity" typeId="humidity"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="control">
+		<label>Control</label>
+		<description>Device control functions.</description>
+		<channels>
+			<channel id="mute" typeId="mute"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="home-control">
+		<label>Control</label>
+		<description>Control functions for the whole home.</description>
+		<channels>
+			<channel id="muteAll" typeId="mute-all"/>
 		</channels>
 	</channel-group-type>
 
@@ -708,6 +733,26 @@
 				<option value="Away">Away</option>
 			</options>
 		</state>
+	</channel-type>
+
+	<channel-type id="mute">
+		<item-type>Switch</item-type>
+		<label>Mute Alarm</label>
+		<description>Mutes an active alarm of the detector.</description>
+		<category>SoundVolume</category>
+		<tags>
+			<tag>Switch</tag>
+		</tags>
+	</channel-type>
+
+	<channel-type id="mute-all">
+		<item-type>Switch</item-type>
+		<label>Mute All Alarms</label>
+		<description>Mutes an active alarm on every device below this home.</description>
+		<category>SoundVolume</category>
+		<tags>
+			<tag>Switch</tag>
+		</tags>
 	</channel-type>
 
 </thing:thing-descriptions>

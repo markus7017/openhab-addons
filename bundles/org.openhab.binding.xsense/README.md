@@ -3,6 +3,7 @@
 This binding integrates [X-Sense](https://www.x-sense.com) home safety devices into openHAB.
 X-Sense offers smoke detectors, carbon monoxide (CO) detectors, heat alarms, water leak sensors and thermo-hygrometers, plus a security line with door/window sensors, motion sensors, keypads, alarm listeners, driveway/mailbox alarms and strobe lights.
 Sensors are connected through the X-Sense SBS50 Base Station, which links the battery powered sensors via a proprietary RF protocol and connects to the network via 2.4 GHz Wi-Fi.
+The base station can be armed and disarmed through the binding (see [Arming and Disarming](#arming-and-disarming)).
 
 ## Scope and Cloud Usage
 
@@ -126,6 +127,8 @@ Live channel states are pushed by the X-Sense cloud and will be filled with the 
 | alarm    | alarm       | Switch               | R      | Alarm active (listener, driveway, mailbox)   |
 | alarm    | selfTest    | Switch               | R      | Self test in progress (advanced)             |
 | alarm    | mailNotice  | Switch               | R      | New mail detected (mailbox)                  |
+| control  | mute        | Switch               | R/W    | Mute an active alarm                         |
+| control  | muteAll     | Switch               | R/W    | Mute an active alarm on every device below this home |
 | control  | light       | Switch               | R/W    | Strobe light on/off                          |
 | sensor   | temperature | Number:Temperature   | R      | Measured temperature                         |
 | sensor   | humidity    | Number:Dimensionless | R      | Measured relative humidity                   |
@@ -138,24 +141,23 @@ Live channel states are pushed by the X-Sense cloud and will be filled with the 
 
 | Thing Type UID     | info | device | alarm channels    | control | sensor                | security |
 |--------------------|------|--------|-------------------|---------|-----------------------|----------|
-| xsense:home        | yes  | -      | -                 | -       | -                     | -        |
+| xsense:home        | yes  | -      | -                 | muteAll | -                     | -        |
 | xsense:station     | yes  | -      | -                 | -       | -                     | safeMode |
-| xsense:smoke       | yes  | yes    | smoke             | -       | -                     | -        |
-| xsense:co          | yes  | yes    | co, coPpm         | -       | -                     | -        |
-| xsense:smokeco     | yes  | yes    | smoke, co, coPpm  | -       | -                     | -        |
-| xsense:heat        | yes  | yes    | -                 | -       | -                     | -        |
-| xsense:water       | yes  | yes    | water             | -       | -                     | -        |
+| xsense:smoke       | yes  | yes    | smoke             | mute    | -                     | -        |
+| xsense:co          | yes  | yes    | co, coPpm         | mute    | -                     | -        |
+| xsense:smokeco     | yes  | yes    | smoke, co, coPpm  | mute    | -                     | -        |
+| xsense:heat        | yes  | yes    | -                 | mute    | -                     | -        |
+| xsense:water       | yes  | yes    | water             | mute    | -                     | -        |
 | xsense:thermohygro | yes  | yes    | -                 | -       | temperature, humidity | -        |
-| xsense:listener    | yes  | yes    | alarm, selfTest   | -       | -                     | -        |
-| xsense:driveway    | yes  | yes    | alarm             | -       | -                     | -        |
-| xsense:mailbox     | yes  | yes    | alarm, mailNotice | -       | -                     | -        |
+| xsense:listener    | yes  | yes    | alarm, selfTest   | mute    | -                     | -        |
+| xsense:driveway    | yes  | yes    | alarm             | mute    | -                     | -        |
+| xsense:mailbox     | yes  | yes    | alarm, mailNotice | mute    | -                     | -        |
 | xsense:door        | yes  | yes    | -                 | -       | contact               | -        |
 | xsense:motion      | yes  | yes    | -                 | -       | motion                | -        |
 | xsense:strobe      | yes  | -      | -                 | light   | -                     | -        |
 | xsense:keypad      | yes  | yes    | -                 | -       | -                     | armed    |
 
 The strobe light's `control#light` command channel is declared but not yet wired to the cloud; it becomes functional with the upcoming real-time (MQTT) support.
-Mute channels are added in the next section.
 
 ### Arming and Disarming
 
@@ -179,6 +181,20 @@ String Station_SafeMode "Security Mode" { channel="xsense:station:myaccount:h1a2
 
 ```javascript
 items.getItem("Station_SafeMode").sendCommand("Away");
+```
+
+### Muting Alarms
+
+Every sensor thing that supports it provides the writable channel `control#mute`; sending `ON` mutes an active alarm on that device via the X-Sense cloud.
+The `home` thing additionally provides `control#muteAll`: sending `ON` cascades a mute request to every mute-capable device below that home (all stations and their sensors).
+Devices without a mute mechanism (door/window sensors, motion sensors, keypads, thermo-hygrometers) are silently skipped.
+Both channels are momentary: since there is no cloud readback state for "muted", the channel bounces back to `OFF` immediately after the command is sent rather than latching `ON`.
+As with arming/disarming, a failed request only logs a warning; the command path mirrors the X-Sense app but is still considered experimental, so please report failures.
+
+Example item:
+
+```java
+Switch Home_MuteAll "Mute All Alarms" { channel="xsense:home:myaccount:h1a2b3:control#muteAll" }
 ```
 
 ### Channel Labels and Item Auto-Naming

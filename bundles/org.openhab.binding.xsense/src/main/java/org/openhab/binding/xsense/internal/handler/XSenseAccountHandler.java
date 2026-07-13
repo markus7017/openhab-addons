@@ -258,6 +258,33 @@ public class XSenseAccountHandler extends BaseBridgeHandler {
     }
 
     /**
+     * Requests muting an active alarm on a device by writing its mute device shadow through the
+     * AWS IoT REST API, the same request the X-Sense app issues. Like {@link #setStationSafeMode},
+     * the mute request targets the parent station's AWS IoT thing (per-device mute has no separate
+     * shadow thing) and is not applied optimistically.
+     *
+     * @param house the house the station belongs to (provides the AWS IoT region)
+     * @param stationSn serial number of the parent station
+     * @param deviceModel device type/model code of the device to mute (e.g. "XS01-M")
+     * @param deviceSn serial number of the device to mute
+     * @throws XSenseApiException if the house lacks the AWS IoT region or the request fails
+     */
+    public void muteDevice(House house, String stationSn, String deviceModel, String deviceSn)
+            throws XSenseApiException {
+        String mqttRegion = house.mqttRegion;
+        if (mqttRegion == null || mqttRegion.isBlank()) {
+            throw new XSenseApiException("Home provides no AWS IoT region (mqttRegion)");
+        }
+        String topic = XSenseShadowRequests.muteTopic(deviceModel);
+        String body = XSenseShadowRequests.muteDesiredState(deviceModel, stationSn, deviceSn, apiClient.getUserId());
+        if (topic == null || body == null) {
+            throw new XSenseApiException("Device model " + deviceModel + " has no known mute mechanism");
+        }
+        String thingName = XSenseShadowRequests.stationThingName(XSenseBindingConstants.STATION_TYPE_SBS50, stationSn);
+        apiClient.updateStationShadow(mqttRegion, thingName, topic, body);
+    }
+
+    /**
      * Performs the Cognito login and, on success, starts inventory polling. On failure, either
      * gives up (bad credentials) or schedules a reconnect with exponential backoff.
      */

@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.xsense.internal.handler;
 
+import static org.openhab.binding.xsense.internal.XSenseBindingConstants.CHANNEL_MUTE;
 import static org.openhab.binding.xsense.internal.XSenseBindingConstants.CHANNEL_PATH;
 
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.xsense.internal.XSenseBindingConstants;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.Device;
 import org.openhab.binding.xsense.internal.config.XSenseDeviceConfiguration;
+import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Channel;
@@ -35,6 +37,8 @@ import org.openhab.core.thing.binding.BaseThingHandler;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.RefreshType;
 import org.openhab.core.types.State;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link XSenseSensorHandler} represents a sensor attached to an X-Sense base station (smoke,
@@ -45,6 +49,8 @@ import org.openhab.core.types.State;
  */
 @NonNullByDefault
 public class XSenseSensorHandler extends BaseThingHandler {
+
+    private final Logger logger = LoggerFactory.getLogger(XSenseSensorHandler.class);
 
     // Written in initialize(), read via getDeviceSn() from the station handler's update path
     private volatile XSenseDeviceConfiguration config = new XSenseDeviceConfiguration();
@@ -72,6 +78,36 @@ public class XSenseSensorHandler extends BaseThingHandler {
         if (command instanceof RefreshType) {
             channelState.invalidate(channelUID.getId());
             requestRefresh();
+            return;
+        }
+        if (CHANNEL_MUTE.equals(channelUID.getId()) && command == OnOffType.ON) {
+            scheduler.execute(this::sendMute);
+            // Momentary action: there is no cloud readback state, so bounce the switch back to
+            // OFF immediately rather than latching it on.
+            updateState(channelUID, OnOffType.OFF);
+        }
+    }
+
+    /**
+     * Mutes an active alarm on this device via the station handler. A failure only logs a warning
+     * so the thing stays usable.
+     */
+    private void sendMute() {
+        Bridge bridge = getBridge();
+        if (bridge != null && bridge.getHandler() instanceof XSenseStationHandler stationHandler) {
+            stationHandler.muteDevice(config.deviceSn, getThing().getProperties().get(Thing.PROPERTY_MODEL_ID));
+        } else {
+            logger.warn("xsense-{}: cannot mute, station not available", config.deviceSn);
+        }
+    }
+
+    /**
+     * Mutes this device if it has a mute channel, used by the home-level mute-all cascade. Devices
+     * without a control#mute channel (door, motion, keypad, thermo-hygro) are silently skipped.
+     */
+    void muteIfSupported() {
+        if (getThing().getChannel(CHANNEL_MUTE) != null) {
+            sendMute();
         }
     }
 

@@ -44,4 +44,47 @@ public class XSenseShadowRequestsTest {
     public void appModeShadowNameIsStable() {
         assertEquals("2nd_appmode", XSenseShadowRequests.SHADOW_NAME_APP_MODE);
     }
+
+    @Test
+    public void muteTopicAndDesiredStateForSmokeDetectorHaveNoExtraFields() {
+        assertEquals("2nd_appmute", XSenseShadowRequests.muteTopic("XS01-M"));
+        String body = XSenseShadowRequests.muteDesiredState("XS01-M", "12345678", "87654321", "user-abc");
+        assertEquals("{\"state\":{\"desired\":{\"deviceSN\":\"87654321\",\"shadow\":\"appMute\","
+                + "\"stationSN\":\"12345678\",\"userId\":\"user-abc\"}}}", body);
+    }
+
+    @Test
+    public void muteDesiredStateForCoDetectorIncludesMuteType() {
+        String body = XSenseShadowRequests.muteDesiredState("XC01-M", "12345678", "87654321", "user-abc");
+        assertEquals("{\"state\":{\"desired\":{\"deviceSN\":\"87654321\",\"shadow\":\"appCoMute\","
+                + "\"stationSN\":\"12345678\",\"userId\":\"user-abc\",\"muteType\":\"1\"}}}", body);
+    }
+
+    @Test
+    public void muteDesiredStateForXp0amrIncludesUserParam() {
+        String body = XSenseShadowRequests.muteDesiredState("XP0A-MR", "12345678", "87654321", "user-abc");
+        assertEquals("{\"state\":{\"desired\":{\"deviceSN\":\"87654321\",\"shadow\":\"appXp0amrMute\","
+                + "\"stationSN\":\"12345678\",\"userId\":\"user-abc\",\"muteType\":\"1\",\"userParam\":\"source=1\"}}}",
+                body);
+    }
+
+    @Test
+    public void muteDesiredStateForWaterSensorIncludesSilenceTimeAndSetType() {
+        String body = XSenseShadowRequests.muteDesiredState("SWS51", "12345678", "87654321", "user-abc");
+        assertEquals("{\"state\":{\"desired\":{\"deviceSN\":\"87654321\",\"shadow\":\"appWater\","
+                + "\"stationSN\":\"12345678\",\"userId\":\"user-abc\",\"silenceTime\":\"\",\"setType\":\"0\"}}}", body);
+    }
+
+    @Test
+    public void muteDesiredStateForDrivewayAlarmUsesRawMuteField() {
+        String body = XSenseShadowRequests.muteDesiredState("SDA51", "12345678", "87654321", "user-abc");
+        assertEquals("{\"state\":{\"desired\":{\"deviceSN\":\"87654321\",\"shadow\":\"appDriveway\","
+                + "\"stationSN\":\"12345678\",\"userId\":\"user-abc\",\"mute\":\"1\"}}}", body);
+    }
+
+    @Test
+    public void muteTopicAndDesiredStateAreNullForUnsupportedModel() {
+        assertNull(XSenseShadowRequests.muteTopic("SDS0A"));
+        assertNull(XSenseShadowRequests.muteDesiredState("SDS0A", "12345678", "87654321", "user-abc"));
+    }
 }

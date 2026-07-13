@@ -108,6 +108,8 @@ public class XSenseBindingConstants {
 
     // Channels
     public static final String CHANNEL_PATH = "info#path";
+    public static final String CHANNEL_MUTE = "control#mute";
+    public static final String CHANNEL_MUTE_ALL = "control#muteAll";
     public static final String CHANNEL_SAFE_MODE = "security#safeMode";
 
     /**

@@ -118,6 +118,45 @@ public class XSenseStationHandler extends BaseBridgeHandler {
         }
     }
 
+    /**
+     * Mutes an active alarm on one device attached to this station. The channel is not updated
+     * optimistically and a failure only logs a warning so the thing stays usable, mirroring
+     * {@link #sendSafeMode}.
+     *
+     * @param deviceSn serial number of the device to mute
+     * @param deviceModel device type/model code of the device, or null if not (yet) known
+     */
+    void muteDevice(String deviceSn, @Nullable String deviceModel) {
+        if (deviceModel == null) {
+            logger.warn("xsense-{}: cannot mute {}, device model not known", config.stationSn, deviceSn);
+            return;
+        }
+        XSenseHomeHandler homeHandler = homeHandler();
+        XSenseAccountHandler accountHandler = homeHandler != null ? homeHandler.getAccountHandler() : null;
+        House house = homeHandler != null ? homeHandler.getHouse() : null;
+        if (accountHandler == null || house == null) {
+            logger.warn("xsense-{}: cannot mute {}, account or home data not available", config.stationSn, deviceSn);
+            return;
+        }
+        try {
+            accountHandler.muteDevice(house, config.stationSn, deviceModel, deviceSn);
+        } catch (XSenseApiException e) {
+            logger.warn("xsense-{}: muting {} failed: {}", config.stationSn, deviceSn, e.getMessage());
+        }
+    }
+
+    /**
+     * Cascades a mute-all request to every mute-capable device attached to this station.
+     */
+    void muteAllDevices() {
+        for (Thing thing : getThing().getThings()) {
+            ThingHandler handler = thing.getHandler();
+            if (handler instanceof XSenseSensorHandler sensorHandler) {
+                sensorHandler.muteIfSupported();
+            }
+        }
+    }
+
     private @Nullable XSenseHomeHandler homeHandler() {
         Bridge bridge = getBridge();
         return bridge != null && bridge.getHandler() instanceof XSenseHomeHandler handler ? handler : null;

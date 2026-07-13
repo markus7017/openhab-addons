@@ -82,11 +82,14 @@ public class XSenseHandlerFactory extends BaseThingHandlerFactory {
             // Supplier so that later binding configuration changes reach existing handlers
             return new XSenseAccountHandler((Bridge) thing, httpClient, () -> bindingConfig, i18nProvider,
                     localeProvider);
-        } else if (THING_TYPE_HOME.equals(thingTypeUID)) {
+        }
+        if (THING_TYPE_HOME.equals(thingTypeUID)) {
             return new XSenseHomeHandler((Bridge) thing);
-        } else if (THING_TYPE_STATION.equals(thingTypeUID)) {
+        }
+        if (THING_TYPE_STATION.equals(thingTypeUID)) {
             return new XSenseStationHandler((Bridge) thing);
-        } else if (SENSOR_THING_TYPES.contains(thingTypeUID)) {
+        }
+        if (SENSOR_THING_TYPES.contains(thingTypeUID)) {
             return new XSenseSensorHandler(thing);
         }
         return null;
