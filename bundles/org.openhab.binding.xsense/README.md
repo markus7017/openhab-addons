@@ -224,3 +224,9 @@ Usage in a Rules DSL rule via the JSONPATH transformation:
 ```java
 val stationName = transform("JSONPATH", "$.station.name", SmokeKitchen_Path.state.toString)
 ```
+
+## XSense Manager
+
+The binding provides a built-in status page at `http://<openhab-ip>:8080/xsense/manager` (also available via HTTPS on port 8443).
+It shows the full account → home → station → device tree with thing status, core configuration (credentials masked) and the unique id of every entity.
+Per account the page offers two actions: **Rescan** (refresh inventory and discovery results) and **Reconnect** (force a new cloud login).
