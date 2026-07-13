@@ -229,6 +229,183 @@
 		</config-description>
 	</thing-type>
 
+	<thing-type id="listener">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Alarm Listener</label>
+		<description>X-Sense alarm listener reporting the sound of existing smoke/CO alarms (e.g. SAL51,
+			SAL100).</description>
+		<semantic-equipment-tag>AlarmDevice</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="device" typeId="device"/>
+			<channel-group id="alarm" typeId="alarm-listener"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the sensor.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<thing-type id="driveway">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Driveway Alarm</label>
+		<description>X-Sense driveway alarm (e.g. SDA51).</description>
+		<semantic-equipment-tag>AlarmDevice</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="device" typeId="device"/>
+			<channel-group id="alarm" typeId="alarm-generic"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the sensor.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<thing-type id="mailbox">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Mailbox Alarm</label>
+		<description>X-Sense mailbox alarm (e.g. SMA51, SMA11).</description>
+		<semantic-equipment-tag>AlarmDevice</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="device" typeId="device"/>
+			<channel-group id="alarm" typeId="alarm-mailbox"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the sensor.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<thing-type id="door">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Door/Window Sensor</label>
+		<description>X-Sense door and window entry sensor (e.g. SDS0A, SES01).</description>
+		<semantic-equipment-tag>ContactSensor</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="device" typeId="device"/>
+			<channel-group id="sensor" typeId="sensor-door"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the sensor.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<thing-type id="motion">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Motion Sensor</label>
+		<description>X-Sense motion sensor (e.g. SMS0A).</description>
+		<semantic-equipment-tag>MotionDetector</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="device" typeId="device"/>
+			<channel-group id="sensor" typeId="sensor-motion"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the sensor.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<thing-type id="strobe">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Strobe Light</label>
+		<description>X-Sense security strobe light (e.g. SSL51). Switching the light requires the upcoming live
+			connection and
+			is not supported yet.</description>
+		<semantic-equipment-tag>Siren</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="control" typeId="control-strobe"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the device.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<thing-type id="keypad">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Security Keypad</label>
+		<description>X-Sense security keypad (e.g. SKP0A) for arming and disarming the base station.</description>
+		<semantic-equipment-tag>Keypad</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="device" typeId="device"/>
+			<channel-group id="security" typeId="security-keypad"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the device.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
 	<!-- Channel Group Types -->
 	<channel-group-type id="info">
 		<label>Information</label>
@@ -289,6 +466,64 @@
 		<channels>
 			<channel id="temperature" typeId="temperature"/>
 			<channel id="humidity" typeId="humidity"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="alarm-generic">
+		<label>Alarm</label>
+		<description>Alarm status of the device.</description>
+		<channels>
+			<channel id="alarm" typeId="alarm"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="alarm-listener">
+		<label>Alarm</label>
+		<description>Alarm status of the listener.</description>
+		<channels>
+			<channel id="alarm" typeId="alarm"/>
+			<channel id="selfTest" typeId="self-test"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="alarm-mailbox">
+		<label>Alarm</label>
+		<description>Alarm status of the mailbox alarm.</description>
+		<channels>
+			<channel id="alarm" typeId="alarm"/>
+			<channel id="mailNotice" typeId="mail-notice"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="sensor-door">
+		<label>Sensor</label>
+		<description>Open state of the door or window.</description>
+		<channels>
+			<channel id="contact" typeId="contact"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="sensor-motion">
+		<label>Sensor</label>
+		<description>Motion detection state.</description>
+		<channels>
+			<channel id="motion" typeId="system.motion"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="control-strobe">
+		<label>Control</label>
+		<description>Strobe light control functions.</description>
+		<channels>
+			<channel id="light" typeId="light"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="security-keypad">
+		<label>Security</label>
+		<description>Security status reported by the keypad.</description>
+		<channels>
+			<channel id="armed" typeId="armed"/>
 		</channels>
 	</channel-group-type>
 
@@ -383,6 +618,70 @@
 			<tag>Humidity</tag>
 		</tags>
 		<state readOnly="true" pattern="%.0f %%"/>
+	</channel-type>
+
+	<channel-type id="alarm">
+		<item-type>Switch</item-type>
+		<label>Alarm</label>
+		<description>Indicates whether the device reports an active alarm.</description>
+		<category>Alarm</category>
+		<tags>
+			<tag>Alarm</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="self-test" advanced="true">
+		<item-type>Switch</item-type>
+		<label>Self-Test</label>
+		<description>Indicates whether the listener reports a running self-test.</description>
+		<tags>
+			<tag>Status</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="mail-notice">
+		<item-type>Switch</item-type>
+		<label>Mail Notice</label>
+		<description>Indicates whether the mailbox alarm reports new mail.</description>
+		<tags>
+			<tag>Status</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="contact">
+		<item-type>Contact</item-type>
+		<label>Open State</label>
+		<description>Indicates whether the door or window is open or closed.</description>
+		<category>Door</category>
+		<tags>
+			<tag>Status</tag>
+			<tag>OpenState</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="armed">
+		<item-type>Switch</item-type>
+		<label>Armed</label>
+		<description>Indicates whether the security system is armed on this keypad.</description>
+		<tags>
+			<tag>Status</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="light">
+		<item-type>Switch</item-type>
+		<label>Light</label>
+		<description>Switches the strobe light. Not supported yet, requires the upcoming live connection.</description>
+		<category>Light</category>
+		<tags>
+			<tag>Switch</tag>
+			<tag>Light</tag>
+		</tags>
 	</channel-type>
 
 </thing:thing-descriptions>

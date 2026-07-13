@@ -43,12 +43,24 @@ public class XSenseBindingConstants {
     public static final ThingTypeUID THING_TYPE_WATER = new ThingTypeUID(BINDING_ID, "water");
     public static final ThingTypeUID THING_TYPE_THERMOHYGRO = new ThingTypeUID(BINDING_ID, "thermohygro");
 
+    // Security-accessory Thing Type UIDs
+    public static final ThingTypeUID THING_TYPE_LISTENER = new ThingTypeUID(BINDING_ID, "listener");
+    public static final ThingTypeUID THING_TYPE_DRIVEWAY = new ThingTypeUID(BINDING_ID, "driveway");
+    public static final ThingTypeUID THING_TYPE_MAILBOX = new ThingTypeUID(BINDING_ID, "mailbox");
+    public static final ThingTypeUID THING_TYPE_DOOR = new ThingTypeUID(BINDING_ID, "door");
+    public static final ThingTypeUID THING_TYPE_MOTION = new ThingTypeUID(BINDING_ID, "motion");
+    public static final ThingTypeUID THING_TYPE_STROBE = new ThingTypeUID(BINDING_ID, "strobe");
+    public static final ThingTypeUID THING_TYPE_KEYPAD = new ThingTypeUID(BINDING_ID, "keypad");
+
     public static final Set<ThingTypeUID> SENSOR_THING_TYPES = Set.of(THING_TYPE_SMOKE, THING_TYPE_CO,
-            THING_TYPE_SMOKECO, THING_TYPE_HEAT, THING_TYPE_WATER, THING_TYPE_THERMOHYGRO);
+            THING_TYPE_SMOKECO, THING_TYPE_HEAT, THING_TYPE_WATER, THING_TYPE_THERMOHYGRO, THING_TYPE_LISTENER,
+            THING_TYPE_DRIVEWAY, THING_TYPE_MAILBOX, THING_TYPE_DOOR, THING_TYPE_MOTION, THING_TYPE_STROBE,
+            THING_TYPE_KEYPAD);
 
     public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Set.of(THING_TYPE_ACCOUNT, THING_TYPE_HOME,
             THING_TYPE_STATION, THING_TYPE_SMOKE, THING_TYPE_CO, THING_TYPE_SMOKECO, THING_TYPE_HEAT, THING_TYPE_WATER,
-            THING_TYPE_THERMOHYGRO);
+            THING_TYPE_THERMOHYGRO, THING_TYPE_LISTENER, THING_TYPE_DRIVEWAY, THING_TYPE_MAILBOX, THING_TYPE_DOOR,
+            THING_TYPE_MOTION, THING_TYPE_STROBE, THING_TYPE_KEYPAD);
 
     /**
      * Maps the X-Sense device type (model code as reported by the cloud API) to the thing type.
@@ -66,7 +78,17 @@ public class XSenseBindingConstants {
             Map.entry("SWS54", THING_TYPE_WATER), //
             Map.entry("STH51", THING_TYPE_THERMOHYGRO), //
             Map.entry("STH0A", THING_TYPE_THERMOHYGRO), //
-            Map.entry("STH0B", THING_TYPE_THERMOHYGRO));
+            Map.entry("STH0B", THING_TYPE_THERMOHYGRO), //
+            Map.entry("SAL51", THING_TYPE_LISTENER), //
+            Map.entry("SAL100", THING_TYPE_LISTENER), //
+            Map.entry("SDA51", THING_TYPE_DRIVEWAY), //
+            Map.entry("SMA51", THING_TYPE_MAILBOX), //
+            Map.entry("SMA11", THING_TYPE_MAILBOX), //
+            Map.entry("SDS0A", THING_TYPE_DOOR), //
+            Map.entry("SES01", THING_TYPE_DOOR), //
+            Map.entry("SMS0A", THING_TYPE_MOTION), //
+            Map.entry("SSL51", THING_TYPE_STROBE), //
+            Map.entry("SKP0A", THING_TYPE_KEYPAD));
 
     // Device type of the SBS50 base station as reported in the station "category" field
     public static final String STATION_TYPE_SBS50 = "SBS50";

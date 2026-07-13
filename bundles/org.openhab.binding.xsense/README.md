@@ -38,6 +38,13 @@ Account things inherit this value unless they configure their own interval.
 | xsense:heat        | Thing  | Heat detector (e.g. XH02-M)                        |
 | xsense:water       | Thing  | Water leak detector (e.g. SWS51, SWS54)            |
 | xsense:thermohygro | Thing  | Thermo-hygrometer (e.g. STH51, STH0A, STH0B)       |
+| xsense:listener    | Thing  | Alarm listener (SAL51, SAL100)                     |
+| xsense:driveway    | Thing  | Driveway alarm (SDA51)                             |
+| xsense:mailbox     | Thing  | Mailbox alarm (SMA51, SMA11)                       |
+| xsense:door        | Thing  | Door/window sensor (SDS0A, SES01)                  |
+| xsense:motion      | Thing  | Motion sensor (SMS0A)                              |
+| xsense:strobe      | Thing  | Strobe light (SSL51)                               |
+| xsense:keypad      | Thing  | Security keypad (SKP0A)                            |
 
 ## Discovery
 
@@ -74,7 +81,7 @@ Unsupported device models are logged on debug level, please report them so suppo
 
 ### Sensor Thing Configuration
 
-All sensor things (`smoke`, `co`, `smokeco`, `heat`, `water`, `thermohygro`) share the same configuration:
+All sensor things (`smoke`, `co`, `smokeco`, `heat`, `water`, `thermohygro`, `listener`, `driveway`, `mailbox`, `door`, `motion`, `strobe`, `keypad`) share the same configuration:
 
 | Name     | Type | Description                 | Default | Required | Advanced |
 |----------|------|-------------------------------|---------|----------|----------|
@@ -91,6 +98,8 @@ Bridge xsense:account:myaccount "My X-Sense Account" [ email="user@example.com",
         Bridge station sbs50 "Hallway Base Station" [ stationSn="SBS50-1234" ] {
             Thing smoke kitchen "Kitchen Smoke Detector" [ deviceSn="DEV567" ]
             Thing thermohygro living "Living Room Sensor" [ deviceSn="DEV890" ]
+            Thing door frontdoor "Front Door Sensor" [ deviceSn="DEV123" ]
+            Thing keypad entry "Entry Keypad" [ deviceSn="DEV456" ]
         }
     }
 }

@@ -34,6 +34,32 @@ public class XSenseBindingConstantsTest {
     }
 
     @Test
+    public void securityAccessoryDeviceTypesMapToThingTypes() {
+        assertEquals(THING_TYPE_LISTENER, thingTypeForDeviceType("SAL51"));
+        assertEquals(THING_TYPE_LISTENER, thingTypeForDeviceType("SAL100"));
+        assertEquals(THING_TYPE_DRIVEWAY, thingTypeForDeviceType("SDA51"));
+        assertEquals(THING_TYPE_MAILBOX, thingTypeForDeviceType("SMA51"));
+        assertEquals(THING_TYPE_MAILBOX, thingTypeForDeviceType("SMA11"));
+        assertEquals(THING_TYPE_DOOR, thingTypeForDeviceType("SDS0A"));
+        assertEquals(THING_TYPE_DOOR, thingTypeForDeviceType("SES01"));
+        assertEquals(THING_TYPE_MOTION, thingTypeForDeviceType("SMS0A"));
+        assertEquals(THING_TYPE_STROBE, thingTypeForDeviceType("SSL51"));
+        assertEquals(THING_TYPE_KEYPAD, thingTypeForDeviceType("SKP0A"));
+    }
+
+    @Test
+    public void securityAccessoryThingTypesAreSensorThingTypes() {
+        assertTrue(SENSOR_THING_TYPES.contains(THING_TYPE_LISTENER));
+        assertTrue(SENSOR_THING_TYPES.contains(THING_TYPE_DRIVEWAY));
+        assertTrue(SENSOR_THING_TYPES.contains(THING_TYPE_MAILBOX));
+        assertTrue(SENSOR_THING_TYPES.contains(THING_TYPE_DOOR));
+        assertTrue(SENSOR_THING_TYPES.contains(THING_TYPE_MOTION));
+        assertTrue(SENSOR_THING_TYPES.contains(THING_TYPE_STROBE));
+        assertTrue(SENSOR_THING_TYPES.contains(THING_TYPE_KEYPAD));
+        assertEquals(13, SENSOR_THING_TYPES.size());
+    }
+
+    @Test
     public void unsupportedDeviceTypeReturnsNull() {
         assertNull(thingTypeForDeviceType(STATION_TYPE_SBS50));
         assertNull(thingTypeForDeviceType("XS01"));

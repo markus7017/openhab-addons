@@ -58,7 +58,8 @@ public class XSenseCloudDiscoveryService extends AbstractThingHandlerDiscoverySe
     private static final int SCAN_TIMEOUT_SEC = 30;
     private static final Set<ThingTypeUID> DISCOVERABLE_THING_TYPES = Set.of(THING_TYPE_HOME, THING_TYPE_STATION,
             THING_TYPE_SMOKE, THING_TYPE_CO, THING_TYPE_SMOKECO, THING_TYPE_HEAT, THING_TYPE_WATER,
-            THING_TYPE_THERMOHYGRO);
+            THING_TYPE_THERMOHYGRO, THING_TYPE_LISTENER, THING_TYPE_DRIVEWAY, THING_TYPE_MAILBOX, THING_TYPE_DOOR,
+            THING_TYPE_MOTION, THING_TYPE_STROBE, THING_TYPE_KEYPAD);
 
     private final Logger logger = LoggerFactory.getLogger(XSenseCloudDiscoveryService.class);
 
