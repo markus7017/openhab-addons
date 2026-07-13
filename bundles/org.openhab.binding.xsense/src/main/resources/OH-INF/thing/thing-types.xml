@@ -30,4 +30,359 @@
 		</config-description>
 	</bridge-type>
 
+	<!-- Home Bridge -->
+	<bridge-type id="home">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="account"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Home</label>
+		<description>A home (house) registered in the X-Sense account, grouping its base stations and
+			sensors.</description>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+		</channel-groups>
+
+		<representation-property>houseId</representation-property>
+
+		<config-description>
+			<parameter name="houseId" type="text" required="true">
+				<label>House ID</label>
+				<description>Identifier of the home in the X-Sense cloud.</description>
+			</parameter>
+		</config-description>
+	</bridge-type>
+
+	<!-- Base Station Bridge -->
+	<bridge-type id="station">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="home"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Base Station</label>
+		<description>X-Sense base station (e.g. SBS50) connecting the battery powered sensors to the X-Sense
+			cloud.</description>
+		<semantic-equipment-tag>AlarmSystem</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="stationSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the base station.</description>
+			</parameter>
+		</config-description>
+	</bridge-type>
+
+	<!-- Sensor Things -->
+	<thing-type id="smoke">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Smoke Detector</label>
+		<description>X-Sense smoke detector (e.g. XS01-M).</description>
+		<semantic-equipment-tag>SmokeDetector</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="device" typeId="device"/>
+			<channel-group id="alarm" typeId="alarm-smoke"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the sensor.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<thing-type id="co">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense CO Detector</label>
+		<description>X-Sense carbon monoxide detector (e.g. XC01-M).</description>
+		<semantic-equipment-tag>COSensor</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="device" typeId="device"/>
+			<channel-group id="alarm" typeId="alarm-co"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the sensor.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<thing-type id="smokeco">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Smoke/CO Detector</label>
+		<description>X-Sense combined smoke and carbon monoxide detector (e.g. SC07-MR, XP0A-MR).</description>
+		<semantic-equipment-tag>SmokeDetector</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="device" typeId="device"/>
+			<channel-group id="alarm" typeId="alarm-smokeco"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the sensor.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<thing-type id="heat">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Heat Detector</label>
+		<description>X-Sense heat detector (e.g. XH02-M).</description>
+		<semantic-equipment-tag>HeatDetector</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="device" typeId="device"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the sensor.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<thing-type id="water">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Water Leak Detector</label>
+		<description>X-Sense water leak detector (e.g. SWS51).</description>
+		<semantic-equipment-tag>LeakSensor</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="device" typeId="device"/>
+			<channel-group id="alarm" typeId="alarm-water"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the sensor.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<thing-type id="thermohygro">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="station"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Thermo-Hygrometer</label>
+		<description>X-Sense temperature and humidity sensor (e.g. STH51).</description>
+		<semantic-equipment-tag>Sensor</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+			<channel-group id="device" typeId="device"/>
+			<channel-group id="sensor" typeId="sensor-th"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="deviceSn" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the sensor.</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<!-- Channel Group Types -->
+	<channel-group-type id="info">
+		<label>Information</label>
+		<description>General information about the device and its place in the account hierarchy.</description>
+		<channels>
+			<channel id="path" typeId="path"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="device">
+		<label>Device Status</label>
+		<description>General device status information.</description>
+		<channels>
+			<channel id="battery" typeId="system.battery-level"/>
+			<channel id="lowBattery" typeId="system.low-battery"/>
+			<channel id="signal" typeId="signal"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="alarm-smoke">
+		<label>Alarm</label>
+		<description>Alarm status of the detector.</description>
+		<channels>
+			<channel id="smoke" typeId="smoke-alarm"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="alarm-co">
+		<label>Alarm</label>
+		<description>Alarm status of the detector.</description>
+		<channels>
+			<channel id="co" typeId="co-alarm"/>
+			<channel id="coPpm" typeId="co-ppm"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="alarm-smokeco">
+		<label>Alarm</label>
+		<description>Alarm status of the detector.</description>
+		<channels>
+			<channel id="smoke" typeId="smoke-alarm"/>
+			<channel id="co" typeId="co-alarm"/>
+			<channel id="coPpm" typeId="co-ppm"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="alarm-water">
+		<label>Alarm</label>
+		<description>Alarm status of the detector.</description>
+		<channels>
+			<channel id="water" typeId="water-alarm"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="sensor-th">
+		<label>Measurements</label>
+		<description>Temperature and humidity measurements.</description>
+		<channels>
+			<channel id="temperature" typeId="temperature"/>
+			<channel id="humidity" typeId="humidity"/>
+		</channels>
+	</channel-group-type>
+
+	<!-- Channel Types -->
+	<channel-type id="path" advanced="true">
+		<item-type>String</item-type>
+		<label>Hierarchy Path</label>
+		<description>JSON describing where this thing belongs in the account/home/station/device hierarchy, e.g.
+			{"account":"a@b.c","home":{"id":"h1","name":"Home"},"station":{"sn":"SN1","name":"Hall"}}.</description>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="signal">
+		<item-type>Number</item-type>
+		<label>Signal Strength</label>
+		<description>RF signal strength between sensor and base station (0-3).</description>
+		<category>QualityOfService</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>SignalStrength</tag>
+		</tags>
+		<state readOnly="true" min="0" max="3" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="smoke-alarm">
+		<item-type>Switch</item-type>
+		<label>Smoke Alarm</label>
+		<description>Indicates whether the detector reports a smoke alarm.</description>
+		<category>Smoke</category>
+		<tags>
+			<tag>Alarm</tag>
+			<tag>Smoke</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="co-alarm">
+		<item-type>Switch</item-type>
+		<label>CO Alarm</label>
+		<description>Indicates whether the detector reports a carbon monoxide alarm.</description>
+		<category>Gas</category>
+		<tags>
+			<tag>Alarm</tag>
+			<tag>CO</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="co-ppm">
+		<item-type>Number:Dimensionless</item-type>
+		<label>CO Concentration</label>
+		<description>Measured carbon monoxide concentration.</description>
+		<category>Gas</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>CO</tag>
+		</tags>
+		<state readOnly="true" pattern="%.0f ppm"/>
+	</channel-type>
+
+	<channel-type id="water-alarm">
+		<item-type>Switch</item-type>
+		<label>Water Leak Alarm</label>
+		<description>Indicates whether the detector reports a water leak.</description>
+		<category>Water</category>
+		<tags>
+			<tag>Alarm</tag>
+			<tag>Water</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="temperature">
+		<item-type>Number:Temperature</item-type>
+		<label>Temperature</label>
+		<description>Measured temperature.</description>
+		<category>Temperature</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>Temperature</tag>
+		</tags>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="humidity">
+		<item-type>Number:Dimensionless</item-type>
+		<label>Humidity</label>
+		<description>Measured relative humidity.</description>
+		<category>Humidity</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>Humidity</tag>
+		</tags>
+		<state readOnly="true" pattern="%.0f %%"/>
+	</channel-type>
+
 </thing:thing-descriptions>
