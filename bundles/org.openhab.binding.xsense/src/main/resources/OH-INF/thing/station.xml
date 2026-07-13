@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="xsense"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<bridge-type id="station">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="home"/>
+		</supported-bridge-type-refs>
+
+		<label>X-Sense Base Station</label>
+		<description>X-Sense base station (e.g. SBS50) connecting the battery powered sensors to the X-Sense
+			cloud.</description>
+		<semantic-equipment-tag>AlarmSystem</semantic-equipment-tag>
+
+		<channel-groups>
+			<channel-group id="info" typeId="info"/>
+		</channel-groups>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description-ref uri="thing-type:xsense:station"/>
+	</bridge-type>
+
+</thing:thing-descriptions>

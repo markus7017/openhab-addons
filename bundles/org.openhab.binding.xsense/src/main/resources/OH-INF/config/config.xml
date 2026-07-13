@@ -23,4 +23,25 @@
 		</parameter>
 	</config-description>
 
+	<config-description uri="thing-type:xsense:home">
+		<parameter name="houseId" type="text" required="true">
+			<label>House ID</label>
+			<description>Identifier of the home in the X-Sense cloud.</description>
+		</parameter>
+	</config-description>
+
+	<config-description uri="thing-type:xsense:station">
+		<parameter name="stationSn" type="text" required="true">
+			<label>Serial Number</label>
+			<description>Serial number of the base station.</description>
+		</parameter>
+	</config-description>
+
+	<config-description uri="thing-type:xsense:sensor">
+		<parameter name="deviceSn" type="text" required="true">
+			<label>Serial Number</label>
+			<description>Serial number of the sensor.</description>
+		</parameter>
+	</config-description>
+
 </config-description:config-descriptions>

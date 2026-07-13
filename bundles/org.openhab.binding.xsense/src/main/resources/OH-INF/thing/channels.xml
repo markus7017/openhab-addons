@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="xsense"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<!-- Channel Group Types -->
+	<channel-group-type id="info">
+		<label>Information</label>
+		<description>General information about the device and its place in the account hierarchy.</description>
+		<channels>
+			<channel id="path" typeId="path"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="device">
+		<label>Device Status</label>
+		<description>General device status information.</description>
+		<channels>
+			<channel id="battery" typeId="system.battery-level"/>
+			<channel id="lowBattery" typeId="system.low-battery"/>
+			<channel id="signal" typeId="signal"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="alarm-smoke">
+		<label>Alarm</label>
+		<description>Alarm status of the detector.</description>
+		<channels>
+			<channel id="smoke" typeId="smoke-alarm"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="alarm-co">
+		<label>Alarm</label>
+		<description>Alarm status of the detector.</description>
+		<channels>
+			<channel id="co" typeId="co-alarm"/>
+			<channel id="coPpm" typeId="co-ppm"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="alarm-smokeco">
+		<label>Alarm</label>
+		<description>Alarm status of the detector.</description>
+		<channels>
+			<channel id="smoke" typeId="smoke-alarm"/>
+			<channel id="co" typeId="co-alarm"/>
+			<channel id="coPpm" typeId="co-ppm"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="alarm-heat">
+		<label>Alarm</label>
+		<description>Alarm status of the detector.</description>
+		<channels>
+			<channel id="heat" typeId="heat-alarm"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="alarm-water">
+		<label>Alarm</label>
+		<description>Alarm status of the detector.</description>
+		<channels>
+			<channel id="water" typeId="water-alarm"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="sensor-th">
+		<label>Measurements</label>
+		<description>Temperature and humidity measurements.</description>
+		<channels>
+			<channel id="temperature" typeId="temperature"/>
+			<channel id="humidity" typeId="humidity"/>
+		</channels>
+	</channel-group-type>
+
+	<!-- Channel Types -->
+	<channel-type id="path" advanced="true">
+		<item-type>String</item-type>
+		<label>Hierarchy Path</label>
+		<description>JSON describing where this thing belongs in the account/home/station/device hierarchy, e.g.
+			{"account":"a@b.c","home":{"id":"h1","name":"Home"},"station":{"sn":"SN1","name":"Hall"}}.</description>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="signal">
+		<item-type>Number</item-type>
+		<label>Signal Strength</label>
+		<description>RF signal strength between sensor and base station (0-3).</description>
+		<category>QualityOfService</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>SignalStrength</tag>
+		</tags>
+		<state readOnly="true" min="0" max="3" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="smoke-alarm">
+		<item-type>Switch</item-type>
+		<label>Smoke Alarm</label>
+		<description>Indicates whether the detector reports a smoke alarm.</description>
+		<category>Smoke</category>
+		<tags>
+			<tag>Alarm</tag>
+			<tag>Smoke</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="co-alarm">
+		<item-type>Switch</item-type>
+		<label>CO Alarm</label>
+		<description>Indicates whether the detector reports a carbon monoxide alarm.</description>
+		<category>Gas</category>
+		<tags>
+			<tag>Alarm</tag>
+			<tag>CO</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="co-ppm">
+		<item-type>Number:Dimensionless</item-type>
+		<label>CO Concentration</label>
+		<description>Measured carbon monoxide concentration.</description>
+		<category>Gas</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>CO</tag>
+		</tags>
+		<state readOnly="true" pattern="%.0f ppm"/>
+	</channel-type>
+
+	<channel-type id="heat-alarm">
+		<item-type>Switch</item-type>
+		<label>Heat Alarm</label>
+		<description>Indicates whether the detector reports a heat alarm.</description>
+		<category>Fire</category>
+		<tags>
+			<tag>Alarm</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="water-alarm">
+		<item-type>Switch</item-type>
+		<label>Water Leak Alarm</label>
+		<description>Indicates whether the detector reports a water leak.</description>
+		<category>Water</category>
+		<tags>
+			<tag>Alarm</tag>
+			<tag>Water</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="temperature">
+		<item-type>Number:Temperature</item-type>
+		<label>Temperature</label>
+		<description>Measured temperature.</description>
+		<category>Temperature</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>Temperature</tag>
+		</tags>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="humidity">
+		<item-type>Number:Dimensionless</item-type>
+		<label>Humidity</label>
+		<description>Measured relative humidity.</description>
+		<category>Humidity</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>Humidity</tag>
+		</tags>
+		<state readOnly="true" pattern="%.0f %%"/>
+	</channel-type>
+
+</thing:thing-descriptions>
