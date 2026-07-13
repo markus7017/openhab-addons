@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.xsense.internal.handler;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -30,13 +31,17 @@ import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.Station;
 import org.openhab.binding.xsense.internal.api.dto.XSenseApiDto.StationList;
 import org.openhab.binding.xsense.internal.config.XSenseAccountConfiguration;
 import org.openhab.binding.xsense.internal.config.XSenseBindingConfiguration;
+import org.openhab.binding.xsense.internal.discovery.XSenseCloudDiscoveryService;
 import org.openhab.core.i18n.LocaleProvider;
 import org.openhab.core.i18n.TranslationProvider;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
+import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.binding.BaseBridgeHandler;
+import org.openhab.core.thing.binding.ThingHandler;
+import org.openhab.core.thing.binding.ThingHandlerService;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.RefreshType;
 import org.osgi.framework.Bundle;
@@ -52,6 +57,13 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class XSenseAccountHandler extends BaseBridgeHandler {
+
+    /**
+     * Listener notified after each successful inventory refresh (used by the discovery service).
+     */
+    public interface CloudDataListener {
+        void onCloudDataChanged();
+    }
 
     /**
      * Immutable snapshot of the cloud inventory so that houses and stations are always consistent.
@@ -86,6 +98,7 @@ public class XSenseAccountHandler extends BaseBridgeHandler {
     private volatile boolean disposed;
     private volatile @Nullable ScheduledFuture<?> pollJob;
     private volatile @Nullable ScheduledFuture<?> reconnectJob;
+    private volatile @Nullable CloudDataListener cloudDataListener;
 
     // Latest inventory snapshot, replaced atomically after each poll
     private volatile Inventory inventory = Inventory.EMPTY;
@@ -146,6 +159,15 @@ public class XSenseAccountHandler extends BaseBridgeHandler {
         if (command instanceof RefreshType) {
             scheduler.execute(this::poll);
         }
+    }
+
+    @Override
+    public Collection<Class<? extends ThingHandlerService>> getServices() {
+        return List.of(XSenseCloudDiscoveryService.class);
+    }
+
+    public void setCloudDataListener(@Nullable CloudDataListener listener) {
+        cloudDataListener = listener;
     }
 
     /**
@@ -262,8 +284,8 @@ public class XSenseAccountHandler extends BaseBridgeHandler {
 
     /**
      * Fetches the current house/station inventory, replaces the snapshot atomically and notifies
-     * home handlers. On an authentication failure, stops polling and schedules a reconnect; other
-     * failures leave polling running for the next attempt.
+     * home handlers and the discovery service. On an authentication failure, stops polling and
+     * schedules a reconnect; other failures leave polling running for the next attempt.
      */
     private synchronized void poll() {
         if (disposed || !apiClient.isLoggedIn()) {
@@ -290,6 +312,11 @@ public class XSenseAccountHandler extends BaseBridgeHandler {
             inventory = new Inventory(List.copyOf(newHouses), Map.copyOf(newStations));
             retryDelay = RETRY_DELAY_MIN_SEC;
             updateStatus(ThingStatus.ONLINE);
+            notifyHomeHandlers();
+            CloudDataListener listener = cloudDataListener;
+            if (listener != null) {
+                listener.onCloudDataChanged();
+            }
         } catch (XSenseApiException e) {
             logger.debug("{}: inventory poll failed: {}", logId, e.getMessage());
             if (e.isAuthenticationFailure()) {
@@ -303,6 +330,30 @@ public class XSenseAccountHandler extends BaseBridgeHandler {
                         "@text/offline.communication-error [\"" + e.getMessage() + "\"]");
             }
         }
+    }
+
+    /**
+     * Pushes the latest inventory snapshot to every home child handler, matched by houseId.
+     */
+    private void notifyHomeHandlers() {
+        Inventory snapshot = inventory;
+        for (Thing thing : getThing().getThings()) {
+            ThingHandler handler = thing.getHandler();
+            if (handler instanceof XSenseHomeHandler homeHandler) {
+                String houseId = homeHandler.getHouseId();
+                homeHandler.updateFromInventory(findHouse(snapshot.houses, houseId),
+                        snapshot.stationsByHouseId.get(houseId), getAccountId());
+            }
+        }
+    }
+
+    private static @Nullable House findHouse(List<House> houses, String houseId) {
+        for (House house : houses) {
+            if (houseId.equals(house.houseId)) {
+                return house;
+            }
+        }
+        return null;
     }
 
     /**

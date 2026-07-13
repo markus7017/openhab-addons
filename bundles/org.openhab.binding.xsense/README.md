@@ -39,6 +39,17 @@ Account things inherit this value unless they configure their own interval.
 | xsense:water       | Thing  | Water leak detector (e.g. SWS51, SWS54)            |
 | xsense:thermohygro | Thing  | Thermo-hygrometer (e.g. STH51, STH0A, STH0B)       |
 
+## Discovery
+
+Discovery imports the whole account tree progressively, starting automatically as soon as the `account` bridge goes online (or manually via a scan):
+
+1. Once the `account` bridge is online, all homes of the account appear in the inbox.
+1. Once a `home` thing has been added, its base stations appear.
+1. Once a `station` thing has been added, its attached sensors appear.
+
+Each inventory poll re-publishes all levels whose parent thing already exists, so after approving a thing the next level appears within seconds without a manual rescan.
+Unsupported device models are logged on debug level, please report them so support can be added.
+
 ## Thing Configuration
 
 ### `account` Bridge Configuration
@@ -71,7 +82,7 @@ All sensor things (`smoke`, `co`, `smokeco`, `heat`, `water`, `thermohygro`) sha
 
 ### Full Example (`.things` file)
 
-Things can be created through auto-discovery (see below, added in a later change) or manually via a `.things` file.
+Things can be created through auto-discovery (see below) or manually via a `.things` file.
 The `deviceSn`/`stationSn`/`houseId` values are taken from the X-Sense app or from a discovered thing's properties.
 
 ```java
