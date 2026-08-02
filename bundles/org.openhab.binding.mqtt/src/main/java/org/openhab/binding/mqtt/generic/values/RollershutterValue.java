@@ -166,45 +166,31 @@ public class RollershutterValue extends Value {
 
     @Override
     public String getMQTTpublishValue(Command command, @Nullable String pattern) {
-        return getMQTTpublishValue(command, transformExtentsToString);
-    }
-
-    public String getMQTTpublishValue(Command command, boolean transformExtentsToString) {
         final String upCommandString = this.upCommandString;
         final String downCommandString = this.downCommandString;
         final String stopCommandString = this.stopCommandString;
+        String value;
         if (command == UpDownType.UP) {
-            if (upCommandString != null) {
-                return upCommandString;
-            } else {
-                return (inverted ? INVERTED_UP_VALUE : UP_VALUE);
-            }
+            value = upCommandString != null ? upCommandString : (inverted ? INVERTED_UP_VALUE : UP_VALUE);
         } else if (command == UpDownType.DOWN) {
-            if (downCommandString != null) {
-                return downCommandString;
-            } else {
-                return (inverted ? INVERTED_DOWN_VALUE : DOWN_VALUE);
-            }
+            value = downCommandString != null ? downCommandString : (inverted ? INVERTED_DOWN_VALUE : DOWN_VALUE);
         } else if (command == StopMoveType.STOP) {
-            if (stopCommandString != null) {
-                return stopCommandString;
-            } else {
-                return ((StopMoveType) command).name();
-            }
+            value = stopCommandString != null ? stopCommandString : ((StopMoveType) command).name();
         } else if (command instanceof PercentType percentage) {
             if (transformExtentsToString && command.equals(PercentType.HUNDRED) && downCommandString != null) {
-                return downCommandString;
+                value = downCommandString;
             } else if (transformExtentsToString && command.equals(PercentType.ZERO) && upCommandString != null) {
-                return upCommandString;
+                value = upCommandString;
             } else {
-                int value = percentage.intValue();
+                int intValue = percentage.intValue();
                 if (inverted) {
-                    value = 100 - value;
+                    intValue = 100 - intValue;
                 }
-                return String.valueOf(value);
+                value = String.valueOf(intValue);
             }
         } else {
             throw new IllegalArgumentException("Invalid command type for Rollershutter item");
         }
+        return new StringType(value).format(pattern != null ? pattern : "%s");
     }
 }

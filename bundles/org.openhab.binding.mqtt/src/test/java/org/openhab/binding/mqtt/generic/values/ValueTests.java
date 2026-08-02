@@ -310,6 +310,15 @@ public class ValueTests {
     }
 
     @Test
+    public void rollershutterFormatBeforePublish() {
+        RollershutterValue v = new RollershutterValue(null, null, "fancyStop");
+        assertThat(v.getMQTTpublishValue(UpDownType.UP, "pos,%s"), is("pos,0"));
+        assertThat(v.getMQTTpublishValue(UpDownType.DOWN, "pos,%s"), is("pos,100"));
+        assertThat(v.getMQTTpublishValue(new PercentType(30), "pos,%s"), is("pos,30"));
+        assertThat(v.getMQTTpublishValue(StopMoveType.STOP, "pos,%s"), is("pos,fancyStop"));
+    }
+
+    @Test
     public void percentCalc() {
         PercentageValue v = new PercentageValue(new BigDecimal(10.0), new BigDecimal(110.0), new BigDecimal(1.0), null,
                 null, null);
