@@ -832,6 +832,10 @@ public class Shelly1ApiJsonDTO {
         public Boolean calibrated;
         public ArrayList<ShellyThermnostat> thermostats;
 
+        // Shelly Wall Display
+        public @Nullable Boolean relayInThermostat;
+        public @Nullable Boolean sensorInThermostat;
+
         public ShellySettingsUpdate update = new ShellySettingsUpdate();
         @SerializedName("ram_total")
         public Long ramTotal;
@@ -1184,6 +1188,7 @@ public class Shelly1ApiJsonDTO {
         public ShellySensorLux lux;
         public ShellySensorAccel accel;
         public ShellySensorBat bat;
+        public ShellySensorBat bat1; // 2nd power source, e.g. devicepower:1
         @SerializedName("sensor")
         public ShellySensorState sensor;
         public Boolean smoke; // SHelly Smoke

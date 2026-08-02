@@ -114,6 +114,14 @@ public class ShellyComponents {
             thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_CALIBRATED,
                     getOnOff(profile.settings.calibrated));
         }
+        if (status.relayInThermostat != null) {
+            thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_RELAY_IN_THERMOSTAT,
+                    getOnOff(status.relayInThermostat));
+        }
+        if (status.sensorInThermostat != null) {
+            thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_SENSOR_IN_THERMOSTAT,
+                    getOnOff(status.sensorInThermostat));
+        }
 
         return false; // device status never triggers update
     }
@@ -777,6 +785,23 @@ public class ShellyComponents {
                 boolean isLow = batteryLowFlag != null ? batteryLowFlag.booleanValue()
                         : (sdata.bat.value != null && !charger && getDouble(sdata.bat.value) < lowBattery);
                 boolean changed = thingHandler.updateChannel(CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LOW,
+                        getOnOff(isLow));
+                updated |= changed;
+                if (changed && isLow) {
+                    thingHandler.postEvent(ALARM_TYPE_LOW_BATTERY, false);
+                }
+            }
+            if (sdata.bat1 != null) {
+                if (sdata.bat1.value != null) {
+                    updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_BAT_LEVEL,
+                            toQuantityType(getDouble(sdata.bat1.value), 0, Units.PERCENT));
+                }
+
+                int lowBattery = thingHandler.getThingConfig().getLowBattery();
+                Boolean batteryLowFlag = sdata.bat1.batteryLow;
+                boolean isLow = batteryLowFlag != null ? batteryLowFlag.booleanValue()
+                        : (sdata.bat1.value != null && getDouble(sdata.bat1.value) < lowBattery);
+                boolean changed = thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_BAT_LOW,
                         getOnOff(isLow));
                 updated |= changed;
                 if (changed && isLow) {

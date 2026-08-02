@@ -197,6 +197,10 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_UPDATE, "updateAvailable", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_CALIBRATED, "calibrated", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_FIRMWARE, "deviceFirmware", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_RELAY_IN_THERMOSTAT, "relayInThermostat",
+                        ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_SENSOR_IN_THERMOSTAT, "sensorInThermostat",
+                        ITEMT_SWITCH))
 
                 // Relay
                 .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_OUTPUT_NAME, "outputName", ITEMT_STRING))
@@ -355,6 +359,10 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_BAT, CHANNEL_SENSOR_BAT_LEVEL, "system:battery-level", ITEMT_PERCENT))
                 .add(new ShellyChannel(m, CHGR_BAT, CHANNEL_SENSOR_BAT_LOW, "system:low-battery", ITEMT_SWITCH))
 
+                // Battery of an attached external sensor (Gen2 devicepower:1)
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_BAT_LEVEL, "system:battery-level", ITEMT_PERCENT))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_BAT_LOW, "system:low-battery", ITEMT_SWITCH))
+
                 // TRV
                 .add(new ShellyChannel(m, CHGR_CONTROL, CHANNEL_CONTROL_POSITION, "sensorPosition", ITEMT_DIMMER))
                 .add(new ShellyChannel(m, CHGR_CONTROL, CHANNEL_CONTROL_MODE, "controlMode", ITEMT_STRING))
@@ -451,6 +459,8 @@ public class ShellyChannelDefinitions {
         addChannel(thing, add, profile.settings.ledPowerDisable != null, CHGR_DEVST, CHANNEL_LED_POWER_DISABLE);
         addChannel(thing, add, profile.settings.ledStatusDisable != null, CHGR_DEVST, CHANNEL_LED_STATUS_DISABLE); // WiFi
         addChannel(thing, add, profile.settings.calibrated != null, CHGR_DEVST, CHANNEL_DEVST_CALIBRATED);
+        addChannel(thing, add, status.relayInThermostat != null, CHGR_DEVST, CHANNEL_DEVST_RELAY_IN_THERMOSTAT);
+        addChannel(thing, add, status.sensorInThermostat != null, CHGR_DEVST, CHANNEL_DEVST_SENSOR_IN_THERMOSTAT);
 
         if (!profile.isBlu) { // currently not supported for BLU devices
             addChannel(thing, add, true, CHGR_DEVST, CHANNEL_DEVST_UPDATE);
@@ -799,6 +809,9 @@ public class ShellyChannelDefinitions {
         boolean hasBatteryValue = sdata.bat != null && sdata.bat.value != null;
         addChannel(thing, newChannels, ws90 || hasBatteryValue, CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LEVEL);
         addChannel(thing, newChannels, ws90 || hasBatteryValue, CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LOW);
+        boolean hasExtBatteryValue = sdata.bat1 != null && sdata.bat1.value != null;
+        addChannel(thing, newChannels, hasExtBatteryValue, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_BAT_LEVEL);
+        addChannel(thing, newChannels, hasExtBatteryValue, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_BAT_LOW);
 
         addChannel(thing, newChannels, sdata.sensorError != null || (profile.isFlood && profile.isGen2),
                 CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ERROR);

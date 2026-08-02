@@ -960,6 +960,13 @@ public class Shelly2ApiJsonDTO {
 
             @SerializedName("devicepower:0")
             public Shelly2DeviceStatusPower devicepower0;
+            @SerializedName("devicepower:1")
+            public @Nullable Shelly2DeviceStatusPower devicepower1;
+
+            @SerializedName("relay_in_thermostat")
+            public @Nullable Boolean relayInThermostat;
+            @SerializedName("sensor_in_thermostat")
+            public @Nullable Boolean sensorInThermostat;
         }
 
         public class Shelly2DeviceStatusSys {

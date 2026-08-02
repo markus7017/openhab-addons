@@ -626,7 +626,15 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         if (flood0 != null) {
             updateFloodStatus(sensorData, flood0);
         }
-        updateBatteryStatus(sensorData, result.devicepower0);
+        updateBatteryStatus(0, sensorData, result.devicepower0);
+        updateBatteryStatus(1, sensorData, result.devicepower1);
+        // NotifyStatus only carries the components it reports, don't wipe the last known value
+        if (result.relayInThermostat != null) {
+            status.relayInThermostat = result.relayInThermostat;
+        }
+        if (result.sensorInThermostat != null) {
+            status.sensorInThermostat = result.sensorInThermostat;
+        }
         updateAddonStatus(status, result);
         updated |= ShellyComponents.updateSensors(getThing(), status);
         return updated;
@@ -1521,19 +1529,28 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         profile.reportHoldoff = reportHoldoff;
     }
 
-    protected void updateBatteryStatus(ShellyStatusSensor sdata, @Nullable Shelly2DeviceStatusPower value) {
+    protected void updateBatteryStatus(int index, ShellyStatusSensor sdata, @Nullable Shelly2DeviceStatusPower value) {
         if (value == null) {
             return;
         }
-        if (sdata.bat == null) {
-            sdata.bat = new ShellySensorBat();
+        ShellySensorBat bat;
+        if (index == 0) {
+            if (sdata.bat == null) {
+                sdata.bat = new ShellySensorBat();
+            }
+            bat = sdata.bat;
+        } else {
+            if (sdata.bat1 == null) {
+                sdata.bat1 = new ShellySensorBat();
+            }
+            bat = sdata.bat1;
         }
 
         if (value.battery != null) {
-            sdata.bat.voltage = getDouble(value.battery.volt);
-            sdata.bat.value = getDouble(value.battery.percent);
+            bat.voltage = getDouble(value.battery.volt);
+            bat.value = getDouble(value.battery.percent);
         }
-        if (value.external != null && value.external.present != null) {
+        if (index == 0 && value.external != null && value.external.present != null) {
             sdata.charger = value.external.present;
         }
     }
