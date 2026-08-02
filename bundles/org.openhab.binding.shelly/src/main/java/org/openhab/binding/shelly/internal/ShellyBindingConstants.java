@@ -215,6 +215,10 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_MEDIA_PLAY_MEDIA_ID = "playMediaId";
     public static final String CHANNEL_MEDIA_PLAY_RADIO_FAV_ID = "playRadioFavId";
 
+    // Wall Display Thermostat reuses the "control" group and CHANNEL_CONTROL_SETTEMP ("targetTemp") from the TRV
+    // channel set; current_C/output are covered by the existing sensors#temperature / relay#output channels.
+    public static final String CHANNEL_THERMOSTAT_ENABLE = "thermostatEnable";
+
     public static final String CHANNEL_GROUP_LIGHT_CONTROL = "control";
     public static final String CHANNEL_LIGHT_COLOR_MODE = "mode";
     public static final String CHANNEL_LIGHT_POWER = "power";

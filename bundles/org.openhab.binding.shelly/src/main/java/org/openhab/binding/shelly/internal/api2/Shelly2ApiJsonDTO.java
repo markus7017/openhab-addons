@@ -24,6 +24,7 @@ import org.openhab.binding.shelly.internal.api2.ShellyBluJsonDTO.Shelly2NotifyBl
 import org.openhab.binding.shelly.internal.api2.dto.ShellyCoverJsonDTO.Shelly2CoverStatus;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyCoverJsonDTO.Shelly2DevConfigCover;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyMediaJsonDTO.Shelly2DeviceStatusMedia;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyThermostatJsonDTO.Shelly2DeviceStatusThermostat;
 import org.openhab.binding.shelly.internal.util.ShellyUtils;
 
 import com.google.gson.Gson;
@@ -109,6 +110,7 @@ public class Shelly2ApiJsonDTO {
     public static final String SHELLYRPC_METHOD_MEDIA_PLAY = "Media.MediaPlayer.Play";
     public static final String SHELLYRPC_METHOD_MEDIA_SETVOLUME = "Media.SetVolume";
     public static final String SHELLYRPC_METHOD_MEDIA_RADIO_PLAYFAVOURITE = "Media.Radio.PlayFavourite";
+    public static final String SHELLYRPC_METHOD_THERMOSTAT_SETCONFIG = "Thermostat.SetConfig";
 
     public static final String SHELLYRPC_METHOD_NOTIFYSTATUS = "NotifyStatus"; // inbound status
     public static final String SHELLYRPC_METHOD_NOTIFYFULLSTATUS = "NotifyFullStatus"; // inbound status from bat device
@@ -979,6 +981,9 @@ public class Shelly2ApiJsonDTO {
             // Media is a singleton (Media.GetStatus takes no id), some firmware reports it indexed
             @SerializedName(value = "media", alternate = { "media:0" })
             public @Nullable Shelly2DeviceStatusMedia media;
+
+            @SerializedName("thermostat:0")
+            public @Nullable Shelly2DeviceStatusThermostat thermostat0;
         }
 
         public class Shelly2DeviceStatusSys {
@@ -1147,6 +1152,10 @@ public class Shelly2ApiJsonDTO {
         public @Nullable String alarmMode;
         @SerializedName("report_holdoff")
         public @Nullable Integer reportHoldoff;
+
+        // Thermostat.SetConfig
+        @SerializedName("target_C")
+        public @Nullable Double targetC;
     }
 
     public static class Shelly2RpcRequest {
