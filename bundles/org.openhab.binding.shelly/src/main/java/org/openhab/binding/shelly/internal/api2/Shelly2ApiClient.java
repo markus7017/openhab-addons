@@ -635,6 +635,9 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         if (result.sensorInThermostat != null) {
             status.sensorInThermostat = result.sensorInThermostat;
         }
+        if (result.media != null) {
+            status.media = result.media;
+        }
         updateAddonStatus(status, result);
         updated |= ShellyComponents.updateSensors(getThing(), status);
         return updated;

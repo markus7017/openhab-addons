@@ -87,6 +87,7 @@ public class ShellyChannelDefinitions {
     public static final String ITEMT_TIME = "Number:Time"; // Seconds
     public static final String ITEMT_PERCENT = "Number:Dimensionless"; // 0–100% (battery, humidity)
     public static final String ITEMT_PRESSURE = "Number:Pressure";
+    public static final String ITEMT_PLAYER = "Player"; // Media playback control (PLAY/PAUSE/NEXT/PREVIOUS)
 
     // shortcuts to avoid line breaks (make code more readable)
     private static final String CHGR_DEVST = CHANNEL_GROUP_DEV_STATUS;
@@ -101,6 +102,7 @@ public class ShellyChannelDefinitions {
     private static final String CHGR_SENSOR = CHANNEL_GROUP_SENSOR;
     private static final String CHGR_CONTROL = CHANNEL_GROUP_CONTROL;
     private static final String CHGR_BAT = CHANNEL_GROUP_BATTERY;
+    private static final String CHGR_MEDIA = CHANNEL_GROUP_MEDIA;
 
     public static final String PREFIX_GROUP = "group-type." + BINDING_ID + ".";
     public static final String PREFIX_CHANNEL = "channel-type." + BINDING_ID + ".";
@@ -363,6 +365,16 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_BAT_LEVEL, "system:battery-level", ITEMT_PERCENT))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_BAT_LOW, "system:low-battery", ITEMT_SWITCH))
 
+                // Wall Display Media Player
+                .add(new ShellyChannel(m, CHGR_MEDIA, CHANNEL_MEDIA_CONTROL, "mediaControl", ITEMT_PLAYER))
+                .add(new ShellyChannel(m, CHGR_MEDIA, CHANNEL_MEDIA_VOLUME, "mediaVolume", ITEMT_DIMMER))
+                .add(new ShellyChannel(m, CHGR_MEDIA, CHANNEL_MEDIA_TITLE, "mediaTitle", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_MEDIA, CHANNEL_MEDIA_ARTIST, "mediaArtist", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_MEDIA, CHANNEL_MEDIA_ALBUM, "mediaAlbum", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_MEDIA, CHANNEL_MEDIA_TYPE, "mediaContentType", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_MEDIA, CHANNEL_MEDIA_PLAY_MEDIA_ID, "playMediaId", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_MEDIA, CHANNEL_MEDIA_PLAY_RADIO_FAV_ID, "playRadioFavId", ITEMT_NUMBER))
+
                 // TRV
                 .add(new ShellyChannel(m, CHGR_CONTROL, CHANNEL_CONTROL_POSITION, "sensorPosition", ITEMT_DIMMER))
                 .add(new ShellyChannel(m, CHGR_CONTROL, CHANNEL_CONTROL_MODE, "controlMode", ITEMT_STRING))
@@ -465,6 +477,24 @@ public class ShellyChannelDefinitions {
         if (!profile.isBlu) { // currently not supported for BLU devices
             addChannel(thing, add, true, CHGR_DEVST, CHANNEL_DEVST_UPDATE);
         }
+        return add;
+    }
+
+    /**
+     * Auto-create the Wall Display Media Player channels when the device reports a media:0 component
+     */
+    public static Map<String, Channel> createMediaChannels(final Thing thing, final ShellyDeviceProfile profile,
+            final ShellySettingsStatus status) {
+        Map<String, Channel> add = new LinkedHashMap<>();
+        boolean hasMedia = status.media != null;
+        addChannel(thing, add, hasMedia, CHGR_MEDIA, CHANNEL_MEDIA_CONTROL);
+        addChannel(thing, add, hasMedia, CHGR_MEDIA, CHANNEL_MEDIA_VOLUME);
+        addChannel(thing, add, hasMedia, CHGR_MEDIA, CHANNEL_MEDIA_TITLE);
+        addChannel(thing, add, hasMedia, CHGR_MEDIA, CHANNEL_MEDIA_ARTIST);
+        addChannel(thing, add, hasMedia, CHGR_MEDIA, CHANNEL_MEDIA_ALBUM);
+        addChannel(thing, add, hasMedia, CHGR_MEDIA, CHANNEL_MEDIA_TYPE);
+        addChannel(thing, add, hasMedia, CHGR_MEDIA, CHANNEL_MEDIA_PLAY_MEDIA_ID);
+        addChannel(thing, add, hasMedia, CHGR_MEDIA, CHANNEL_MEDIA_PLAY_RADIO_FAV_ID);
         return add;
     }
 

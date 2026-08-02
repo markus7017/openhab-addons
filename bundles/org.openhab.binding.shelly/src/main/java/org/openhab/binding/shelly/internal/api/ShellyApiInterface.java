@@ -132,4 +132,18 @@ public interface ShellyApiInterface extends ShellyDiscoveryInterface {
     void postEvent(String device, String index, String event, Map<String, String> parms) throws ShellyApiException;
 
     void startScan();
+
+    void mediaPlayOrPause() throws ShellyApiException;
+
+    void mediaStop() throws ShellyApiException;
+
+    void mediaNext() throws ShellyApiException;
+
+    void mediaPrevious() throws ShellyApiException;
+
+    void mediaSetVolume(int volume) throws ShellyApiException;
+
+    void mediaPlayMedia(int id) throws ShellyApiException;
+
+    void mediaPlayRadioFavourite(int id) throws ShellyApiException;
 }

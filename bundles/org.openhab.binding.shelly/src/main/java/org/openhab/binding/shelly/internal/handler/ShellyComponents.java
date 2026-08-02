@@ -18,6 +18,7 @@ import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.measure.MetricPrefix;
 import javax.measure.Unit;
@@ -49,12 +50,18 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSe
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyExtVoltage;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyExtVoltage.ShellyShortVoltage;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyThermnostat;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyMediaJsonDTO.Shelly2DeviceStatusMedia;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyMediaJsonDTO.Shelly2DeviceStatusMedia.Shelly2DeviceStatusMediaPlayback;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyMediaJsonDTO.Shelly2DeviceStatusMedia.Shelly2DeviceStatusMediaPlayback.Shelly2DeviceStatusMediaMeta;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 import org.openhab.core.library.types.OnOffType;
+import org.openhab.core.library.types.PercentType;
+import org.openhab.core.library.types.PlayPauseType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.ImperialUnits;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
+import org.openhab.core.thing.Channel;
 import org.openhab.core.types.State;
 import org.openhab.core.types.UnDefType;
 
@@ -81,6 +88,13 @@ public class ShellyComponents {
         if (!thingHandler.areChannelsCreated()) {
             thingHandler.updateChannelDefinitions(ShellyChannelDefinitions.createDeviceChannels(thingHandler.getThing(),
                     thingHandler.getProfile(), status));
+        }
+
+        // Media can be enabled at any time, so create the channels as soon as the component shows up
+        Map<String, Channel> dynChannels = ShellyChannelDefinitions.createMediaChannels(thingHandler.getThing(), profile,
+                status);
+        if (!dynChannels.isEmpty()) {
+            thingHandler.updateThingChannels(Map.of(), dynChannels);
         }
 
         thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_FIRMWARE, getStringType(profile.fwVersion));
@@ -121,6 +135,37 @@ public class ShellyComponents {
         if (status.sensorInThermostat != null) {
             thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_SENSOR_IN_THERMOSTAT,
                     getOnOff(status.sensorInThermostat));
+        }
+
+        Shelly2DeviceStatusMedia media = status.media;
+        Shelly2DeviceStatusMediaPlayback playback = media != null ? media.playback : null;
+        if (playback != null) {
+            thingHandler.updateChannel(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_CONTROL,
+                    getBool(playback.enable) ? PlayPauseType.PLAY : PlayPauseType.PAUSE);
+            Integer volume = playback.volume;
+            if (volume != null) {
+                // device reports the volume as 0..10
+                int percent = Math.min(Math.max(volume * 10, 0), 100);
+                thingHandler.updateChannel(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_VOLUME, new PercentType(percent));
+            }
+            if (playback.mediaType != null) {
+                thingHandler.updateChannel(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_TYPE, getStringType(playback.mediaType));
+            }
+            Shelly2DeviceStatusMediaMeta mediaMeta = playback.mediaMeta;
+            if (mediaMeta != null) {
+                if (mediaMeta.title != null) {
+                    thingHandler.updateChannel(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_TITLE,
+                            getStringType(mediaMeta.title));
+                }
+                if (mediaMeta.artist != null) {
+                    thingHandler.updateChannel(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_ARTIST,
+                            getStringType(mediaMeta.artist));
+                }
+                if (mediaMeta.album != null) {
+                    thingHandler.updateChannel(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_ALBUM,
+                            getStringType(mediaMeta.album));
+                }
+            }
         }
 
         return false; // device status never triggers update

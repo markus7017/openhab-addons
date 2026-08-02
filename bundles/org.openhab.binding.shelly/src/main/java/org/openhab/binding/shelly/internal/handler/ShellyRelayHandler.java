@@ -30,14 +30,17 @@ import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.IncreaseDecreaseType;
+import org.openhab.core.library.types.NextPreviousType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.PercentType;
+import org.openhab.core.library.types.PlayPauseType;
 import org.openhab.core.library.types.StopMoveType;
 import org.openhab.core.library.types.UpDownType;
 import org.openhab.core.library.unit.Units;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.types.Command;
+import org.openhab.core.types.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,6 +137,46 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
             case CHANNEL_TIMER_AUTOOFF:
                 logger.debug("{}: Set Auto-OFF timer to {}", thingName, command);
                 api.setAutoTimer(rIndex, SHELLY_TIMER_AUTOOFF, getNumber(command).doubleValue());
+                break;
+
+            case CHANNEL_MEDIA_CONTROL:
+                logger.debug("{}: Media control command {}", thingName, command);
+                if (command == PlayPauseType.PLAY || command == PlayPauseType.PAUSE) {
+                    api.mediaPlayOrPause();
+                } else if (command == NextPreviousType.NEXT) {
+                    api.mediaNext();
+                } else if (command == NextPreviousType.PREVIOUS) {
+                    api.mediaPrevious();
+                }
+                break;
+            case CHANNEL_MEDIA_VOLUME:
+                int volume = -1;
+                if (command instanceof PercentType percentCommand) {
+                    volume = percentCommand.intValue();
+                } else if (command instanceof OnOffType onOffCommand) {
+                    volume = onOffCommand == OnOffType.ON ? 100 : 0;
+                } else if (command instanceof IncreaseDecreaseType) {
+                    State current = getChannelValue(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_VOLUME);
+                    int currentVolume = current instanceof PercentType currentPercent ? currentPercent.intValue() : 0;
+                    volume = command == IncreaseDecreaseType.INCREASE ? Math.min(currentVolume + DIM_STEPSIZE, 100)
+                            : Math.max(currentVolume - DIM_STEPSIZE, 0);
+                }
+                if (volume >= 0) {
+                    logger.debug("{}: Set media volume to {}", thingName, volume);
+                    api.mediaSetVolume((int) Math.round(volume / 10.0));
+                }
+                break;
+            case CHANNEL_MEDIA_PLAY_MEDIA_ID:
+                if (command instanceof Number numberCommand) {
+                    logger.debug("{}: Play media id {}", thingName, command);
+                    api.mediaPlayMedia(numberCommand.intValue());
+                }
+                break;
+            case CHANNEL_MEDIA_PLAY_RADIO_FAV_ID:
+                if (command instanceof Number numberCommand) {
+                    logger.debug("{}: Play radio favorite id {}", thingName, command);
+                    api.mediaPlayRadioFavourite(numberCommand.intValue());
+                }
                 break;
 
         }
