@@ -129,6 +129,11 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
     private String lastWakeupReason = "";
     private volatile boolean updateMarkerSet;
 
+    // TRV target temperature queued while the device is sleeping, applied once it wakes up again
+    private static final long TRV_PENDING_COMMAND_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(30);
+    private volatile @Nullable Double pendingTrvTargetTemp;
+    private volatile long pendingTrvTargetTempDeadline;
+
     // Scheduler
     private volatile double watchdog = now();
     protected int scheduledUpdates = 0;
@@ -265,6 +270,27 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         }
 
         return retry;
+    }
+
+    /**
+     * Apply a target temperature that was queued while the TRV was asleep/unreachable, now that it responded.
+     */
+    private void applyPendingTrvTargetTemp() {
+        Double temp = pendingTrvTargetTemp;
+        if (temp == null) {
+            return;
+        }
+        pendingTrvTargetTemp = null;
+        if (System.currentTimeMillis() > pendingTrvTargetTempDeadline) {
+            logger.debug("{}: Discarding queued target temperature {}, expired", thingName, temp);
+            return;
+        }
+        try {
+            logger.debug("{}: Applying queued target temperature {}", thingName, temp);
+            api.setValveTemperature(0, temp);
+        } catch (ShellyApiException e) {
+            logger.debug("{}: Failed to apply queued target temperature {}: {}", thingName, temp, e.toString());
+        }
     }
 
     @Override
@@ -601,6 +627,14 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
             ShellyApiResult res = e.getApiResult();
             if (res.isNotCalibrtated()) {
                 logger.warn("{}: {}", thingName, messages.get("roller.calibrating"));
+            } else if (profile.isTRV && CHANNEL_CONTROL_SETTEMP.equals(channel)
+                    && (e.isConnectionError() || e.isTimeout())) {
+                // TRV is asleep and unreachable via HTTP - queue the command, applied on the next successful poll
+                double temp = getNumber(command).doubleValue();
+                pendingTrvTargetTemp = temp;
+                pendingTrvTargetTempDeadline = System.currentTimeMillis() + TRV_PENDING_COMMAND_TIMEOUT_MS;
+                logger.debug("{}: Device unreachable, queuing target temperature {} for next wake-up", thingName, temp);
+                return;
             } else if (e.isTimeout() && profile.isSensor) {
                 logger.debug(
                         "{}: Command {} for channel {} timed out, device is likely a sleeping battery-powered sensor: {}",
@@ -644,6 +678,9 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 profile = getProfile(refreshSettings || restarted);
                 profile.status = status;
                 profile.updateFromStatus(status);
+                if (profile.isTRV) {
+                    applyPendingTrvTargetTemp();
+                }
                 if (restarted) {
                     logger.debug("{}: Device restart #{} detected", thingName, stats.restarts);
                     stats.restarts.incrementAndGet();
