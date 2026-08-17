@@ -298,6 +298,16 @@ public class ShellyDeviceProfile {
         return 0;
     }
 
+    /**
+     * Every relay has its own Input component (1:1), but some Gen2+ devices don't report one for every relay
+     * (e.g. a disabled/unused input) - floor the count so each relay still gets its own input-derived channels
+     * (lastEvent, eventCount, ...) instead of the higher-indexed relay(s) losing them entirely, see #21205.
+     */
+    public static int resolveNumInputs(int numInputsFromDevice, boolean hasRelays, boolean isRoller, boolean isDimmer,
+            int numRelays) {
+        return hasRelays && !isRoller && !isDimmer && numInputsFromDevice < numRelays ? numRelays : numInputsFromDevice;
+    }
+
     public void updateFromStatus(ShellySettingsStatus status) {
         if (hasRelays) {
             // Dimmer-2 doesn't report inputs under /settings, only on /status, we need to update that info after init

@@ -18,13 +18,15 @@ import java.util.ArrayList;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.jupiter.api.Test;
+import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsEMeter;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2DeviceStatusEmData;
 
 /**
  * Covers em1data:N (single-phase clamp) total/returned-energy mapping, i.e. #18166 (Pro EM-50 / EM Mini lifetime
- * totals via EM1Data.GetStatus) and the shared returned-energy path (#20959).
+ * totals via EM1Data.GetStatus) and the shared returned-energy path (#20959), plus the relay/input count
+ * reconciliation in {@link ShellyDeviceProfile#resolveNumInputs} (#21205).
  *
  * @author Markus Michels - Initial contribution
  */
@@ -106,5 +108,25 @@ public class Shelly2ApiClientTest {
         emData.totalActiveEnergy = 10.0;
 
         assertDoesNotThrow(() -> Shelly2ApiClient.applyEm1Data(status, 5, emData));
+    }
+
+    @Test
+    void resolveNumInputsFloorsToRelayCountWhenDeviceUndercounts() {
+        // 2PM with one relay's Input component missing from GetConfig (e.g. disabled) must not lose that
+        // relay's lastEvent/eventCount channels just because the device only reported 1 Input component
+        assertEquals(2, ShellyDeviceProfile.resolveNumInputs(1, true, false, false, 2));
+    }
+
+    @Test
+    void resolveNumInputsKeepsDeviceCountWhenAlreadySufficient() {
+        assertEquals(2, ShellyDeviceProfile.resolveNumInputs(2, true, false, false, 2));
+    }
+
+    @Test
+    void resolveNumInputsIgnoresRollerAndDimmerDevices() {
+        // Roller: 2 inputs map to 1 combined roller control, not 1:1 per relay - never floor
+        assertEquals(0, ShellyDeviceProfile.resolveNumInputs(0, true, true, false, 2));
+        // Dimmer: up to 2 inputs control a single light, not 1:1 per relay - never floor
+        assertEquals(1, ShellyDeviceProfile.resolveNumInputs(1, true, false, true, 2));
     }
 }
