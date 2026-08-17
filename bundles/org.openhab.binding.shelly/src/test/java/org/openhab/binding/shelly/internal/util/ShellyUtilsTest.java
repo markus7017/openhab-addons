@@ -14,8 +14,6 @@ package org.openhab.binding.shelly.internal.util;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.ShellyDevices.*;
@@ -23,7 +21,6 @@ import static org.openhab.binding.shelly.internal.ShellyDevices.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.stream.Stream;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -33,6 +30,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.core.library.types.DateTimeType;
+import org.openhab.core.types.State;
+import org.openhab.core.types.UnDefType;
 
 /**
  * Tests for {@link ShellyUtils}.
@@ -44,7 +43,7 @@ public class ShellyUtilsTest {
     @ParameterizedTest
     @MethodSource("provideTestCasesForGetTimestamp")
     void getTimestamp(String zone, long timestamp, Instant expectedInstant) {
-        DateTimeType actual = ShellyUtils.getTimestamp(zone, timestamp);
+        State actual = ShellyUtils.getTimestamp(zone, timestamp);
         DateTimeType expected = new DateTimeType(expectedInstant);
         assertThat(actual, is(equalTo(expected)));
     }
@@ -59,14 +58,10 @@ public class ShellyUtilsTest {
     }
 
     @Test
-    void getTimestampInvalidZoneFallsBackToNow() {
-        Instant before = Instant.now().truncatedTo(ChronoUnit.SECONDS);
-        DateTimeType actual = ShellyUtils.getTimestamp("_invalid", 123);
-        Instant actualInstant = actual.getInstant();
-        Instant after = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+    void getTimestampInvalidZoneReturnsUndef() {
+        State actual = ShellyUtils.getTimestamp("_invalid", 123);
 
-        assertThat(actualInstant, allOf(greaterThanOrEqualTo(before), lessThanOrEqualTo(after)));
-        assertThat(actualInstant.getNano(), is(0));
+        assertThat(actual, is(equalTo(UnDefType.UNDEF)));
     }
 
     @Test

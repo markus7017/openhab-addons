@@ -319,15 +319,15 @@ public class ShellyUtils {
         return new DateTimeType(Instant.now().truncatedTo(ChronoUnit.SECONDS));
     }
 
-    public static DateTimeType getTimestamp(String zone, long timestamp) {
+    public static State getTimestamp(String zone, long timestamp) {
         try {
             ZoneId zoneId = zone.isEmpty() ? ZoneId.systemDefault() : ZoneId.of(zone);
             Instant instant = Instant.ofEpochSecond(timestamp);
             int delta = zoneId.getRules().getOffset(instant).getTotalSeconds();
             return new DateTimeType(Instant.ofEpochSecond(timestamp - delta));
         } catch (DateTimeException e) {
-            // Unable to convert device's timezone, use system one
-            return getTimestamp();
+            // Device's timezone is invalid, the timestamp can't be converted
+            return UnDefType.UNDEF;
         }
     }
 
