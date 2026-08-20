@@ -142,7 +142,12 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
             case CHANNEL_MEDIA_CONTROL:
                 logger.debug("{}: Media control command {}", thingName, command);
                 if (command == PlayPauseType.PLAY || command == PlayPauseType.PAUSE) {
-                    api.mediaPlayOrPause();
+                    // the device only exposes a PlayOrPause toggle, no distinct Play/Pause command;
+                    // only toggle when the requested state differs from the last known playback state
+                    State current = getChannelValue(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_CONTROL);
+                    if (!command.equals(current)) {
+                        api.mediaPlayOrPause();
+                    }
                 } else if (command == NextPreviousType.NEXT) {
                     api.mediaNext();
                 } else if (command == NextPreviousType.PREVIOUS) {
