@@ -31,47 +31,11 @@
 		</channels>
 	</channel-group-type>
 
-	<channel-group-type id="alarm-co">
-		<label>Alarm</label>
-		<description>Alarm status of the detector.</description>
-		<channels>
-			<channel id="co" typeId="co-alarm"/>
-			<channel id="coPpm" typeId="co-ppm"/>
-		</channels>
-	</channel-group-type>
-
-	<channel-group-type id="alarm-smokeco">
-		<label>Alarm</label>
-		<description>Alarm status of the detector.</description>
-		<channels>
-			<channel id="smoke" typeId="smoke-alarm"/>
-			<channel id="co" typeId="co-alarm"/>
-			<channel id="coPpm" typeId="co-ppm"/>
-		</channels>
-	</channel-group-type>
-
-	<channel-group-type id="alarm-heat">
-		<label>Alarm</label>
-		<description>Alarm status of the detector.</description>
-		<channels>
-			<channel id="heat" typeId="heat-alarm"/>
-		</channels>
-	</channel-group-type>
-
 	<channel-group-type id="alarm-water">
 		<label>Alarm</label>
 		<description>Alarm status of the detector.</description>
 		<channels>
 			<channel id="water" typeId="water-alarm"/>
-		</channels>
-	</channel-group-type>
-
-	<channel-group-type id="sensor-th">
-		<label>Measurements</label>
-		<description>Temperature and humidity measurements.</description>
-		<channels>
-			<channel id="temperature" typeId="temperature"/>
-			<channel id="humidity" typeId="humidity"/>
 		</channels>
 	</channel-group-type>
 
@@ -108,41 +72,6 @@
 		<state readOnly="true"/>
 	</channel-type>
 
-	<channel-type id="co-alarm">
-		<item-type>Switch</item-type>
-		<label>CO Alarm</label>
-		<description>Indicates whether the detector reports a carbon monoxide alarm.</description>
-		<category>Gas</category>
-		<tags>
-			<tag>Alarm</tag>
-			<tag>CO</tag>
-		</tags>
-		<state readOnly="true"/>
-	</channel-type>
-
-	<channel-type id="co-ppm">
-		<item-type>Number:Dimensionless</item-type>
-		<label>CO Concentration</label>
-		<description>Measured carbon monoxide concentration.</description>
-		<category>Gas</category>
-		<tags>
-			<tag>Measurement</tag>
-			<tag>CO</tag>
-		</tags>
-		<state readOnly="true" pattern="%.0f ppm"/>
-	</channel-type>
-
-	<channel-type id="heat-alarm">
-		<item-type>Switch</item-type>
-		<label>Heat Alarm</label>
-		<description>Indicates whether the detector reports a heat alarm.</description>
-		<category>Fire</category>
-		<tags>
-			<tag>Alarm</tag>
-		</tags>
-		<state readOnly="true"/>
-	</channel-type>
-
 	<channel-type id="water-alarm">
 		<item-type>Switch</item-type>
 		<label>Water Leak Alarm</label>
@@ -153,30 +82,6 @@
 			<tag>Water</tag>
 		</tags>
 		<state readOnly="true"/>
-	</channel-type>
-
-	<channel-type id="temperature">
-		<item-type>Number:Temperature</item-type>
-		<label>Temperature</label>
-		<description>Measured temperature.</description>
-		<category>Temperature</category>
-		<tags>
-			<tag>Measurement</tag>
-			<tag>Temperature</tag>
-		</tags>
-		<state readOnly="true" pattern="%.1f %unit%"/>
-	</channel-type>
-
-	<channel-type id="humidity">
-		<item-type>Number:Dimensionless</item-type>
-		<label>Humidity</label>
-		<description>Measured relative humidity.</description>
-		<category>Humidity</category>
-		<tags>
-			<tag>Measurement</tag>
-			<tag>Humidity</tag>
-		</tags>
-		<state readOnly="true" pattern="%.0f %%"/>
 	</channel-type>
 
 </thing:thing-descriptions>

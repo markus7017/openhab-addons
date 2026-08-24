@@ -203,9 +203,8 @@ public class XSenseAccountHandler extends BaseBridgeHandler {
     }
 
     /**
-     * Triggers an inventory refresh in the background, e.g. on child initialization or a manual
-     * rescan request from the XSense Manager. Fire-and-forget: callers that need the refreshed
-     * inventory before continuing must use {@link #pollNow()} instead.
+     * Triggers an inventory refresh in the background, e.g. on child initialization. Fire-and-forget:
+     * callers that need the refreshed inventory before continuing must use {@link #pollNow()} instead.
      */
     public void requestRefresh() {
         scheduler.execute(this::poll);
@@ -219,20 +218,6 @@ public class XSenseAccountHandler extends BaseBridgeHandler {
      */
     public void pollNow() {
         poll();
-    }
-
-    /**
-     * Triggers a full reconnect including a new cloud login, e.g. from the XSense Manager.
-     */
-    public void reconnect() {
-        scheduler.execute(this::connect);
-    }
-
-    /**
-     * Returns whether the cloud session is currently established (for the XSense Manager).
-     */
-    public boolean isLoggedIn() {
-        return apiClient.isLoggedIn();
     }
 
     /**

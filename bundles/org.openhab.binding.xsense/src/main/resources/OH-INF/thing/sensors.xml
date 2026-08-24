@@ -24,66 +24,6 @@
 		<config-description-ref uri="thing-type:xsense:sensor"/>
 	</thing-type>
 
-	<thing-type id="co">
-		<supported-bridge-type-refs>
-			<bridge-type-ref id="station"/>
-		</supported-bridge-type-refs>
-
-		<label>X-Sense CO Detector</label>
-		<description>X-Sense carbon monoxide detector (e.g. XC01-M).</description>
-		<semantic-equipment-tag>COSensor</semantic-equipment-tag>
-
-		<channel-groups>
-			<channel-group id="info" typeId="info"/>
-			<channel-group id="device" typeId="device"/>
-			<channel-group id="alarm" typeId="alarm-co"/>
-		</channel-groups>
-
-		<representation-property>serialNumber</representation-property>
-
-		<config-description-ref uri="thing-type:xsense:sensor"/>
-	</thing-type>
-
-	<thing-type id="smokeco">
-		<supported-bridge-type-refs>
-			<bridge-type-ref id="station"/>
-		</supported-bridge-type-refs>
-
-		<label>X-Sense Smoke/CO Detector</label>
-		<description>X-Sense combined smoke and carbon monoxide detector (e.g. SC07-MR, XP0A-MR).</description>
-		<semantic-equipment-tag>SmokeDetector</semantic-equipment-tag>
-
-		<channel-groups>
-			<channel-group id="info" typeId="info"/>
-			<channel-group id="device" typeId="device"/>
-			<channel-group id="alarm" typeId="alarm-smokeco"/>
-		</channel-groups>
-
-		<representation-property>serialNumber</representation-property>
-
-		<config-description-ref uri="thing-type:xsense:sensor"/>
-	</thing-type>
-
-	<thing-type id="heat">
-		<supported-bridge-type-refs>
-			<bridge-type-ref id="station"/>
-		</supported-bridge-type-refs>
-
-		<label>X-Sense Heat Detector</label>
-		<description>X-Sense heat detector (e.g. XH02-M).</description>
-		<semantic-equipment-tag>HeatDetector</semantic-equipment-tag>
-
-		<channel-groups>
-			<channel-group id="info" typeId="info"/>
-			<channel-group id="device" typeId="device"/>
-			<channel-group id="alarm" typeId="alarm-heat"/>
-		</channel-groups>
-
-		<representation-property>serialNumber</representation-property>
-
-		<config-description-ref uri="thing-type:xsense:sensor"/>
-	</thing-type>
-
 	<thing-type id="water">
 		<supported-bridge-type-refs>
 			<bridge-type-ref id="station"/>
@@ -97,26 +37,6 @@
 			<channel-group id="info" typeId="info"/>
 			<channel-group id="device" typeId="device"/>
 			<channel-group id="alarm" typeId="alarm-water"/>
-		</channel-groups>
-
-		<representation-property>serialNumber</representation-property>
-
-		<config-description-ref uri="thing-type:xsense:sensor"/>
-	</thing-type>
-
-	<thing-type id="thermohygro">
-		<supported-bridge-type-refs>
-			<bridge-type-ref id="station"/>
-		</supported-bridge-type-refs>
-
-		<label>X-Sense Thermo-Hygrometer</label>
-		<description>X-Sense temperature and humidity sensor (e.g. STH51).</description>
-		<semantic-equipment-tag>Sensor</semantic-equipment-tag>
-
-		<channel-groups>
-			<channel-group id="info" typeId="info"/>
-			<channel-group id="device" typeId="device"/>
-			<channel-group id="sensor" typeId="sensor-th"/>
 		</channel-groups>
 
 		<representation-property>serialNumber</representation-property>

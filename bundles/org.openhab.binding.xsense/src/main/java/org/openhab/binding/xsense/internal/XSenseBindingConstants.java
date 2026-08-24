@@ -37,36 +37,25 @@ public class XSenseBindingConstants {
 
     // Sensor Thing Type UIDs
     public static final ThingTypeUID THING_TYPE_SMOKE = new ThingTypeUID(BINDING_ID, "smoke");
-    public static final ThingTypeUID THING_TYPE_CO = new ThingTypeUID(BINDING_ID, "co");
-    public static final ThingTypeUID THING_TYPE_SMOKECO = new ThingTypeUID(BINDING_ID, "smokeco");
-    public static final ThingTypeUID THING_TYPE_HEAT = new ThingTypeUID(BINDING_ID, "heat");
     public static final ThingTypeUID THING_TYPE_WATER = new ThingTypeUID(BINDING_ID, "water");
-    public static final ThingTypeUID THING_TYPE_THERMOHYGRO = new ThingTypeUID(BINDING_ID, "thermohygro");
 
-    public static final Set<ThingTypeUID> SENSOR_THING_TYPES = Set.of(THING_TYPE_SMOKE, THING_TYPE_CO,
-            THING_TYPE_SMOKECO, THING_TYPE_HEAT, THING_TYPE_WATER, THING_TYPE_THERMOHYGRO);
+    public static final Set<ThingTypeUID> SENSOR_THING_TYPES = Set.of(THING_TYPE_SMOKE, THING_TYPE_WATER);
 
     public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Set.of(THING_TYPE_ACCOUNT, THING_TYPE_HOME,
-            THING_TYPE_STATION, THING_TYPE_SMOKE, THING_TYPE_CO, THING_TYPE_SMOKECO, THING_TYPE_HEAT, THING_TYPE_WATER,
-            THING_TYPE_THERMOHYGRO);
+            THING_TYPE_STATION, THING_TYPE_SMOKE, THING_TYPE_WATER);
 
     /**
      * Maps the X-Sense device type (model code as reported by the cloud API) to the thing type.
-     * Models not listed here are reported by the discovery service as unsupported.
+     * Models not listed here are reported by the discovery service as unsupported, including
+     * models supported by other X-Sense sensor lines (CO, heat, thermo-hygrometer, security
+     * accessories) planned for a follow-up release.
      */
     private static final Map<String, ThingTypeUID> DEVICE_TYPE_TO_THING_TYPE = Map.ofEntries(
             Map.entry("XS01-M", THING_TYPE_SMOKE), //
             Map.entry("XS0B-MR", THING_TYPE_SMOKE), //
             Map.entry("XS0D-MR", THING_TYPE_SMOKE), //
-            Map.entry("XC01-M", THING_TYPE_CO), //
-            Map.entry("SC07-MR", THING_TYPE_SMOKECO), //
-            Map.entry("XP0A-MR", THING_TYPE_SMOKECO), //
-            Map.entry("XH02-M", THING_TYPE_HEAT), //
             Map.entry("SWS51", THING_TYPE_WATER), //
-            Map.entry("SWS54", THING_TYPE_WATER), //
-            Map.entry("STH51", THING_TYPE_THERMOHYGRO), //
-            Map.entry("STH0A", THING_TYPE_THERMOHYGRO), //
-            Map.entry("STH0B", THING_TYPE_THERMOHYGRO));
+            Map.entry("SWS54", THING_TYPE_WATER));
 
     // Device type of the SBS50 base station as reported in the station "category" field
     public static final String STATION_TYPE_SBS50 = "SBS50";

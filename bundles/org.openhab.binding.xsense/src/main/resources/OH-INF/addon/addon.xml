@@ -5,9 +5,9 @@
 
 	<type>binding</type>
 	<name>X-Sense Binding</name>
-	<description>Integrates X-Sense smoke, carbon monoxide, heat and water leak detectors and thermo-hygrometers
-		connected
-		through an X-Sense base station (e.g. SBS50) using the X-Sense cloud.</description>
+	<description>Integrates X-Sense smoke and water leak detectors connected through an X-Sense base station (e.g.
+		SBS50)
+		using the X-Sense cloud.</description>
 	<connection>cloud</connection>
 
 	<config-description>

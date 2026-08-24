@@ -25,12 +25,8 @@ public class XSenseBindingConstantsTest {
     public void knownDeviceTypesMapToThingTypes() {
         assertEquals(THING_TYPE_SMOKE, thingTypeForDeviceType("XS01-M"));
         assertEquals(THING_TYPE_SMOKE, thingTypeForDeviceType("XS0B-MR"));
-        assertEquals(THING_TYPE_CO, thingTypeForDeviceType("XC01-M"));
-        assertEquals(THING_TYPE_SMOKECO, thingTypeForDeviceType("SC07-MR"));
-        assertEquals(THING_TYPE_SMOKECO, thingTypeForDeviceType("XP0A-MR"));
-        assertEquals(THING_TYPE_HEAT, thingTypeForDeviceType("XH02-M"));
         assertEquals(THING_TYPE_WATER, thingTypeForDeviceType("SWS51"));
-        assertEquals(THING_TYPE_THERMOHYGRO, thingTypeForDeviceType("STH51"));
+        assertEquals(THING_TYPE_WATER, thingTypeForDeviceType("SWS54"));
     }
 
     @Test
@@ -38,6 +34,14 @@ public class XSenseBindingConstantsTest {
         assertNull(thingTypeForDeviceType(STATION_TYPE_SBS50));
         assertNull(thingTypeForDeviceType("XS01"));
         assertNull(thingTypeForDeviceType(""));
+    }
+
+    @Test
+    public void deviceTypesPlannedForFollowUpReleaseAreNotYetSupported() {
+        assertNull(thingTypeForDeviceType("XC01-M"));
+        assertNull(thingTypeForDeviceType("SC07-MR"));
+        assertNull(thingTypeForDeviceType("XH02-M"));
+        assertNull(thingTypeForDeviceType("STH51"));
     }
 
     @Test
