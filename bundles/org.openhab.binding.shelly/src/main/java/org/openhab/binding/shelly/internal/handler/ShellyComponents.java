@@ -94,8 +94,8 @@ public class ShellyComponents {
         // Media and Thermostat can be enabled at any time, so create those channels as soon as the
         // component shows up in the status, not only on the first update cycle
         Map<String, Channel> dynChannels = ShellyChannelDefinitions.createMediaChannels(thingHandler.getThing(),
-                profile, status);
-        dynChannels.putAll(ShellyChannelDefinitions.createThermostatChannels(thingHandler.getThing(), profile, status));
+                status);
+        dynChannels.putAll(ShellyChannelDefinitions.createThermostatChannels(thingHandler.getThing(), status));
         if (!dynChannels.isEmpty()) {
             thingHandler.updateThingChannels(Map.of(), dynChannels);
         }
