@@ -567,11 +567,6 @@ public class Shelly1HttpApi extends ShellyHttpClient implements ShellyApiInterfa
     }
 
     @Override
-    public void mediaStop() throws ShellyApiException {
-        throw new ShellyApiException("Request not supported");
-    }
-
-    @Override
     public void mediaNext() throws ShellyApiException {
         throw new ShellyApiException("Request not supported");
     }

@@ -135,8 +135,6 @@ public interface ShellyApiInterface extends ShellyDiscoveryInterface {
 
     void mediaPlayOrPause() throws ShellyApiException;
 
-    void mediaStop() throws ShellyApiException;
-
     void mediaNext() throws ShellyApiException;
 
     void mediaPrevious() throws ShellyApiException;

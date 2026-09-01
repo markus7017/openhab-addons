@@ -1043,11 +1043,6 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     }
 
     @Override
-    public void mediaStop() throws ShellyApiException {
-        apiRequest(SHELLYRPC_METHOD_MEDIA_STOP, null, String.class);
-    }
-
-    @Override
     public void mediaNext() throws ShellyApiException {
         apiRequest(SHELLYRPC_METHOD_MEDIA_NEXT, null, String.class);
     }
