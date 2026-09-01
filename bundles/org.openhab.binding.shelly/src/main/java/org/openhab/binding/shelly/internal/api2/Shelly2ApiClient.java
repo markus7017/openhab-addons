@@ -85,6 +85,7 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceS
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2DeviceStatusTempId;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2DeviceStatusVoltage;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2RGBWStatus;
+import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusSys;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2InputStatus;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2RelayStatus;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2RpcBaseMessage;
@@ -629,11 +630,14 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         updateBatteryStatus(0, sensorData, result.devicepower0);
         updateBatteryStatus(1, sensorData, result.devicepower1);
         // NotifyStatus only carries the components it reports, don't wipe the last known value
-        if (result.relayInThermostat != null) {
-            status.relayInThermostat = result.relayInThermostat;
-        }
-        if (result.sensorInThermostat != null) {
-            status.sensorInThermostat = result.sensorInThermostat;
+        Shelly2DeviceStatusSys sys = result.sys;
+        if (sys != null) {
+            if (sys.relayInThermostat != null) {
+                status.relayInThermostat = sys.relayInThermostat;
+            }
+            if (sys.sensorInThermostat != null) {
+                status.sensorInThermostat = sys.sensorInThermostat;
+            }
         }
         if (result.media != null) {
             status.media = result.media;

@@ -104,7 +104,6 @@ public class Shelly2ApiJsonDTO {
     public static final String SHELLYRPC_METHOD_SCRIPT_START = "Script.Start";
     public static final String SHELLYRPC_METHOD_SCRIPT_STOP = "Script.Stop";
     public static final String SHELLYRPC_METHOD_MEDIA_PLAYORPAUSE = "Media.MediaPlayer.PlayOrPause";
-    public static final String SHELLYRPC_METHOD_MEDIA_STOP = "Media.MediaPlayer.Stop";
     public static final String SHELLYRPC_METHOD_MEDIA_NEXT = "Media.MediaPlayer.Next";
     public static final String SHELLYRPC_METHOD_MEDIA_PREVIOUS = "Media.MediaPlayer.Previous";
     public static final String SHELLYRPC_METHOD_MEDIA_PLAY = "Media.MediaPlayer.Play";
@@ -973,11 +972,6 @@ public class Shelly2ApiJsonDTO {
             @SerializedName("devicepower:1")
             public @Nullable Shelly2DeviceStatusPower devicepower1;
 
-            @SerializedName("relay_in_thermostat")
-            public @Nullable Boolean relayInThermostat;
-            @SerializedName("sensor_in_thermostat")
-            public @Nullable Boolean sensorInThermostat;
-
             // Media is a singleton (Media.GetStatus takes no id), some firmware reports it indexed
             @SerializedName(value = "media", alternate = { "media:0" })
             public @Nullable Shelly2DeviceStatusMedia media;
@@ -1025,6 +1019,12 @@ public class Shelly2ApiJsonDTO {
             public Shelly2DeviceStatusWakeup wakeUpReason;
             @SerializedName("wakeup_period")
             public Integer wakeupPeriod;
+
+            // Wall Display: reported inside sys, not as a top level component
+            @SerializedName("relay_in_thermostat")
+            public @Nullable Boolean relayInThermostat;
+            @SerializedName("sensor_in_thermostat")
+            public @Nullable Boolean sensorInThermostat;
         }
 
         public class Shelly2DeviceStatusSysWiFi {
