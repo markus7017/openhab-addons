@@ -635,6 +635,14 @@ public class ShellyComponents {
                         ShellyChannelDefinitions.createSensorChannels(thingHandler.getThing(), profile, sdata));
             }
 
+            // An attached sensor's battery (e.g. Wall Display devicepower:1) can be paired after the Thing
+            // already exists, so (re-)check for it on every cycle instead of only at Thing creation
+            Map<String, Channel> extBattery = ShellyChannelDefinitions.createExtBatteryChannels(thingHandler.getThing(),
+                    sdata);
+            if (!extBattery.isEmpty()) {
+                thingHandler.updateThingChannels(Map.of(), extBattery);
+            }
+
             updated |= thingHandler.updateWakeupReason(sdata.actReasons);
 
             if ((sdata.sensor != null) && sdata.sensor.isValid) {

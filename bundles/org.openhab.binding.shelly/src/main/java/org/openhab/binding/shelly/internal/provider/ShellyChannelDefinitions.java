@@ -514,6 +514,19 @@ public class ShellyChannelDefinitions {
     }
 
     /**
+     * Auto-create the battery channels for a sensor attached to the device (e.g. an H&amp;T paired with a Wall
+     * Display, reported as devicepower:1) as soon as it shows up in the status, since it can be paired after the
+     * Thing already exists.
+     */
+    public static Map<String, Channel> createExtBatteryChannels(final Thing thing, final ShellyStatusSensor sdata) {
+        Map<String, Channel> add = new LinkedHashMap<>();
+        boolean hasExtBattery = sdata.bat1 != null;
+        addChannel(thing, add, hasExtBattery, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_BAT_LEVEL);
+        addChannel(thing, add, hasExtBattery, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_BAT_LOW);
+        return add;
+    }
+
+    /**
      * Auto-create relay channels depending on relay type/mode
      *
      * @return {@code ArrayList<Channel>} of channels to be added to the thing
@@ -855,9 +868,8 @@ public class ShellyChannelDefinitions {
         boolean hasBatteryValue = sdata.bat != null && sdata.bat.value != null;
         addChannel(thing, newChannels, ws90 || hasBatteryValue, CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LEVEL);
         addChannel(thing, newChannels, ws90 || hasBatteryValue, CHANNEL_GROUP_BATTERY, CHANNEL_SENSOR_BAT_LOW);
-        boolean hasExtBatteryValue = sdata.bat1 != null && sdata.bat1.value != null;
-        addChannel(thing, newChannels, hasExtBatteryValue, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_BAT_LEVEL);
-        addChannel(thing, newChannels, hasExtBatteryValue, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_BAT_LOW);
+        // Battery of an attached external sensor (e.g. Wall Display devicepower:1) is created separately via
+        // createExtBatteryChannels(), because the sensor can be paired after the Thing already exists
 
         addChannel(thing, newChannels, sdata.sensorError != null || (profile.isFlood && profile.isGen2),
                 CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_ERROR);
