@@ -147,7 +147,6 @@ public class ShellyLightHandler extends ShellyBaseHandler {
                         col.power = getOnOff(light.ison);
                         col.setBrightness(light.brightness);
                         String brightnessGroup = buildWhiteGroupName(profile, lightId);
-                        updateChannel(brightnessGroup, CHANNEL_BRIGHTNESS + "$Switch", col.power);
                         updateChannel(brightnessGroup, CHANNEL_BRIGHTNESS + "$Value", toQuantityType(
                                 (double) (col.power == OnOffType.ON ? col.brightness : 0), DIGITS_NONE, Units.PERCENT));
                         update = false;
@@ -423,7 +422,6 @@ public class ShellyLightHandler extends ShellyBaseHandler {
             if (updatesWhiteChannels(profile, lightId)) {
                 String whiteGroup = buildWhiteGroupName(profile, lightId);
                 col.setBrightness(getInteger(light.brightness));
-                updated |= updateChannel(whiteGroup, CHANNEL_BRIGHTNESS + "$Switch", col.power);
                 updated |= updateChannel(whiteGroup, CHANNEL_BRIGHTNESS + "$Value",
                         toQuantityType(col.power == OnOffType.ON ? col.percentBrightness.doubleValue() : 0, DIGITS_NONE,
                                 Units.PERCENT));
