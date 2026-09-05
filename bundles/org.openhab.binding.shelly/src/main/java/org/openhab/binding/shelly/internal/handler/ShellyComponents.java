@@ -922,7 +922,6 @@ public class ShellyComponents {
                 ShellySettingsLight light = lights.get(i);
                 String groupName = profile.getControlGroup(i);
                 OnOffType power = getOnOff(light.ison);
-                updated |= thingHandler.updateChannel(groupName, CHANNEL_BRIGHTNESS + "$Switch", power);
                 updated |= thingHandler.updateChannel(groupName, CHANNEL_BRIGHTNESS + "$Value",
                         toQuantityType(power == OnOffType.ON ? (double) getInteger(light.brightness) : 0.0, DIGITS_NONE,
                                 Units.PERCENT));
@@ -972,11 +971,9 @@ public class ShellyComponents {
                 // When the device's brightness is > 0 we send the new value to the channel and an ON command
                 if (dimmer.ison != null) {
                     if (dimmer.ison) {
-                        updated |= thingHandler.updateChannel(groupName, CHANNEL_BRIGHTNESS + "$Switch", OnOffType.ON);
                         updated |= thingHandler.updateChannel(groupName, CHANNEL_BRIGHTNESS + "$Value",
                                 toQuantityType((double) getInteger(dimmer.brightness), DIGITS_NONE, Units.PERCENT));
                     } else {
-                        updated |= thingHandler.updateChannel(groupName, CHANNEL_BRIGHTNESS + "$Switch", OnOffType.OFF);
                         updated |= thingHandler.updateChannel(groupName, CHANNEL_BRIGHTNESS + "$Value",
                                 toQuantityType(0.0, DIGITS_NONE, Units.PERCENT));
                     }
