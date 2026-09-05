@@ -186,16 +186,19 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
 
     private void updateBrightnessChannel(int lightId, OnOffType power, int brightness) throws ShellyApiException {
         String group = profile.getControlGroup(lightId);
-        updateChannel(group, CHANNEL_BRIGHTNESS + "$Switch", power);
+        int actualBrightness = brightness;
         if (brightness > 0) {
             api.setBrightness(lightId, brightness, config.getBrightnessAutoOn());
         } else {
-            api.setLightTurn(lightId, power == OnOffType.ON ? SHELLY_API_ON : SHELLY_API_OFF);
-            if (brightness >= 0) { // ignore -1
-                updateChannel(group, CHANNEL_BRIGHTNESS + "$Value",
-                        toQuantityType((double) (power == OnOffType.ON ? brightness : 0), DIGITS_NONE, Units.PERCENT));
+            ShellyShortLightStatus light = api.setLightTurn(lightId,
+                    power == OnOffType.ON ? SHELLY_API_ON : SHELLY_API_OFF);
+            if (brightness < 0) { // blind Switch command, brightness unknown -> use the device-reported value
+                actualBrightness = getInteger(light.brightness);
             }
         }
+        // single Percent update only; a linked Switch item still gets a correct ON/OFF state via core's conversion
+        updateChannel(group, CHANNEL_BRIGHTNESS + "$Value",
+                toQuantityType((double) (power == OnOffType.ON ? actualBrightness : 0), DIGITS_NONE, Units.PERCENT));
     }
 
     @Override

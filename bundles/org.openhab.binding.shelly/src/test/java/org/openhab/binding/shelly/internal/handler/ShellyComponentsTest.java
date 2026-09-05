@@ -937,8 +937,8 @@ public class ShellyComponentsTest {
 
         assertThat(updated, is(true));
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_LIGHT_CONTROL), anyString(), any());
-        verify(handler).updateChannel(eq(CHANNEL_GROUP_LIGHT_INDEX + "1"), eq(CHANNEL_BRIGHTNESS + "$Switch"),
-                eq(OnOffType.ON));
+        verify(handler).updateChannel(eq(CHANNEL_GROUP_LIGHT_INDEX + "1"), eq(CHANNEL_BRIGHTNESS + "$Value"),
+                argThat(s -> s instanceof QuantityType<?> qt && qt.doubleValue() == 42.0));
         verify(handler).updateChannel(eq(CHANNEL_GROUP_LIGHT_INDEX + "1"), eq(CHANNEL_COLOR_TEMP), any());
     }
 
@@ -1030,8 +1030,8 @@ public class ShellyComponentsTest {
         boolean updated = ShellyComponents.updateLightMode(handler, status);
 
         assertThat(updated, is(true));
-        verify(handler).updateChannel(eq(CHANNEL_GROUP_WHITE_CONTROL), eq(CHANNEL_BRIGHTNESS + "$Switch"),
-                eq(OnOffType.ON));
+        verify(handler).updateChannel(eq(CHANNEL_GROUP_WHITE_CONTROL), eq(CHANNEL_BRIGHTNESS + "$Value"),
+                argThat(s -> s instanceof QuantityType<?> qt && qt.doubleValue() == 55.0));
         verify(handler).updateChannel(eq(CHANNEL_GROUP_WHITE_CONTROL), eq(CHANNEL_COLOR_TEMP),
                 eq(new QuantityType<>(3200, Units.KELVIN)));
     }
