@@ -594,6 +594,9 @@ public class ShellyChannelDefinitions {
             ShellyShortLightStatus dss = dstatus.dimmers.get(idx);
             addChannel(thing, add, dss != null && dss.hasTimer != null, group, CHANNEL_TIMER_ACTIVE);
         }
+
+        addAddonChannels(thing, profile, idx, add);
+
         return add;
     }
 

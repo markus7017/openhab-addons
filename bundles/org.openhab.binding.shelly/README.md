@@ -961,6 +961,11 @@ The Shelly 4Pro provides 4 relays and 4 power meters.
 |       | energyAvgLast3Min | Number   | yes       | Average of the total energy per minute over the previous 3 complete minutes, minutes -1 to -3 (Wh) |
 |       | totalEnergy       | Number   | yes       | Total energy consumption in kWh                                                                    |
 |       | lastUpdate        | DateTime | yes       | Timestamp of the last measurement                                                                  |
+| sensors | temperature1    | Number   | yes       | Temperature value of external sensor #1 (if connected to temp/hum addon)                           |
+|       | temperature2      | Number   | yes       | Temperature value of external sensor #2 (if connected to temp/hum addon)                           |
+|       | temperature3      | Number   | yes       | Temperature value of external sensor #3 (if connected to temp/hum addon)                           |
+|       | humidity          | Number   | yes       | Humidity in percent (if connected to temp/hum addon)                                               |
+|       | lastUpdate        | DateTime | yes       | Timestamp of the last sensor update (heartbeat)                                                    |
 
 `Note:`
 The Dimmer should be calibrated using the device Web UI or Shelly App.
@@ -1656,6 +1661,11 @@ totalEnergy might reset on restart depending on device type and firmware version
 | meter | currentPower      | Number   | yes       | Current power consumption in Watts                                                                 |
 |       | totalEnergy       | Number   | yes       | Total energy consumption in kWh                                                                    |
 |       | lastUpdate        | DateTime | yes       | Timestamp of the last measurement                                                                  |
+| sensors | temperature1    | Number   | yes       | Temperature value of external sensor #1 (if connected to Plus Addon)                               |
+|       | temperature2      | Number   | yes       | Temperature value of external sensor #2 (if connected to Plus Addon)                                |
+|       | temperature3      | Number   | yes       | Temperature value of external sensor #3 (if connected to Plus Addon)                                |
+|       | humidity          | Number   | yes       | Humidity in percent (if connected to Plus Addon)                                                   |
+|       | lastUpdate        | DateTime | yes       | Timestamp of the last sensor update (heartbeat)                                                    |
 
 `Note:`
 The Dimmer should be calibrated using the device Web UI or Shelly App.

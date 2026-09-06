@@ -326,6 +326,29 @@ public class ShellyComponentsTest {
     }
 
     @Test
+    void createDimmerChannelsWithAddonTempCreatesSensorChannels() {
+        ThingUID thingUID = new ThingUID(THING_TYPE_SHELLYDIMMER, "test");
+        Thing thing = mock(Thing.class);
+        when(thing.getUID()).thenReturn(thingUID);
+
+        ShellyDeviceProfile profile = new ShellyDeviceProfile(THING_TYPE_SHELLYDIMMER);
+        profile.isDimmer = true;
+        ShellyExtTemperature extTemperature = new ShellyExtTemperature();
+        extTemperature.sensor1 = new ShellyShortTemp();
+        profile.status.extTemperature = extTemperature;
+
+        Map<String, Channel> channels = ShellyChannelDefinitions.createDimmerChannels(thing, profile,
+                new ShellySettingsStatus(), 0);
+
+        assertThat("temperature1 channel created",
+                channels.containsKey(CHANNEL_GROUP_SENSOR + ChannelUID.CHANNEL_GROUP_SEPARATOR + CHANNEL_ESENSOR_TEMP1),
+                is(true));
+        assertThat("lastUpdate channel created",
+                channels.containsKey(CHANNEL_GROUP_SENSOR + ChannelUID.CHANNEL_GROUP_SEPARATOR + CHANNEL_LAST_UPDATE),
+                is(true));
+    }
+
+    @Test
     void updateSensorsRelayWithAddonTempUpdatesLastUpdate() throws Exception {
         ShellyThingInterface handler = relayHandlerWith(new ShellySettingsStatus());
         ShellySettingsStatus status = new ShellySettingsStatus();
