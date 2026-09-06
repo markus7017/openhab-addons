@@ -112,6 +112,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     protected final boolean alwaysOn;
     private @Nullable Shelly2RpcSocket rpcSocket;
     private @Nullable Shelly2AuthChallenge authInfo;
+    private @Nullable String pendingAsyncMethod;
     private final WebSocketClient client;
     private final ScheduledExecutorService scheduler;
 
@@ -531,11 +532,16 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         getThing().incProtMessages();
         if (message.error != null) {
             if (message.error.code == HttpStatus.UNAUTHORIZED_401 && !getString(message.error.message).isEmpty()) {
-                // Save nonce for notification
+                // The WebSocket channel has no HTTP headers, so the device embeds the auth challenge in the
+                // error message instead of a WWW-Authenticate header. Requests sent over this channel (see
+                // asyncApiRequest()) are fire-and-forget, so the rejected request has to be resent explicitly
+                // once the challenge is known - unlike apiRequest(), which retries inline on the HTTP response.
                 Shelly2AuthChallenge auth = gson.fromJson(message.error.message, Shelly2AuthChallenge.class);
-                if (auth != null && auth.realm == null) {
-                    logger.debug("{}: Authentication data received: {}", thingName, message.error.message);
+                if (auth != null) {
+                    logger.debug("{}: Authentication requested on WebSocket channel: {}", thingName,
+                            message.error.message);
                     authInfo = auth;
+                    retryPendingAsyncRequest(auth);
                 }
             } else {
                 logger.debug("{}: Error status received - {} {}", thingName, message.error.code, message.error.message);
@@ -1330,9 +1336,30 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         Shelly2RpcSocket rpcSocket = this.rpcSocket;
         if (rpcSocket != null) {
             Shelly2RpcBaseMessage request = buildRequest(method, null);
+            pendingAsyncMethod = method;
             rpcSocket.sendMessage(gson.toJson(request)); // submit, result will be async
         } else {
             throw new ShellyApiException("RPC socket isn't connected, cannot send async request");
+        }
+    }
+
+    /**
+     * Resends the last fire-and-forget WebSocket request with the device's auth challenge answered. Only
+     * asyncApiRequest() goes through this channel, so a single pending method is enough to track.
+     */
+    private void retryPendingAsyncRequest(Shelly2AuthChallenge challenge) {
+        String method = pendingAsyncMethod;
+        Shelly2RpcSocket rpcSocket = this.rpcSocket;
+        if (method == null || rpcSocket == null) {
+            return;
+        }
+        pendingAsyncMethod = null;
+        try {
+            Shelly2RpcBaseMessage request = buildRequest(method, null);
+            request.auth = buildChannelAuthResponse(challenge, SHELLY2_AUTHDEF_USER, config.getPassword());
+            rpcSocket.sendMessage(gson.toJson(request));
+        } catch (ShellyApiException e) {
+            logger.debug("{}: Unable to authenticate WebSocket request", thingName, e);
         }
     }
 
