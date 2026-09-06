@@ -848,7 +848,13 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         }
         api.close(); // Gen2: disconnect WS/close http sessions
         watchdog = 0;
-        profile.initialized = false; // force full re-init (incl. asyncApiRequest) on next reconnect
+        if (profile.alwaysOn) {
+            // Force full re-init (incl. asyncApiRequest re-arm) on next reconnect. Battery/sleeping devices have
+            // no persistent connection to reconnect, so resetting this here only made initializeThing() treat
+            // every watchdog-expiry as an uninitialized thing and flip it to CONFIGURATION_PENDING until the
+            // device's next scheduled wakeup cleared it again (#21289).
+            profile.initialized = false;
+        }
         channelsCreated = false; // check for new channels after devices gets re-initialized (e.g. new
     }
 
