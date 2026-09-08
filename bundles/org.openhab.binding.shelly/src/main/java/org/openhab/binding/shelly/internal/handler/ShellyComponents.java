@@ -30,6 +30,7 @@ import javax.measure.quantity.Pressure;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
+import org.openhab.binding.shelly.internal.api.ShellyApiInterface;
 import org.openhab.binding.shelly.internal.api.ShellyApiLightUtil;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO;
@@ -1117,6 +1118,41 @@ public class ShellyComponents {
                                 e.getMessage());
                     }
                 }
+                break;
+        }
+    }
+
+    /**
+     * Dispatches a command sent to a Boolean/Number/Text/Enum virtual component channel to the matching
+     * {@code <Type>.Set} RPC call. Group and Button have no command path: Group is a pure grouping container and
+     * Button is stateless/event-only, neither ever gets a channel (see {@link #updateVirtualComponentStatus}).
+     */
+    public static void handleVirtualComponentCommand(ShellyThingInterface thingHandler, String channel, Command command)
+            throws ShellyApiException {
+        String thingName = thingHandler.getThingName();
+        ShellyVirtualComponent vc = thingHandler.getProfile().vComponents.stream()
+                .filter(c -> (c.type + c.id).equals(channel)).findFirst().orElse(null);
+        if (vc == null) {
+            LOGGER.debug("{}: Unknown Virtual Component channel {}, command ignored", thingName, channel);
+            return;
+        }
+
+        ShellyApiInterface api = thingHandler.getApi();
+        switch (vc.type) {
+            case CHANNEL_VCOMP_BOOLEAN:
+                api.setVirtualBoolean(vc.id, command == OnOffType.ON);
+                break;
+            case CHANNEL_VCOMP_NUMBER:
+                api.setVirtualNumber(vc.id, getNumber(command));
+                break;
+            case CHANNEL_VCOMP_TEXT:
+                api.setVirtualText(vc.id, getString(command));
+                break;
+            case CHANNEL_VCOMP_ENUM:
+                api.setVirtualEnum(vc.id, getString(command));
+                break;
+            default:
+                LOGGER.debug("{}: Command not supported for Virtual Component type {}", thingName, vc.type);
                 break;
         }
     }

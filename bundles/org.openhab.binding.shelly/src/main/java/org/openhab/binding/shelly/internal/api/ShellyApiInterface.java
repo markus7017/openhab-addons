@@ -89,6 +89,14 @@ public interface ShellyApiInterface extends ShellyDiscoveryInterface {
 
     void setFloodConfig(int id, @Nullable String alarmMode, int reportHoldoff) throws ShellyApiException;
 
+    void setVirtualBoolean(int id, boolean value) throws ShellyApiException;
+
+    void setVirtualNumber(int id, double value) throws ShellyApiException;
+
+    void setVirtualText(int id, String value) throws ShellyApiException;
+
+    void setVirtualEnum(int id, String value) throws ShellyApiException;
+
     ShellyOtaCheckResult checkForUpdate() throws ShellyApiException;
 
     ShellySettingsUpdate firmwareUpdate(String uri) throws ShellyApiException;

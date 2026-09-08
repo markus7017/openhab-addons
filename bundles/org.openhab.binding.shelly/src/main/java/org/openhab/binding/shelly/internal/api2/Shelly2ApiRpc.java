@@ -1481,6 +1481,38 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     }
 
     @Override
+    public void setVirtualBoolean(int id, boolean value) throws ShellyApiException {
+        Shelly2BooleanSetParams params = new Shelly2BooleanSetParams();
+        params.id = id;
+        params.value = value;
+        apiRequest(SHELLYRPC_METHOD_BOOLEAN_SET, params, String.class);
+    }
+
+    @Override
+    public void setVirtualNumber(int id, double value) throws ShellyApiException {
+        Shelly2NumberSetParams params = new Shelly2NumberSetParams();
+        params.id = id;
+        params.value = value;
+        apiRequest(SHELLYRPC_METHOD_NUMBER_SET, params, String.class);
+    }
+
+    @Override
+    public void setVirtualText(int id, String value) throws ShellyApiException {
+        Shelly2TextSetParams params = new Shelly2TextSetParams();
+        params.id = id;
+        params.value = value;
+        apiRequest(SHELLYRPC_METHOD_TEXT_SET, params, String.class);
+    }
+
+    @Override
+    public void setVirtualEnum(int id, String value) throws ShellyApiException {
+        Shelly2EnumSetParams params = new Shelly2EnumSetParams();
+        params.id = id;
+        params.value = value;
+        apiRequest(SHELLYRPC_METHOD_ENUM_SET, params, String.class);
+    }
+
+    @Override
     public void setLightMode(String mode) throws ShellyApiException {
         ShellyDeviceProfile profile = getProfile();
         if (profile.isRGBCCT) {
