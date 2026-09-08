@@ -371,6 +371,18 @@ public class ShellyUtils {
         return s.length() > 1 ? s.charAt(s.length() - 1) : '*';
     }
 
+    /**
+     * @return the maximal run of trailing digits in {@code s} (e.g. "boolean200" -&gt; "200"), empty if {@code s}
+     *         doesn't end in a digit. Unlike {@link #lastChar(String)} this survives multi-digit suffixes.
+     */
+    public static String trailingDigits(String s) {
+        int i = s.length();
+        while (i > 0 && isDigit(s.charAt(i - 1))) {
+            i--;
+        }
+        return s.substring(i);
+    }
+
     public static String sha256(String string) throws ShellyApiException {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
