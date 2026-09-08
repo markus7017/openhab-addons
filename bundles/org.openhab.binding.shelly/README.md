@@ -660,6 +660,20 @@ The add-on firmware version is shown in the Thing property `addonFirmware`; the 
 |         | snr          | Number:Dimensionless | yes    | SNR (signal-to-noise ratio in dB) of the last received packet.                    |
 |         | airtime      | Number:Time       | yes       | Transmission air time of the LoRa Add-On during the last 60 minutes.              |
 
+### Virtual Components (Channel Group: vcomponents / vgroupN)
+
+Gen3, Gen4 and Gen2 "Pro" devices (firmware 1.1.0-beta3 or later) let you define custom Boolean/Number/Text/Enum/Group/Button elements under Settings > Virtual Components in the Shelly App or device UI — useful e.g. for a switch driven only by rules, or a status flag shown in the app. The binding discovers configured virtual components automatically (no thing configuration required) and keeps the channel set in sync when components are added or removed on the device.
+
+Each virtual component is identified by a device-assigned instance id (200-299) and gets a channel named after its type plus that id, e.g. `boolean200`, `enum205`. The channel label uses the component's configured name, falling back to a generic label like "Virtual Boolean" when unnamed. A virtual component that is a member of a virtual Group gets its channel under `vgroupN` (N = the Group's id) instead of the default `vcomponents` group; the Group component itself is a grouping container only and has no channel of its own.
+
+| Group                  | Channel   | Type    | read-only | Description                                                                              |
+| ----------------------- | --------- | ------- | --------- | ------------------------------------------------------------------------------------------ |
+| vcomponents / vgroupN   | booleanNNN | Switch  | r/w       | Virtual Boolean component; NNN is the device-assigned instance id (200-299)               |
+|                          | numberNNN  | Number  | r/w       | Virtual Number component                                                                  |
+|                          | textNNN    | String  | r/w       | Virtual Text component                                                                    |
+|                          | enumNNN    | String  | r/w       | Virtual Enum component; allowed values are provided by the device                         |
+|                          | buttonNNN  | Trigger | yes       | Virtual Button component; fires SHORT_PRESSED / DOUBLE_PRESSED / TRIPLE_PRESSED / LONG_PRESSED |
+
 ### Shelly 1 (thing-type: shelly1)
 
 | Group   | Channel      | Type     | read-only | Description                                                                       |
