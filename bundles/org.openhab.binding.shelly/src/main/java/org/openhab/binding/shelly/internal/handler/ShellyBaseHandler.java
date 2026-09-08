@@ -53,6 +53,7 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2APClientList.Shelly2APClient;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiRpc;
 import org.openhab.binding.shelly.internal.api2.ShellyBluApi;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVirtualComponent;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyBindingRuntimeConfig;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
@@ -77,7 +78,6 @@ import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.binding.BaseThingHandler;
 import org.openhab.core.thing.binding.builder.ThingBuilder;
-import org.openhab.core.thing.type.ChannelTypeUID;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.RefreshType;
 import org.openhab.core.types.State;
@@ -800,6 +800,19 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
             for (ShellyFavPos fav : prf.settings.favorites) {
                 channelDefinitions.addStateOption(channelId, "" + fid, fid + ": " + fav.name);
                 fid++;
+            }
+        }
+        for (ShellyVirtualComponent vc : prf.vComponents) {
+            String[] vcOptions = vc.options;
+            if (CHANNEL_VCOMP_ENUM.equals(vc.type) && vcOptions != null) {
+                String group = ShellyChannelDefinitions.getVirtualComponentChannelGroup(prf, vc);
+                String channelId = mkChannelId(group, vc.type + vc.id);
+                logger.debug("{}: Adding {} option(s) to Virtual Enum channel {}", thingName, vcOptions.length,
+                        channelId);
+                channelDefinitions.clearStateOptions(channelId);
+                for (String option : vcOptions) {
+                    channelDefinitions.addStateOption(channelId, option, option);
+                }
             }
         }
     }
@@ -1739,10 +1752,10 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
     }
 
     @Override
-    public @Nullable List<StateOption> getStateOptions(ChannelTypeUID uid) {
-        List<StateOption> options = channelDefinitions.getStateOptions(uid);
+    public @Nullable List<StateOption> getStateOptions(String channelId) {
+        List<StateOption> options = channelDefinitions.getStateOptions(channelId);
         if (!options.isEmpty()) {
-            logger.debug("{}: Return {} state options for channel uid {}", thingName, options.size(), uid.getId());
+            logger.debug("{}: Return {} state options for channel {}", thingName, options.size(), channelId);
             return options;
         }
         return null;

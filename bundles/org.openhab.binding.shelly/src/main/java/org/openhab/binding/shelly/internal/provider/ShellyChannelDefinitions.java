@@ -114,12 +114,12 @@ public class ShellyChannelDefinitions {
     public static final String PREFIX_CHANNEL = "channel-type." + BINDING_ID + ".";
 
     public class OptionEntry {
-        public ChannelTypeUID uid;
+        public String channelId;
         public String key;
         public String value;
 
-        public OptionEntry(ChannelTypeUID uid, String key, String value) {
-            this.uid = uid;
+        public OptionEntry(String channelId, String key, String value) {
+            this.channelId = channelId;
             this.key = key;
             this.value = value;
         }
@@ -1122,10 +1122,15 @@ public class ShellyChannelDefinitions {
         return builder.withType(channelTypeUID).build();
     }
 
-    public List<StateOption> getStateOptions(ChannelTypeUID uid) {
+    /**
+     * @param channelId the full "group#channel" instance id, e.g. as returned by {@link ChannelUID#getId()} - kept
+     *            per-instance (not per {@link ChannelTypeUID}) so multiple channels sharing one channel type (e.g.
+     *            several Virtual Enum components on the same Thing) each get their own option list.
+     */
+    public List<StateOption> getStateOptions(String channelId) {
         List<StateOption> options = new ArrayList<>();
         for (OptionEntry oe : stateOptions) {
-            if (oe.uid.equals(uid)) {
+            if (oe.channelId.equals(channelId)) {
                 options.add(new StateOption(oe.key, oe.value));
             }
         }
@@ -1133,14 +1138,12 @@ public class ShellyChannelDefinitions {
     }
 
     public void addStateOption(String channelId, String key, String value) {
-        ChannelTypeUID uid = getChannelTypeUID(channelId);
-        stateOptions.addIfAbsent(new OptionEntry(uid, key, value));
+        stateOptions.addIfAbsent(new OptionEntry(channelId, key, value));
     }
 
     public void clearStateOptions(String channelId) {
-        ChannelTypeUID uid = getChannelTypeUID(channelId);
         for (OptionEntry oe : stateOptions) {
-            if (oe.uid.equals(uid)) {
+            if (oe.channelId.equals(channelId)) {
                 stateOptions.remove(oe);
             }
         }
