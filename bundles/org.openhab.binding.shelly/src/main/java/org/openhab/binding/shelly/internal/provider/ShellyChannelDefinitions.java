@@ -18,6 +18,7 @@ import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettings
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortLightStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLightChannel;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVirtualComponent;
 import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.core.thing.Channel;
@@ -105,6 +107,7 @@ public class ShellyChannelDefinitions {
     private static final String CHGR_CONTROL = CHANNEL_GROUP_CONTROL;
     private static final String CHGR_BAT = CHANNEL_GROUP_BATTERY;
     private static final String CHGR_LORA = CHANNEL_GROUP_LORA;
+    private static final String CHGR_VCOMPONENTS = CHANNEL_GROUP_VCOMPONENTS;
 
     public static final String PREFIX_GROUP = "group-type." + BINDING_ID + ".";
     public static final String PREFIX_CHANNEL = "channel-type." + BINDING_ID + ".";
@@ -389,7 +392,13 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_TXERRORS, "loraTxErrors", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_SNR, "loraSNR", ITEMT_DIMENSIONLESS))
                 .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_AIRTIME, "loraAirtime", ITEMT_TIME))
-                .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_RSSI, "loraSignal", ITEMT_POWER));
+                .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_RSSI, "loraSignal", ITEMT_POWER))
+
+                // Virtual Components (Gen3/Gen4/Gen2 Pro)
+                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_BOOLEAN, "vcompBoolean", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_NUMBER, "vcompNumber", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_TEXT, "vcompText", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_ENUM, "vcompEnum", ITEMT_STRING));
 
         CHANNEL_TYPE_OVERRIDES.put(CHANNEL_TYPE_WHITE_TEMP_DUO, new ShellyChannel(m, CHANNEL_GROUP_WHITE_CONTROL,
                 CHANNEL_COLOR_TEMP, CHANNEL_TYPE_WHITE_TEMP_DUO, ITEMT_TEMP));
@@ -419,6 +428,14 @@ public class ShellyChannelDefinitions {
             channel = CHANNEL_STATUS_EVENTTYPE;
         } else if (channel.startsWith(CHANNEL_STATUS_EVENTCOUNT)) {
             channel = CHANNEL_STATUS_EVENTCOUNT;
+        } else if (channel.startsWith(CHANNEL_VCOMP_BOOLEAN)) {
+            channel = CHANNEL_VCOMP_BOOLEAN; // map boolean200..299 to boolean
+        } else if (channel.startsWith(CHANNEL_VCOMP_NUMBER)) {
+            channel = CHANNEL_VCOMP_NUMBER; // map number200..299 to number
+        } else if (channel.startsWith(CHANNEL_VCOMP_TEXT)) {
+            channel = CHANNEL_VCOMP_TEXT; // map text200..299 to text
+        } else if (channel.startsWith(CHANNEL_VCOMP_ENUM)) {
+            channel = CHANNEL_VCOMP_ENUM; // map enum200..299 to enum
         }
 
         String channelId = group + ChannelUID.CHANNEL_GROUP_SEPARATOR + channel;
@@ -527,6 +544,61 @@ public class ShellyChannelDefinitions {
             return LORA_ALL_CHANNELS;
         }
         return profile.settings.loraRxEnabled ? Set.of() : LORA_RX_ONLY_CHANNELS;
+    }
+
+    // Group and Button virtual components don't get a channel here: Group is a grouping container only, Button
+    // is wired through the trigger-event path instead of the poll/channel path. Both follow in a later step.
+    private static final Set<String> VCOMP_CHANNEL_TYPES = Set.of(CHANNEL_VCOMP_BOOLEAN, CHANNEL_VCOMP_NUMBER,
+            CHANNEL_VCOMP_TEXT, CHANNEL_VCOMP_ENUM);
+
+    /**
+     * Auto-create channels for discovered Virtual Components (Boolean/Number/Text/Enum only, see
+     * {@link #VCOMP_CHANNEL_TYPES}). The device assigns each instance's id (200-299), so unlike the fixed LoRa
+     * channel set, both the channel count and the per-channel id suffix vary and must be reconciled against the
+     * Thing's current channels on every cycle, see {@link #getObsoleteVirtualComponentChannelIds}. A component's
+     * user-assigned {@code name} (if any) overrides the generic "Virtual Boolean 200"-style default label.
+     *
+     * @return {@code Map<String, Channel>} of channels to be added to the thing
+     */
+    public static Map<String, Channel> createVirtualComponentChannels(final Thing thing,
+            final ShellyDeviceProfile profile) {
+        Map<String, Channel> add = new LinkedHashMap<>();
+        for (ShellyVirtualComponent vc : profile.vComponents) {
+            if (VCOMP_CHANNEL_TYPES.contains(vc.type)) {
+                String channelName = vc.type + vc.id;
+                addChannel(thing, add, true, CHGR_VCOMPONENTS, channelName);
+                String name = vc.name;
+                if (name != null && !name.isBlank()) {
+                    String channelId = CHGR_VCOMPONENTS + ChannelUID.CHANNEL_GROUP_SEPARATOR + channelName;
+                    Channel channel = add.get(channelId);
+                    if (channel != null) {
+                        add.put(channelId, ChannelBuilder.create(channel).withLabel(name).build());
+                    }
+                }
+            }
+        }
+        return add;
+    }
+
+    /**
+     * @return vcomponents channel ids ("group#channel") no longer present on the device and to be removed
+     */
+    public static Set<String> getObsoleteVirtualComponentChannelIds(final Thing thing,
+            final ShellyDeviceProfile profile) {
+        Set<String> desired = new HashSet<>();
+        for (ShellyVirtualComponent vc : profile.vComponents) {
+            if (VCOMP_CHANNEL_TYPES.contains(vc.type)) {
+                desired.add(vc.type + vc.id);
+            }
+        }
+        Set<String> obsolete = new HashSet<>();
+        for (Channel channel : thing.getChannels()) {
+            ChannelUID uid = channel.getUID();
+            if (CHGR_VCOMPONENTS.equals(uid.getGroupId()) && !desired.contains(uid.getIdWithoutGroup())) {
+                obsolete.add(uid.getId());
+            }
+        }
+        return obsolete;
     }
 
     /**
@@ -1001,14 +1073,18 @@ public class ShellyChannelDefinitions {
             builder = ChannelBuilder.create(channelUID, channelDef.itemType);
         }
         if (!channelDef.label.isEmpty()) {
-            char grseq = lastChar(group);
+            String grseq = trailingDigits(group);
             // Only genuinely indexed names get a digit suffix — same allowlist as getDefinition() uses.
+            // Virtual Component channel names carry the device-assigned component id (200-299), a multi-digit
+            // suffix, unlike the single-digit relay/input/... sequence numbers the other prefixes use.
             boolean chIndexed = channelName.startsWith(CHANNEL_INPUT) || channelName.startsWith(CHANNEL_BUTTON_TRIGGER)
                     || channelName.startsWith(CHANNEL_STATUS_EVENTTYPE)
-                    || channelName.startsWith(CHANNEL_STATUS_EVENTCOUNT);
-            char chseq = chIndexed ? lastChar(channelName) : ' ';
-            char sequence = isDigit(chseq) ? chseq : grseq;
-            String label = !isDigit(sequence) ? channelDef.label : channelDef.label + " " + sequence;
+                    || channelName.startsWith(CHANNEL_STATUS_EVENTCOUNT)
+                    || channelName.startsWith(CHANNEL_VCOMP_BOOLEAN) || channelName.startsWith(CHANNEL_VCOMP_NUMBER)
+                    || channelName.startsWith(CHANNEL_VCOMP_TEXT) || channelName.startsWith(CHANNEL_VCOMP_ENUM);
+            String chseq = chIndexed ? trailingDigits(channelName) : "";
+            String sequence = !chseq.isEmpty() ? chseq : grseq;
+            String label = sequence.isEmpty() ? channelDef.label : channelDef.label + " " + sequence;
             builder.withLabel(label);
         }
         if (!channelDef.description.isEmpty()) {

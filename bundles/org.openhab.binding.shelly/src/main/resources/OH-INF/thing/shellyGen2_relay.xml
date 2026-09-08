@@ -12,6 +12,7 @@
 			<channel-group id="relay" typeId="relayChannel"/>
 			<channel-group id="sensors" typeId="externalSensors"/>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -28,6 +29,7 @@
 			<channel-group id="meter" typeId="meter"/>
 			<channel-group id="sensors" typeId="externalSensors"/>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -68,6 +70,7 @@
 				<label>Power Meter 2</label>
 			</channel-group>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -84,6 +87,7 @@
 			<channel-group id="roller" typeId="rollerControl"/>
 			<channel-group id="meter" typeId="meter"/>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -118,6 +122,7 @@
 			<channel-group id="roller" typeId="rollerControl"/>
 			<channel-group id="meter" typeId="meter"/>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -350,6 +355,7 @@
 			<channel-group id="relay" typeId="relayChannel"/>
 			<channel-group id="sensors" typeId="externalSensors"/>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -366,6 +372,7 @@
 			<channel-group id="meter" typeId="meter"/>
 			<channel-group id="sensors" typeId="externalSensors"/>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -399,6 +406,7 @@
 				<label>Relay 2</label>
 			</channel-group>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -424,6 +432,7 @@
 				<label>Power Meter 2</label>
 			</channel-group>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -440,6 +449,7 @@
 			<channel-group id="roller" typeId="rollerControl"/>
 			<channel-group id="meter" typeId="meter"/>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -484,6 +494,7 @@
 			</channel-group>
 			<channel-group id="relay" typeId="relayChannel"/>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -504,6 +515,7 @@
 			</channel-group>
 			<channel-group id="relay" typeId="relayChannel"/>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -615,6 +627,7 @@
 			<channel-group id="relay" typeId="dimmerChannel"/>
 			<channel-group id="meter" typeId="meter"/>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -636,6 +649,7 @@
 			<channel-group id="nmeter" typeId="nmeter"/>
 			<channel-group id="relay" typeId="relayChannel"/>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -675,6 +689,7 @@
 				<label>Power Meter 2</label>
 			</channel-group>
 			<channel-group id="lora" typeId="loraAddon"/>
+			<channel-group id="vcomponents" typeId="vcomponents"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
 
@@ -818,6 +833,38 @@
 		</tags>
 		<state readOnly="true" pattern="%.0f %unit%">
 		</state>
+	</channel-type>
+
+	<channel-group-type id="vcomponents">
+		<label>Virtual Components</label>
+		<description>User-defined Virtual Components (Boolean/Number/Text/Enum), discovered from the device</description>
+	</channel-group-type>
+
+	<channel-type id="vcompBoolean">
+		<item-type>Switch</item-type>
+		<label>Virtual Boolean</label>
+		<description>User-defined Virtual Component of type Boolean</description>
+		<tags>
+			<tag>Switch</tag>
+		</tags>
+	</channel-type>
+
+	<channel-type id="vcompNumber">
+		<item-type>Number</item-type>
+		<label>Virtual Number</label>
+		<description>User-defined Virtual Component of type Number</description>
+	</channel-type>
+
+	<channel-type id="vcompText">
+		<item-type>String</item-type>
+		<label>Virtual Text</label>
+		<description>User-defined Virtual Component of type Text</description>
+	</channel-type>
+
+	<channel-type id="vcompEnum">
+		<item-type>String</item-type>
+		<label>Virtual Enum</label>
+		<description>User-defined Virtual Component of type Enum; allowed values are provided by the device</description>
 	</channel-type>
 
 </thing:thing-descriptions>

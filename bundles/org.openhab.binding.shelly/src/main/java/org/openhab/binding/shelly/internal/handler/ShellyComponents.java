@@ -55,7 +55,9 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSe
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyExtVoltage.ShellyShortVoltage;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyThermnostat;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatusLora;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVirtualComponent;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
+import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.ImperialUnits;
@@ -68,6 +70,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 
 /***
  * The{@link ShellyComponents} implements updates for supplemental components
@@ -98,6 +101,15 @@ public class ShellyComponents {
             thingHandler.updateThingChannels(Map.of(),
                     ShellyChannelDefinitions.createLoraChannels(thingHandler.getThing(), profile));
             reconcileLoraChannels(thingHandler, profile);
+
+            if (profile.vComponentsProbed) {
+                // Same rationale as LoRa: instances can be added/removed on the device at any time, so this
+                // bypasses the one-time channelsCreated gate and is reconciled on every cycle.
+                thingHandler.updateThingChannels(Map.of(),
+                        ShellyChannelDefinitions.createVirtualComponentChannels(thingHandler.getThing(), profile));
+                reconcileVirtualComponentChannels(thingHandler, profile);
+                updateVirtualComponentStatus(thingHandler, profile);
+            }
         }
 
         thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_FIRMWARE, getStringType(profile.fwVersion));
@@ -1031,6 +1043,46 @@ public class ShellyComponents {
         if (!profile.settings.loraDetected) {
             profile.addOnFw = "";
             thingHandler.removeProperty(PROPERTY_ADDON_FIRMWARE);
+        }
+    }
+
+    private static void reconcileVirtualComponentChannels(ShellyThingInterface thingHandler,
+            ShellyDeviceProfile profile) {
+        Set<String> obsolete = ShellyChannelDefinitions.getObsoleteVirtualComponentChannelIds(thingHandler.getThing(),
+                profile);
+        if (!obsolete.isEmpty()) {
+            thingHandler.removeChannels(obsolete);
+        }
+    }
+
+    /**
+     * Pushes the current value of every discovered Boolean/Number/Text/Enum virtual component into its channel.
+     * Group and Button don't reach here: Group has no state of its own, Button is stateless and only ever fires
+     * as a trigger event.
+     */
+    private static void updateVirtualComponentStatus(ShellyThingInterface thingHandler, ShellyDeviceProfile profile) {
+        for (ShellyVirtualComponent vc : profile.vComponents) {
+            JsonElement jvalue = vc.value;
+            if (jvalue == null) {
+                continue; // not yet reported, e.g. right after discovery; also always null for button
+            }
+            String channel = vc.type + vc.id;
+            switch (vc.type) {
+                case CHANNEL_VCOMP_BOOLEAN:
+                    thingHandler.updateChannel(CHANNEL_GROUP_VCOMPONENTS, channel,
+                            OnOffType.from(jvalue.getAsBoolean()));
+                    break;
+                case CHANNEL_VCOMP_NUMBER:
+                    thingHandler.updateChannel(CHANNEL_GROUP_VCOMPONENTS, channel,
+                            new DecimalType(jvalue.getAsDouble()));
+                    break;
+                case CHANNEL_VCOMP_TEXT:
+                case CHANNEL_VCOMP_ENUM:
+                    thingHandler.updateChannel(CHANNEL_GROUP_VCOMPONENTS, channel, getStringType(jvalue.getAsString()));
+                    break;
+                default:
+                    break; // group/button: no channel to update
+            }
         }
     }
 
