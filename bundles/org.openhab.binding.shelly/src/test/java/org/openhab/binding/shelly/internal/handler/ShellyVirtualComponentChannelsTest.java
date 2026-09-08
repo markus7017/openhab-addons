@@ -96,6 +96,12 @@ public class ShellyVirtualComponentChannelsTest {
         return vc;
     }
 
+    private static ShellyVirtualComponent vgroup(int id, String... memberKeys) {
+        ShellyVirtualComponent vc = vcomp(SHELLY2_VCOMP_GROUP, id);
+        vc.groupMembers = List.of(memberKeys);
+        return vc;
+    }
+
     /**
      * Builds a {@link ShellyThingInterface} mock wired to the given profile and thing, as used by every
      * {@code ShellyComponents.updateDeviceStatus} integration test below.
@@ -225,5 +231,48 @@ public class ShellyVirtualComponentChannelsTest {
         ShellyComponents.handleVirtualComponentCommand(handler, "boolean299", OnOffType.ON);
 
         verify(handler.getApi(), never()).setVirtualBoolean(anyInt(), anyBoolean());
+    }
+
+    @Test
+    void createVirtualComponentChannelsPutsGroupMemberUnderVgroupPrefixAndSkipsTheGroupItself() {
+        Map<String, Channel> channels = ShellyChannelDefinitions.createVirtualComponentChannels(thing(),
+                vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200), vcomp(CHANNEL_VCOMP_NUMBER, 201),
+                        vgroup(204, "boolean:200")));
+
+        assertThat(channels.keySet(),
+                is(Set.of(CHANNEL_GROUP_VGROUP_PREFIX + "204#boolean200", CHANNEL_GROUP_VCOMPONENTS + "#number201")));
+    }
+
+    @Test
+    void getObsoleteVirtualComponentChannelIdsRemovesChannelMovedToADifferentGroup() {
+        // boolean200 used to live directly under vcomponents; the device now reports it as a member of group 204
+        Thing thing = thing(channel(CHANNEL_GROUP_VCOMPONENTS + "#boolean200"));
+
+        Set<String> obsolete = ShellyChannelDefinitions.getObsoleteVirtualComponentChannelIds(thing,
+                vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200), vgroup(204, "boolean:200")));
+
+        assertThat(obsolete, is(Set.of(CHANNEL_GROUP_VCOMPONENTS + "#boolean200")));
+    }
+
+    @Test
+    void getObsoleteVirtualComponentChannelIdsKeepsChannelStillInItsGroup() {
+        Thing thing = thing(channel(CHANNEL_GROUP_VGROUP_PREFIX + "204#boolean200"));
+
+        Set<String> obsolete = ShellyChannelDefinitions.getObsoleteVirtualComponentChannelIds(thing,
+                vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200), vgroup(204, "boolean:200")));
+
+        assertThat(obsolete.isEmpty(), is(true));
+    }
+
+    @Test
+    void updateVirtualComponentStatusRoutesGroupMemberToVgroupChannel() {
+        Thing thing = thing();
+        ShellyDeviceProfile profile = vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200, true),
+                vgroup(204, "boolean:200"));
+        ShellyThingInterface handler = mockHandler(profile, thing);
+
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+
+        verify(handler).updateChannel(CHANNEL_GROUP_VGROUP_PREFIX + "204", "boolean200", OnOffType.ON);
     }
 }

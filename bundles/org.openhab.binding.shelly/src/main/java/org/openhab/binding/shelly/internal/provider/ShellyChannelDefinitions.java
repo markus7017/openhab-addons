@@ -14,6 +14,7 @@ package org.openhab.binding.shelly.internal.provider;
 
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.SHELLY_API_INVTEMP;
+import static org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.SHELLY2_VCOMP_GROUP;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.util.ArrayList;
@@ -418,6 +419,8 @@ public class ShellyChannelDefinitions {
             group = CHANNEL_GROUP_LIGHT_INDEX; // map light1..n to light
         } else if (group.startsWith(CHANNEL_GROUP_STATUS)) {
             group = CHANNEL_GROUP_STATUS; // map status1..n to meter
+        } else if (group.startsWith(CHANNEL_GROUP_VGROUP_PREFIX)) {
+            group = CHANNEL_GROUP_VCOMPONENTS; // map vgroup200..299 to vcomponents (same channel types)
         }
 
         if (!CHGR_SENSOR.equals(group) && channel.startsWith(CHANNEL_INPUT)) {
@@ -552,11 +555,32 @@ public class ShellyChannelDefinitions {
             CHANNEL_VCOMP_TEXT, CHANNEL_VCOMP_ENUM);
 
     /**
+     * Channel-group prefix a Boolean/Number/Text/Enum vcomponent's channel lives under: the fixed
+     * {@link #CHGR_VCOMPONENTS} group, or {@code vgroup<cid>} when the device currently lists it as a member of
+     * virtual Group {@code <cid>} (see {@code Group.GetStatus}'s membership array). Group membership is only
+     * picked up on the next full reconciliation, not live, matching how other dynamic-channel-set changes are
+     * handled elsewhere in the binding.
+     */
+    public static String getVirtualComponentChannelGroup(final ShellyDeviceProfile profile,
+            final ShellyVirtualComponent vc) {
+        String memberKey = vc.type + ":" + vc.id;
+        for (ShellyVirtualComponent candidate : profile.vComponents) {
+            List<String> members = candidate.groupMembers;
+            if (SHELLY2_VCOMP_GROUP.equals(candidate.type) && members != null && members.contains(memberKey)) {
+                return CHANNEL_GROUP_VGROUP_PREFIX + candidate.id;
+            }
+        }
+        return CHGR_VCOMPONENTS;
+    }
+
+    /**
      * Auto-create channels for discovered Virtual Components (Boolean/Number/Text/Enum only, see
      * {@link #VCOMP_CHANNEL_TYPES}). The device assigns each instance's id (200-299), so unlike the fixed LoRa
      * channel set, both the channel count and the per-channel id suffix vary and must be reconciled against the
      * Thing's current channels on every cycle, see {@link #getObsoleteVirtualComponentChannelIds}. A component's
-     * user-assigned {@code name} (if any) overrides the generic "Virtual Boolean 200"-style default label.
+     * user-assigned {@code name} (if any) overrides the generic "Virtual Boolean 200"-style default label. A
+     * component that's a member of a virtual Group gets its channel under that group's {@code vgroup<cid>} prefix
+     * instead, see {@link #getVirtualComponentChannelGroup}.
      *
      * @return {@code Map<String, Channel>} of channels to be added to the thing
      */
@@ -566,10 +590,11 @@ public class ShellyChannelDefinitions {
         for (ShellyVirtualComponent vc : profile.vComponents) {
             if (VCOMP_CHANNEL_TYPES.contains(vc.type)) {
                 String channelName = vc.type + vc.id;
-                addChannel(thing, add, true, CHGR_VCOMPONENTS, channelName);
+                String group = getVirtualComponentChannelGroup(profile, vc);
+                addChannel(thing, add, true, group, channelName);
                 String name = vc.name;
                 if (name != null && !name.isBlank()) {
-                    String channelId = CHGR_VCOMPONENTS + ChannelUID.CHANNEL_GROUP_SEPARATOR + channelName;
+                    String channelId = group + ChannelUID.CHANNEL_GROUP_SEPARATOR + channelName;
                     Channel channel = add.get(channelId);
                     if (channel != null) {
                         add.put(channelId, ChannelBuilder.create(channel).withLabel(name).build());
@@ -581,20 +606,24 @@ public class ShellyChannelDefinitions {
     }
 
     /**
-     * @return vcomponents channel ids ("group#channel") no longer present on the device and to be removed
+     * @return vcomponents/vgroup&lt;cid&gt; channel ids ("group#channel") no longer present on the device (or moved
+     *         to a different virtual Group) and to be removed
      */
     public static Set<String> getObsoleteVirtualComponentChannelIds(final Thing thing,
             final ShellyDeviceProfile profile) {
         Set<String> desired = new HashSet<>();
         for (ShellyVirtualComponent vc : profile.vComponents) {
             if (VCOMP_CHANNEL_TYPES.contains(vc.type)) {
-                desired.add(vc.type + vc.id);
+                String group = getVirtualComponentChannelGroup(profile, vc);
+                desired.add(group + ChannelUID.CHANNEL_GROUP_SEPARATOR + vc.type + vc.id);
             }
         }
         Set<String> obsolete = new HashSet<>();
         for (Channel channel : thing.getChannels()) {
             ChannelUID uid = channel.getUID();
-            if (CHGR_VCOMPONENTS.equals(uid.getGroupId()) && !desired.contains(uid.getIdWithoutGroup())) {
+            String group = getString(uid.getGroupId());
+            if ((CHGR_VCOMPONENTS.equals(group) || group.startsWith(CHANNEL_GROUP_VGROUP_PREFIX))
+                    && !desired.contains(uid.getId())) {
                 obsolete.add(uid.getId());
             }
         }

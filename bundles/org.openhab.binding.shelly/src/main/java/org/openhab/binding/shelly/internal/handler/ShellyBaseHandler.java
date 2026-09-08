@@ -597,7 +597,8 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 default:
                     // Virtual Component channel names are device-assigned (e.g. "boolean200") and can't be matched
                     // as a literal case label like the fixed LoRa channels above, so they're dispatched by group.
-                    if (CHANNEL_GROUP_VCOMPONENTS.equals(group)) {
+                    // A member of a virtual Group lives under "vgroup<cid>" instead of "vcomponents".
+                    if (CHANNEL_GROUP_VCOMPONENTS.equals(group) || group.startsWith(CHANNEL_GROUP_VGROUP_PREFIX)) {
                         ShellyComponents.handleVirtualComponentCommand(this, channel, command);
                     } else {
                         update = handleDeviceCommand(channelUID, command);

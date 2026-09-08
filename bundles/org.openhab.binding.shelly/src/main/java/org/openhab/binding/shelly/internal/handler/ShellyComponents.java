@@ -1067,19 +1067,18 @@ public class ShellyComponents {
             if (jvalue == null) {
                 continue; // not yet reported, e.g. right after discovery; also always null for button
             }
+            String group = ShellyChannelDefinitions.getVirtualComponentChannelGroup(profile, vc);
             String channel = vc.type + vc.id;
             switch (vc.type) {
                 case CHANNEL_VCOMP_BOOLEAN:
-                    thingHandler.updateChannel(CHANNEL_GROUP_VCOMPONENTS, channel,
-                            OnOffType.from(jvalue.getAsBoolean()));
+                    thingHandler.updateChannel(group, channel, OnOffType.from(jvalue.getAsBoolean()));
                     break;
                 case CHANNEL_VCOMP_NUMBER:
-                    thingHandler.updateChannel(CHANNEL_GROUP_VCOMPONENTS, channel,
-                            new DecimalType(jvalue.getAsDouble()));
+                    thingHandler.updateChannel(group, channel, new DecimalType(jvalue.getAsDouble()));
                     break;
                 case CHANNEL_VCOMP_TEXT:
                 case CHANNEL_VCOMP_ENUM:
-                    thingHandler.updateChannel(CHANNEL_GROUP_VCOMPONENTS, channel, getStringType(jvalue.getAsString()));
+                    thingHandler.updateChannel(group, channel, getStringType(jvalue.getAsString()));
                     break;
                 default:
                     break; // group/button: no channel to update

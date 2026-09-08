@@ -289,6 +289,8 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_VCOMP_NUMBER = "number";
     public static final String CHANNEL_VCOMP_TEXT = "text";
     public static final String CHANNEL_VCOMP_ENUM = "enum";
+    // a member vcomponent of virtual Group <cid> gets its channel under "vgroup<cid>" instead of "vcomponents"
+    public static final String CHANNEL_GROUP_VGROUP_PREFIX = "vgroup";
 
     // General
     public static final String CHANNEL_LAST_UPDATE = "lastUpdate";
