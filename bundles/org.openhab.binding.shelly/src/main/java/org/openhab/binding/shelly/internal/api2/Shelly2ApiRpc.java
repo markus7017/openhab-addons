@@ -97,6 +97,7 @@ import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonD
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
+import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
@@ -693,6 +694,14 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         for (Shelly2NotifyEvent e : events) {
             String event = getString(e.event);
             int id = getInteger(e.id);
+            String component = getString(e.component);
+            if (component.startsWith(SHELLY2_VCOMP_BUTTON_PREFIX)) {
+                // Virtual Button: stateless (Button.GetStatus always returns {}), reuses the physical-input push
+                // event names, but id is a vcomponent id (200-299), not an input index - handle it separately
+                // rather than falling into the id<numInputs-guarded cases below meant for physical inputs.
+                handleVirtualButtonEvent(profile, id, event);
+                continue;
+            }
             switch (event) {
                 case SHELLY2_EVENT_BTNUP:
                 case SHELLY2_EVENT_BTNDOWN:
@@ -812,6 +821,28 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                     logger.debug("{}: Event {} was not handled", thingName, e.event);
             }
         }
+    }
+
+    /**
+     * Dispatch a Button.Trigger event for a Virtual Button component. Unlike a physical input's push event this
+     * can't reuse {@link ShellyThingInterface#triggerButton}, which assumes a fixed input-channel naming convention
+     * and also updates {@code CHANNEL_LAST_UPDATE} on the group - neither applies to a vcomponent's trigger channel.
+     */
+    private void handleVirtualButtonEvent(ShellyDeviceProfile profile, int id, String event) throws ShellyApiException {
+        String trigger = mapButtonEvent(mapValue(MAP_INPUT_EVENT_ID, event));
+        if (trigger.isEmpty()) {
+            logger.debug("{}: Unmapped Virtual Button event {}, ignoring", thingName, event);
+            return;
+        }
+        for (ShellyVirtualComponent vc : profile.vComponents) {
+            if (SHELLY2_VCOMP_BUTTON.equals(vc.type) && vc.id == id) {
+                String group = ShellyChannelDefinitions.getVirtualComponentChannelGroup(profile, vc);
+                logger.debug("{}: Virtual Button {} triggered: {}", thingName, id, trigger);
+                getThing().triggerChannel(group, CHANNEL_VCOMP_BUTTON + id, trigger);
+                return;
+            }
+        }
+        logger.debug("{}: Virtual Button {} not found in profile, ignoring event", thingName, id);
     }
 
     @Override

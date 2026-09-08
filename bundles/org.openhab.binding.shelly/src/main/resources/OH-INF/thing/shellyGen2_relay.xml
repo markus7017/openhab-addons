@@ -867,4 +867,18 @@
 		<description>User-defined Virtual Component of type Enum; allowed values are provided by the device</description>
 	</channel-type>
 
+	<channel-type id="vcompButton">
+		<kind>trigger</kind>
+		<label>Virtual Button</label>
+		<description>User-defined Virtual Component of type Button; fires on a Button.Trigger event from the device</description>
+		<event>
+			<options>
+				<option value="SHORT_PRESSED">Short Pressed</option>
+				<option value="DOUBLE_PRESSED">Double Pressed</option>
+				<option value="TRIPLE_PRESSED">Triple Pressed</option>
+				<option value="LONG_PRESSED">Long Pressed</option>
+			</options>
+		</event>
+	</channel-type>
+
 </thing:thing-descriptions>

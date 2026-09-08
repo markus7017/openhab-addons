@@ -399,7 +399,8 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_BOOLEAN, "vcompBoolean", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_NUMBER, "vcompNumber", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_TEXT, "vcompText", ITEMT_STRING))
-                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_ENUM, "vcompEnum", ITEMT_STRING));
+                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_ENUM, "vcompEnum", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_BUTTON, "vcompButton", ITEMT_STRING));
 
         CHANNEL_TYPE_OVERRIDES.put(CHANNEL_TYPE_WHITE_TEMP_DUO, new ShellyChannel(m, CHANNEL_GROUP_WHITE_CONTROL,
                 CHANNEL_COLOR_TEMP, CHANNEL_TYPE_WHITE_TEMP_DUO, ITEMT_TEMP));
@@ -426,6 +427,7 @@ public class ShellyChannelDefinitions {
         if (!CHGR_SENSOR.equals(group) && channel.startsWith(CHANNEL_INPUT)) {
             channel = CHANNEL_INPUT; // status#input0..n -> status#input; sensors#input1 (Addon) is a fixed name
         } else if (channel.startsWith(CHANNEL_BUTTON_TRIGGER)) {
+            // also matches button200..299 (Virtual Button): CHANNEL_VCOMP_BUTTON is the same string "button"
             channel = CHANNEL_BUTTON_TRIGGER;
         } else if (channel.startsWith(CHANNEL_STATUS_EVENTTYPE)) {
             channel = CHANNEL_STATUS_EVENTTYPE;
@@ -549,10 +551,11 @@ public class ShellyChannelDefinitions {
         return profile.settings.loraRxEnabled ? Set.of() : LORA_RX_ONLY_CHANNELS;
     }
 
-    // Group and Button virtual components don't get a channel here: Group is a grouping container only, Button
-    // is wired through the trigger-event path instead of the poll/channel path. Both follow in a later step.
+    // Group never gets a channel here: it's a grouping container only, see getVirtualComponentChannelGroup().
+    // Button gets a trigger channel (created just like the others) but no state - it's never touched by
+    // updateVirtualComponentStatus(), instead it fires from a Button.Trigger NotifyEvent, see Shelly2ApiRpc.
     private static final Set<String> VCOMP_CHANNEL_TYPES = Set.of(CHANNEL_VCOMP_BOOLEAN, CHANNEL_VCOMP_NUMBER,
-            CHANNEL_VCOMP_TEXT, CHANNEL_VCOMP_ENUM);
+            CHANNEL_VCOMP_TEXT, CHANNEL_VCOMP_ENUM, CHANNEL_VCOMP_BUTTON);
 
     /**
      * Channel-group prefix a Boolean/Number/Text/Enum vcomponent's channel lives under: the fixed
@@ -1096,7 +1099,7 @@ public class ShellyChannelDefinitions {
         ChannelTypeUID channelTypeUID = typeId.contains("system:") ? new ChannelTypeUID(typeId)
                 : new ChannelTypeUID(BINDING_ID, typeId);
         ChannelBuilder builder;
-        if ("system:button".equalsIgnoreCase(channelDef.typeId)) {
+        if ("system:button".equalsIgnoreCase(channelDef.typeId) || "vcompButton".equals(channelDef.typeId)) {
             builder = ChannelBuilder.create(channelUID, null).withKind(ChannelKind.TRIGGER);
         } else {
             builder = ChannelBuilder.create(channelUID, channelDef.itemType);
@@ -1106,6 +1109,7 @@ public class ShellyChannelDefinitions {
             // Only genuinely indexed names get a digit suffix — same allowlist as getDefinition() uses.
             // Virtual Component channel names carry the device-assigned component id (200-299), a multi-digit
             // suffix, unlike the single-digit relay/input/... sequence numbers the other prefixes use.
+            // CHANNEL_BUTTON_TRIGGER also covers Virtual Button (CHANNEL_VCOMP_BUTTON is the same string "button")
             boolean chIndexed = channelName.startsWith(CHANNEL_INPUT) || channelName.startsWith(CHANNEL_BUTTON_TRIGGER)
                     || channelName.startsWith(CHANNEL_STATUS_EVENTTYPE)
                     || channelName.startsWith(CHANNEL_STATUS_EVENTCOUNT)
