@@ -43,6 +43,7 @@ import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingUID;
 import org.openhab.core.thing.binding.builder.ChannelBuilder;
+import org.openhab.core.thing.type.ChannelKind;
 
 import com.google.gson.JsonPrimitive;
 
@@ -127,7 +128,7 @@ public class ShellyVirtualComponentChannelsTest {
     }
 
     @Test
-    void createVirtualComponentChannelsCreatesOnlyBooleanNumberTextEnumChannels() {
+    void createVirtualComponentChannelsCreatesBooleanNumberTextEnumButtonButNotGroupChannels() {
         Map<String, Channel> channels = ShellyChannelDefinitions.createVirtualComponentChannels(thing(),
                 vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200), vcomp(CHANNEL_VCOMP_NUMBER, 201),
                         vcomp(CHANNEL_VCOMP_TEXT, 202), vcomp(CHANNEL_VCOMP_ENUM, 203), vcomp(SHELLY2_VCOMP_GROUP, 204),
@@ -135,7 +136,17 @@ public class ShellyVirtualComponentChannelsTest {
 
         assertThat(channels.keySet(),
                 is(Set.of(CHANNEL_GROUP_VCOMPONENTS + "#boolean200", CHANNEL_GROUP_VCOMPONENTS + "#number201",
-                        CHANNEL_GROUP_VCOMPONENTS + "#text202", CHANNEL_GROUP_VCOMPONENTS + "#enum203")));
+                        CHANNEL_GROUP_VCOMPONENTS + "#text202", CHANNEL_GROUP_VCOMPONENTS + "#enum203",
+                        CHANNEL_GROUP_VCOMPONENTS + "#button205")));
+    }
+
+    @Test
+    void createVirtualComponentChannelsCreatesButtonAsTriggerChannel() {
+        Map<String, Channel> channels = ShellyChannelDefinitions.createVirtualComponentChannels(thing(),
+                vComponentsProfile(vcomp(SHELLY2_VCOMP_BUTTON, 205)));
+
+        Channel button = channels.get(CHANNEL_GROUP_VCOMPONENTS + "#button205");
+        assertThat(button.getKind(), is(ChannelKind.TRIGGER));
     }
 
     @Test
