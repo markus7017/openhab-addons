@@ -80,4 +80,24 @@ public class ShellyUtilsTest {
     void stripDeprecatedSuffixLeavesRegularChannelIdUnchanged() {
         assertEquals("light1#brightness", ShellyUtils.stripDeprecatedSuffix("light1#brightness"));
     }
+
+    @Test
+    void trailingDigitsExtractsSingleDigitSuffix() {
+        assertEquals("1", ShellyUtils.trailingDigits("relay1"));
+    }
+
+    @Test
+    void trailingDigitsExtractsMultiDigitSuffix() {
+        assertEquals("200", ShellyUtils.trailingDigits("boolean200"));
+    }
+
+    @Test
+    void trailingDigitsReturnsEmptyWhenNoTrailingDigit() {
+        assertEquals("", ShellyUtils.trailingDigits("relay"));
+    }
+
+    @Test
+    void trailingDigitsReturnsEmptyForEmptyString() {
+        assertEquals("", ShellyUtils.trailingDigits(""));
+    }
 }
