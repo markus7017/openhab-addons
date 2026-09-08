@@ -527,6 +527,26 @@ public class Shelly1HttpApi extends ShellyHttpClient implements ShellyApiInterfa
         throw new ShellyApiException("Request not supported");
     }
 
+    @Override
+    public void setVirtualBoolean(int id, boolean value) throws ShellyApiException {
+        throw new ShellyApiException("Request not supported");
+    }
+
+    @Override
+    public void setVirtualNumber(int id, double value) throws ShellyApiException {
+        throw new ShellyApiException("Request not supported");
+    }
+
+    @Override
+    public void setVirtualText(int id, String value) throws ShellyApiException {
+        throw new ShellyApiException("Request not supported");
+    }
+
+    @Override
+    public void setVirtualEnum(int id, String value) throws ShellyApiException {
+        throw new ShellyApiException("Request not supported");
+    }
+
     /**
      * Set event callback URLs. Depending on the device different event types are supported. In fact all of them will be
      * redirected to the binding's servlet and act as a trigger to schedule a status update

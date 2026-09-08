@@ -28,6 +28,8 @@ import java.util.Set;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.openhab.binding.shelly.internal.api.ShellyApiException;
+import org.openhab.binding.shelly.internal.api.ShellyApiInterface;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVirtualComponent;
@@ -103,6 +105,18 @@ public class ShellyVirtualComponentChannelsTest {
         when(handler.getProfile()).thenReturn(profile);
         when(handler.getThing()).thenReturn(thing);
         when(handler.areChannelsCreated()).thenReturn(true);
+        return handler;
+    }
+
+    /**
+     * Builds a {@link ShellyThingInterface} mock wired to the given profile and a mocked API, as used by every
+     * {@code ShellyComponents.handleVirtualComponentCommand} test below.
+     */
+    private static ShellyThingInterface commandHandler(ShellyDeviceProfile profile) {
+        ShellyThingInterface handler = mock(ShellyThingInterface.class);
+        when(handler.getThingName()).thenReturn("test-vcomp");
+        when(handler.getProfile()).thenReturn(profile);
+        when(handler.getApi()).thenReturn(mock(ShellyApiInterface.class));
         return handler;
     }
 
@@ -186,5 +200,30 @@ public class ShellyVirtualComponentChannelsTest {
         ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_VCOMPONENTS), anyString(), any());
+    }
+
+    @Test
+    void handleVirtualComponentCommandDispatchesToMatchingRpcSetCall() throws ShellyApiException {
+        ShellyThingInterface handler = commandHandler(vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200),
+                vcomp(CHANNEL_VCOMP_NUMBER, 201), vcomp(CHANNEL_VCOMP_TEXT, 202), vcomp(CHANNEL_VCOMP_ENUM, 203)));
+
+        ShellyComponents.handleVirtualComponentCommand(handler, "boolean200", OnOffType.ON);
+        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(12.5));
+        ShellyComponents.handleVirtualComponentCommand(handler, "text202", new StringType("hi"));
+        ShellyComponents.handleVirtualComponentCommand(handler, "enum203", new StringType("high"));
+
+        verify(handler.getApi()).setVirtualBoolean(200, true);
+        verify(handler.getApi()).setVirtualNumber(201, 12.5);
+        verify(handler.getApi()).setVirtualText(202, "hi");
+        verify(handler.getApi()).setVirtualEnum(203, "high");
+    }
+
+    @Test
+    void handleVirtualComponentCommandIgnoresUnknownChannel() throws ShellyApiException {
+        ShellyThingInterface handler = commandHandler(vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200)));
+
+        ShellyComponents.handleVirtualComponentCommand(handler, "boolean299", OnOffType.ON);
+
+        verify(handler.getApi(), never()).setVirtualBoolean(anyInt(), anyBoolean());
     }
 }
