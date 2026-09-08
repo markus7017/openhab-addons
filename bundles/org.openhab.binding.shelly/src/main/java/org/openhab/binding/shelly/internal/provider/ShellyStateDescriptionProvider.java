@@ -75,7 +75,7 @@ public class ShellyStateDescriptionProvider extends BaseDynamicStateDescriptionP
             return null;
         }
 
-        List<StateOption> stateOptions = handler.getStateOptions(uid);
+        List<StateOption> stateOptions = handler.getStateOptions(channel.getUID().getId());
         return stateOptions == null ? null
                 : StateDescriptionFragmentBuilder.create(originalStateDescription).withOptions(stateOptions).build()
                         .toStateDescription();

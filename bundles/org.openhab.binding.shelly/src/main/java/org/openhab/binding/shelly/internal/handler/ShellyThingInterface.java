@@ -29,7 +29,6 @@ import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
-import org.openhab.core.thing.type.ChannelTypeUID;
 import org.openhab.core.types.State;
 import org.openhab.core.types.StateOption;
 
@@ -43,8 +42,13 @@ public interface ShellyThingInterface {
 
     ShellyDeviceProfile getProfile(boolean forceRefresh) throws ShellyApiException;
 
+    /**
+     * @param channelId the full "group#channel" instance id (e.g. {@code ChannelUID.getId()}), kept per-instance so
+     *            multiple channels sharing one channel type (e.g. several Virtual Enum components) each get their
+     *            own option list
+     */
     @Nullable
-    List<StateOption> getStateOptions(ChannelTypeUID uid);
+    List<StateOption> getStateOptions(String channelId);
 
     double getChannelDouble(String group, String channel);
 
