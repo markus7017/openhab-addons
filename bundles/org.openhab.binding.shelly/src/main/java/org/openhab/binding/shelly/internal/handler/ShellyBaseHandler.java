@@ -627,6 +627,13 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
 
             skipUpdate++;
             if (refreshSettings || (scheduledUpdates > 0) || (skipUpdate % skipCount == 0)) {
+                if (!refreshSettings && (scheduledUpdates == 0) && !profile.alwaysOn && profile.isInitialized()) {
+                    // Sleep device: skip the periodic active poll, it's a guaranteed miss while the device is
+                    // asleep. Its own wakeup push (WS NotifyStatus/NotifyFullStatus, or Gen1 CoIoT) already
+                    // restores ONLINE and resets the watchdog independently of this poll loop (#21289).
+                    logger.trace("{}: Sleep device, skip periodic poll, waiting for next wakeup", thingName);
+                    return;
+                }
                 ThingStatus thingStatus = getThing().getStatus();
                 if (!profile.isInitialized() || ((thingStatus == ThingStatus.OFFLINE))
                         || (getThingStatusDetail() == ThingStatusDetail.CONFIGURATION_PENDING)) {
