@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -63,6 +64,7 @@ import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
 import org.openhab.binding.shelly.internal.util.ShellyChannelCache;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
+import org.openhab.core.common.ThreadPoolManager;
 import org.openhab.core.config.discovery.DiscoveryResult;
 import org.openhab.core.i18n.LocationProvider;
 import org.openhab.core.library.types.DecimalType;
@@ -112,6 +114,10 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
     private final ShellyTranslationProvider messages;
     private final ShellyChannelCache cache;
     private static final long DEPRECATED_CHANNEL_WARNING_INTERVAL_MS = TimeUnit.DAYS.toMillis(1);
+
+    // Dedicated pool for polling/watchdog/RPC scheduling, isolated from openHAB core's shared
+    // "thingHandler" pool so a blocked/slow Shelly device can't starve other bindings' Things.
+    private static final ScheduledExecutorService SHELLY_SCHEDULER = ThreadPoolManager.getScheduledPool("shelly");
 
     private final Map<String, Long> deprecatedChannelWarnings = new ConcurrentHashMap<>();
     private final int cacheCount = UPDATE_SETTINGS_INTERVAL_SECONDS / UPDATE_STATUS_INTERVAL_SECONDS;
@@ -182,10 +188,10 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
 
         // Create API instance
         if (blu) {
-            this.api = new ShellyBluApi(thingName, thingTable, this, apiConfig, webSocketClient, scheduler,
+            this.api = new ShellyBluApi(thingName, thingTable, this, apiConfig, webSocketClient, SHELLY_SCHEDULER,
                     locationProvider);
         } else if (gen2) {
-            this.api = new Shelly2ApiRpc(thingName, thingTable, this, apiConfig, webSocketClient, scheduler);
+            this.api = new Shelly2ApiRpc(thingName, thingTable, this, apiConfig, webSocketClient, SHELLY_SCHEDULER);
         } else {
             this.api = new Shelly1HttpApi(thingName, apiConfig, this);
         }
@@ -216,7 +222,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
     @Override
     public void initialize() {
         // start background initialization:
-        initJob = scheduler.schedule(() -> {
+        initJob = SHELLY_SCHEDULER.schedule(() -> {
             boolean start = false;
             try {
                 if (initializeThingConfig()) {
@@ -1321,8 +1327,8 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
     protected void startUpdateJob() {
         ScheduledFuture<?> statusJob = this.statusJob;
         if ((statusJob == null) || statusJob.isCancelled()) {
-            this.statusJob = scheduler.scheduleWithFixedDelay(this::refreshStatus, 2, UPDATE_STATUS_INTERVAL_SECONDS,
-                    TimeUnit.SECONDS);
+            this.statusJob = SHELLY_SCHEDULER.scheduleWithFixedDelay(this::refreshStatus, 2,
+                    UPDATE_STATUS_INTERVAL_SECONDS, TimeUnit.SECONDS);
             logger.debug("{}: Update status job started, interval={}*{}={}sec.", thingName, skipCount,
                     UPDATE_STATUS_INTERVAL_SECONDS, skipCount * UPDATE_STATUS_INTERVAL_SECONDS);
         }

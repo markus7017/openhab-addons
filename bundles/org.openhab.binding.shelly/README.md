@@ -660,6 +660,15 @@ The add-on firmware version is shown in the Thing property `addonFirmware`; the 
 |         | snr          | Number:Dimensionless | yes    | SNR (signal-to-noise ratio in dB) of the last received packet.                    |
 |         | airtime      | Number:Time       | yes       | Transmission air time of the LoRa Add-On during the last 60 minutes.              |
 
+### Thread Pool
+
+All periodic device polling runs on the shared scheduled thread pool named `shelly` (5 threads by default).
+On installations with many Shelly Things the pool size can be raised via the `org.openhab.threadpool` configuration, e.g. in `runtime.cfg`:
+
+```text
+org.openhab.threadpool:shelly=10
+```
+
 ### Shelly 1 (thing-type: shelly1)
 
 | Group   | Channel      | Type     | read-only | Description                                                                       |
