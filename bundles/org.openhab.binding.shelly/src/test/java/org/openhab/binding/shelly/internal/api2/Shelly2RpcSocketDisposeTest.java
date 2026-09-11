@@ -68,7 +68,7 @@ class Shelly2RpcSocketDisposeTest {
     void closeAfterDisposeIsNotReportedToTheHandler() {
         socket.dispose();
 
-        socket.onClose(StatusCode.ABNORMAL, "Device rebooted");
+        socket.onClose(session, StatusCode.ABNORMAL, "Device rebooted");
 
         verify(handler, never()).onClose(anyBoolean(), anyInt(), anyString());
     }
@@ -77,7 +77,7 @@ class Shelly2RpcSocketDisposeTest {
     void errorAfterDisposeIsNotReportedToTheHandler() {
         socket.dispose();
 
-        socket.onError(new EOFException("connection reset"));
+        socket.onError(session, new EOFException("connection reset"));
 
         verify(handler, never()).onError(any());
     }
@@ -96,7 +96,12 @@ class Shelly2RpcSocketDisposeTest {
 
     @Test
     void closeBeforeDisposeIsStillReportedToTheHandler() {
-        socket.onClose(StatusCode.ABNORMAL, "Device rebooted");
+        ShellyThingInterface thing = mock(ShellyThingInterface.class);
+        when(thingTable.getThing(DEVICE_ADDRESS)).thenReturn(thing);
+        when(thing.getThingName()).thenReturn("shellyplus1-test");
+        socket.onConnect(session);
+
+        socket.onClose(session, StatusCode.ABNORMAL, "Device rebooted");
 
         verify(handler).onClose(anyBoolean(), eq(StatusCode.ABNORMAL), anyString());
     }
