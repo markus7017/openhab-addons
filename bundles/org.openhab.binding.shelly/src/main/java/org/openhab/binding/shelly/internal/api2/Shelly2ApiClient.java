@@ -486,6 +486,8 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
                 }
                 json = httpPost(authInfo, gson.toJson(req));
             } else {
+                // Includes HTTP 429; left to propagate rather than retried inline here - callers of discovery
+                // already re-probe periodically, so a transient throttle clears on its own.
                 throw e;
             }
         }

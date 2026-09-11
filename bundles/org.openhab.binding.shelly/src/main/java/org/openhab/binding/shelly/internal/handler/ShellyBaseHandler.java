@@ -247,6 +247,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         ThingStatusDetail errorCode = ThingStatusDetail.COMMUNICATION_ERROR;
         String status = "";
         boolean retry = true;
+        boolean handled = false;
         if (e.isJsonError()) { // invalid JSON format
             logger.debug("{}: Unable to parse API response: {}; json={}", thingName, res.getUrl(), res.response, e);
             status = "offline.status-error-unexpected-error";
@@ -258,6 +259,11 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
             retry = false;
         } else if (isWatchdogExpired()) {
             status = profile.isBlu ? "offline.status-error-blu-timeout" : "offline.status-error-watchdog";
+        } else if (res.isHttpTooManyRequests()) {
+            // Device throttles briefly (~2s) once its nonce cache is exhausted; treat as transient so the
+            // existing poll cadence retries a few seconds later instead of taking the thing offline.
+            logger.debug("{}: Device is throttling requests (429), retrying on next poll", thingName);
+            handled = true;
         } else if (res.httpCode >= 400) {
             logger.debug("{}: Unexpected API result: {}/{}", thingName, res.httpCode, res.httpReason, e);
             status = "offline.status-error-unexpected-api-result";
@@ -268,7 +274,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
 
         if (!status.isEmpty()) {
             setThingOfflineAndDisconnect(errorCode, status, e.toString());
-        } else {
+        } else if (!handled) {
             logger.debug("{}: Unable to initialize: {}, retrying later", thingName, e.toString());
         }
 

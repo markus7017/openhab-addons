@@ -112,7 +112,14 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     protected volatile boolean initialized;
     protected final boolean alwaysOn;
     private @Nullable Shelly2RpcSocket rpcSocket;
-    private @Nullable Shelly2AuthChallenge authInfo;
+    private volatile @Nullable Shelly2AuthChallenge authInfo;
+    // Guards the read-challenge/refresh-on-401 section of apiRequest() so concurrent calls (e.g. several
+    // init-time requests racing on the same instance) collapse onto a single refreshed nonce instead of each
+    // independently requesting - and being issued - their own new one.
+    private final Object authLock = new Object();
+    // Written by the caller thread in asyncApiRequest(), read/cleared on the WebSocket thread in
+    // retryPendingAsyncRequest() when the device answers with a 401 challenge.
+    private volatile @Nullable String pendingAsyncMethod;
     private final WebSocketClient client;
     private final ScheduledExecutorService scheduler;
 
@@ -532,11 +539,18 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         getThing().incProtMessages();
         if (message.error != null) {
             if (message.error.code == HttpStatus.UNAUTHORIZED_401 && !getString(message.error.message).isEmpty()) {
-                // Save nonce for notification
+                // The WebSocket channel has no HTTP headers, so the device embeds the auth challenge in the
+                // error message instead of a WWW-Authenticate header. Requests sent over this channel (see
+                // asyncApiRequest()) are fire-and-forget, so the rejected request has to be resent explicitly
+                // once the challenge is known - unlike apiRequest(), which retries inline on the HTTP response.
                 Shelly2AuthChallenge auth = gson.fromJson(message.error.message, Shelly2AuthChallenge.class);
-                if (auth != null && auth.realm == null) {
-                    logger.debug("{}: Authentication data received: {}", thingName, message.error.message);
-                    authInfo = auth;
+                if (auth != null) {
+                    logger.debug("{}: Authentication requested on WebSocket channel: {}", thingName,
+                            message.error.message);
+                    synchronized (authLock) {
+                        authInfo = auth;
+                    }
+                    retryPendingAsyncRequest(auth);
                 }
             } else {
                 logger.debug("{}: Error status received - {} {}", thingName, message.error.code, message.error.message);
@@ -1466,9 +1480,30 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         Shelly2RpcSocket rpcSocket = this.rpcSocket;
         if (rpcSocket != null) {
             Shelly2RpcBaseMessage request = buildRequest(method, null);
+            pendingAsyncMethod = method;
             rpcSocket.sendMessage(gson.toJson(request)); // submit, result will be async
         } else {
             throw new ShellyApiException("RPC socket isn't connected, cannot send async request");
+        }
+    }
+
+    /**
+     * Resends the last fire-and-forget WebSocket request with the device's auth challenge answered. Only
+     * asyncApiRequest() goes through this channel, so a single pending method is enough to track.
+     */
+    private void retryPendingAsyncRequest(Shelly2AuthChallenge challenge) {
+        String method = pendingAsyncMethod;
+        Shelly2RpcSocket rpcSocket = this.rpcSocket;
+        if (method == null || rpcSocket == null) {
+            return;
+        }
+        pendingAsyncMethod = null;
+        try {
+            Shelly2RpcBaseMessage request = buildRequest(method, null);
+            request.auth = buildChannelAuthResponse(challenge, SHELLY2_AUTHDEF_USER, config.getPassword());
+            rpcSocket.sendMessage(gson.toJson(request));
+        } catch (ShellyApiException e) {
+            logger.debug("{}: Unable to authenticate WebSocket request", thingName, e);
         }
     }
 
@@ -1476,6 +1511,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     public <T> T apiRequest(String method, @Nullable Object params, Class<T> classOfT) throws ShellyApiException {
         String json = "";
         Shelly2RpcBaseMessage req = buildRequest(method, params);
+        Shelly2AuthChallenge sentAuth = authInfo; // snapshot of the nonce this request is about to use, if any
         try {
             // only always-on devices have an RPC WebSocket; battery devices use HTTP RPC only
             if (alwaysOn) {
@@ -1487,30 +1523,47 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             ShellyApiResult res = e.getApiResult();
             String auth = getString(res.authChallenge);
             if (res.isHttpAccessUnauthorized() && !auth.isEmpty()) {
-                String[] options = auth.split(",");
-                Shelly2AuthChallenge authInfo = this.authInfo = new Shelly2AuthChallenge();
-                for (String o : options) {
-                    String key = substringBefore(o, "=").stripLeading().trim();
-                    String value = substringAfter(o, "=").replace("\"", "").trim();
-                    switch (key) {
-                        case "Digest qop":
-                            authInfo.authType = SHELLY2_AUTHTTYPE_DIGEST;
-                            break;
-                        case "realm":
-                            authInfo.realm = value;
-                            break;
-                        case "nonce":
-                            // authInfo.nonce = Long.parseLong(value, 16);
-                            authInfo.nonce = value;
-                            break;
-                        case "algorithm":
-                            authInfo.algorithm = value;
-                            break;
+                synchronized (authLock) {
+                    // A concurrent call on this instance may already have refreshed the nonce while this one
+                    // was in flight or waiting for the lock - reuse it instead of parsing and requesting yet
+                    // another new one for what is really the same 401 storm. Left unguarded, several
+                    // init-time requests racing on a stale/absent nonce each get their own fresh challenge,
+                    // which is what exhausts the device's nonce cache and drives it into 429 throttling.
+                    // Deliberate identity check, not equals(): sentAuth is a snapshot reference, and
+                    // Shelly2AuthChallenge has no equals() of its own, so this asks "is it still the same
+                    // challenge instance" rather than "an equal one" - which is what determines whether the
+                    // nonce was already refreshed by someone else.
+                    if (authInfo == sentAuth) { // NOPMD CompareObjectsWithEquals
+                        Shelly2AuthChallenge newAuth = new Shelly2AuthChallenge();
+                        String[] options = auth.split(",");
+                        for (String o : options) {
+                            String key = substringBefore(o, "=").stripLeading().trim();
+                            String value = substringAfter(o, "=").replace("\"", "").trim();
+                            switch (key) {
+                                case "Digest qop":
+                                    newAuth.authType = SHELLY2_AUTHTTYPE_DIGEST;
+                                    break;
+                                case "realm":
+                                    newAuth.realm = value;
+                                    break;
+                                case "nonce":
+                                    newAuth.nonce = value;
+                                    break;
+                                case "algorithm":
+                                    newAuth.algorithm = value;
+                                    break;
+                            }
+                        }
+                        authInfo = newAuth;
                     }
                 }
                 req = buildRequest(method, params); // update RPC message id
                 json = rpcPost(gson.toJson(req));
             } else {
+                // Includes HTTP 429: the device throttles briefly once its nonce cache is exhausted. Left to
+                // propagate as-is rather than retried inline here - handleApiException() in ShellyBaseHandler
+                // classifies it as transient so the existing poll cadence retries a few seconds later instead
+                // of forcing the thing offline.
                 throw e;
             }
         }
