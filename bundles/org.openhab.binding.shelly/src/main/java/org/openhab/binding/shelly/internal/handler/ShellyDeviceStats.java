@@ -43,7 +43,8 @@ public class ShellyDeviceStats {
     public final AtomicLong protocolMessages = new AtomicLong(0);
     public final AtomicInteger protocolErrors = new AtomicInteger(0);
     public final AtomicInteger wifiRssi = new AtomicInteger(0);
-    public final AtomicInteger maxInternalTemp = new AtomicInteger(0);
+    // null until the device has reported an internal temperature at least once
+    public final AtomicReference<@Nullable Double> maxInternalTemp = new AtomicReference<>();
 
     public Map<String, String> asProperties() {
         Map<String, String> prop = new HashMap<>();
@@ -61,7 +62,9 @@ public class ShellyDeviceStats {
         prop.put("protocolMessages", String.valueOf(protocolMessages));
         prop.put("protocolErrors", String.valueOf(protocolErrors));
         prop.put("wifiRssi", String.valueOf(wifiRssi));
-        prop.put("maxInternalTemp", String.valueOf(maxInternalTemp.get()));
+        @Nullable
+        Double maxItemp = maxInternalTemp.get();
+        prop.put("maxInternalTemp", maxItemp != null ? String.valueOf(maxItemp) : "n/a");
         return prop;
     }
 }
