@@ -288,4 +288,12 @@
 		<state pattern="%.1f %unit%" readOnly="true">
 		</state>
 	</channel-type>
+
+	<channel-type id="deviceDebug" advanced="true">
+		<item-type>Switch</item-type>
+		<label>Debug Logging</label>
+		<description>ON: Streams the device's real-time debug log into openHAB's log at DEBUG level; auto-disables after 60
+			minutes</description>
+		<category>Switch</category>
+	</channel-type>
 </thing:thing-descriptions>

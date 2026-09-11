@@ -272,6 +272,7 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_DIAG_LASTALARM = "lastAlarm";
     public static final String CHANNEL_DIAG_PROTOCOLERRORS = "protocolErrors";
     public static final String CHANNEL_DIAG_MAXITEMP = "maxInternalTemp";
+    public static final String CHANNEL_DIAG_DEVDEBUG = "deviceDebug";
 
     public static final String CHANNEL_LED_STATUS_DISABLE = "statusLed";
     public static final String CHANNEL_LED_POWER_DISABLE = "powerLed";

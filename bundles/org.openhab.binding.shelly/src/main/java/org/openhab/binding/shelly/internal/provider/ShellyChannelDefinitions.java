@@ -218,6 +218,7 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_LASTALARM, "lastAlarm", ITEMT_STRING))
                 .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_PROTOCOLERRORS, "protocolErrors", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_MAXITEMP, "maxInternalTemp", ITEMT_TEMP))
+                .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_DEVDEBUG, "deviceDebug", ITEMT_SWITCH))
 
                 // Relay
                 .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_OUTPUT_NAME, "outputName", ITEMT_STRING))
@@ -531,6 +532,9 @@ public class ShellyChannelDefinitions {
         addChannel(thing, add, true, CHGR_DIAG, CHANNEL_DIAG_PROTOCOLERRORS);
         // Only devices that report their own internal temperature can ever feed the max-temp stat
         addChannel(thing, add, reportsInternalTemp(profile, status), CHGR_DIAG, CHANNEL_DIAG_MAXITEMP);
+
+        // Live debug log streaming only makes sense for continuously-reachable (mains-powered) devices
+        addChannel(thing, add, profile.alwaysOn, CHGR_DIAG, CHANNEL_DIAG_DEVDEBUG);
         return add;
     }
 

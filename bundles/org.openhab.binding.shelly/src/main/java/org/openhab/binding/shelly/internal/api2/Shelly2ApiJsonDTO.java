@@ -49,6 +49,7 @@ public class Shelly2ApiJsonDTO {
     public static final String SHELLYRPC_METHOD_GETCONFIG = "GetConfig"; // sys + components
     public static final String SHELLYRPC_METHOD_GETSYSSTATUS = "GetSysStatus"; // only sys
     public static final String SHELLYRPC_METHOD_GETSTATUS = "GetStatus"; // sys + components
+    public static final String SHELLYRPC_METHOD_SYS_SETCONFIG = "Sys.SetConfig";
     public static final String SHELLYRPC_METHOD_REBOOT = "Shelly.Reboot";
     public static final String SHELLYRPC_METHOD_RESET = "Shelly.FactoryReset";
     public static final String SHELLYRPC_METHOD_CHECKUPD = "Shelly.CheckForUpdate";
@@ -1185,6 +1186,17 @@ public class Shelly2ApiJsonDTO {
         public @Nullable String alarmMode;
         @SerializedName("report_holdoff")
         public @Nullable Integer reportHoldoff;
+
+        // Sys.SetConfig
+        public Shelly2ConfigParmsDebug debug;
+
+        public static class Shelly2ConfigParmsDebug {
+            public static class Shelly2ConfigParmsDebugWebSocket {
+                public Boolean enable;
+            }
+
+            public Shelly2ConfigParmsDebugWebSocket websocket;
+        }
     }
 
     public static class Shelly2RpcRequest {

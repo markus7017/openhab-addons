@@ -111,6 +111,16 @@ public interface ShellyApiInterface extends ShellyDiscoveryInterface {
 
     String getDebugLog(String id) throws ShellyApiException;
 
+    /**
+     * Gen2+ only: arms/disarms the device's real-time debug log WebSocket ({@code /debug/log}) and, when enabling,
+     * opens a dedicated connection to stream it into the binding's log. Not supported by Gen1 or BLU devices.
+     *
+     * @param enable true to start streaming (auto-disables after an implementation-defined timeout), false to stop
+     */
+    default void setDebugLogEnabled(boolean enable) throws ShellyApiException {
+        // no-op by default; only implemented for Gen2+ (non-BLU) devices
+    }
+
     String setCloud(boolean enabled) throws ShellyApiException;
 
     String setApRoaming(boolean enable) throws ShellyApiException;

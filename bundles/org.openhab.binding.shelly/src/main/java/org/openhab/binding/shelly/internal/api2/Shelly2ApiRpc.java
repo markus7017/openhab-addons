@@ -17,6 +17,7 @@ import static org.openhab.binding.shelly.internal.api.ShellyApiLightUtil.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.ShellyBluJsonDTO.*;
+import static org.openhab.binding.shelly.internal.api2.dto.ShellyDebugLogJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.io.BufferedReader;
@@ -34,10 +35,13 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.io.EofException;
 import org.eclipse.jetty.websocket.api.StatusCode;
@@ -64,6 +68,8 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSe
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2APClientList;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2AuthChallenge;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2ConfigParms;
+import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2ConfigParms.Shelly2ConfigParmsDebug;
+import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2ConfigParms.Shelly2ConfigParmsDebug.Shelly2ConfigParmsDebugWebSocket;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DevConfigBle.Shelly2DevConfigBleObserver;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2GetConfigResult;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfigAp;
@@ -92,6 +98,7 @@ import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
+import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
 import org.openhab.core.thing.ThingStatus;
@@ -106,13 +113,20 @@ import org.slf4j.LoggerFactory;
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterface, Shelly2RpctInterface {
+public class Shelly2ApiRpc extends Shelly2ApiClient
+        implements ShellyApiInterface, Shelly2RpctInterface, Shelly2DebugLogListener {
     private final Logger logger = LoggerFactory.getLogger(Shelly2ApiRpc.class);
     private final ShellyThingTable thingTable;
+
+    private static final long DEBUGLOG_AUTOOFF_MINUTES = 60;
 
     protected volatile boolean initialized;
     protected final boolean alwaysOn;
     private @Nullable Shelly2RpcSocket rpcSocket;
+    // All access must be guarded by "this"
+    private @Nullable Shelly2DebugLogSocket debugLogSocket;
+    // All access must be guarded by "this"
+    private @Nullable ScheduledFuture<?> debugLogAutoOffTask;
     private volatile @Nullable Shelly2AuthChallenge authInfo;
     // Guards the read-challenge/refresh-on-401 section of apiRequest() so concurrent calls (e.g. several
     // init-time requests racing on the same instance) collapse onto a single refreshed nonce instead of each
@@ -1285,6 +1299,121 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     }
 
     @Override
+    public void setDebugLogEnabled(boolean enable) throws ShellyApiException {
+        Shelly2RpcRequestParams params = new Shelly2RpcRequestParams().withConfig();
+        params.config.debug = new Shelly2ConfigParmsDebug();
+        params.config.debug.websocket = new Shelly2ConfigParmsDebugWebSocket();
+        params.config.debug.websocket.enable = enable;
+        apiRequest(SHELLYRPC_METHOD_SYS_SETCONFIG, params, Shelly2WsConfigResult.class);
+
+        cancelDebugLogAutoOff();
+        if (enable) {
+            // Arm the safety timer before connecting, so a failing openDebugLogSocket() still gets the device
+            // disabled again instead of leaving it streaming with no auto-off
+            scheduleDebugLogAutoOff();
+            openDebugLogSocket();
+        } else {
+            closeDebugLogSocket();
+        }
+    }
+
+    private synchronized void openDebugLogSocket() throws ShellyApiException {
+        InetSocketAddress socketAddr = config.getDeviceSocketAddress();
+        if (socketAddr == null) {
+            throw new ShellyApiException(thingName + ": Device IP not set");
+        }
+        Shelly2DebugLogSocket socket = debugLogSocket;
+        if (socket == null) {
+            socket = new Shelly2DebugLogSocket(thingName, socketAddr, client, this);
+            debugLogSocket = socket;
+        }
+        if (!socket.isConnected()) {
+            logger.debug("{}: Connect Debug Log Socket", thingName);
+            socket.connect(buildDebugLogAuthHeader());
+        }
+    }
+
+    private @Nullable String buildDebugLogAuthHeader() throws ShellyApiException {
+        Shelly2AuthChallenge challenge = authInfo;
+        if (challenge == null || config.getPassword().isBlank()) {
+            return null;
+        }
+        // The preceding Sys.SetConfig call over /rpc has just refreshed this nonce, so reuse it for the
+        // /debug/log upgrade GET instead of forcing the device to issue another challenge.
+        return formatAuthResponse(SHELLY2_DEBUGLOG_ENDPOINT, buildAuthResponse(HttpMethod.GET,
+                SHELLY2_DEBUGLOG_ENDPOINT, challenge, SHELLY2_AUTHDEF_USER, config.getPassword()));
+    }
+
+    private void closeDebugLogSocket() {
+        Shelly2DebugLogSocket socket;
+        synchronized (this) {
+            socket = debugLogSocket;
+            debugLogSocket = null;
+        }
+        if (socket != null) {
+            socket.disconnect();
+        }
+    }
+
+    private synchronized void scheduleDebugLogAutoOff() {
+        ScheduledFuture<?> oldTask = debugLogAutoOffTask;
+        debugLogAutoOffTask = scheduler.schedule(this::autoOffDebugLog, DEBUGLOG_AUTOOFF_MINUTES, TimeUnit.MINUTES);
+        if (oldTask != null) {
+            oldTask.cancel(false);
+        }
+    }
+
+    private synchronized void cancelDebugLogAutoOff() {
+        ScheduledFuture<?> oldTask = debugLogAutoOffTask;
+        debugLogAutoOffTask = null;
+        if (oldTask != null) {
+            oldTask.cancel(false);
+        }
+    }
+
+    private void autoOffDebugLog() {
+        logger.info("{}: Auto-disabling Debug Log streaming after {} minutes", thingName, DEBUGLOG_AUTOOFF_MINUTES);
+        try {
+            setDebugLogEnabled(false);
+            updateChannel(CHANNEL_GROUP_DIAG, CHANNEL_DIAG_DEVDEBUG, OnOffType.OFF);
+        } catch (ShellyApiException e) {
+            logger.debug("{}: Failed to auto-disable Debug Log streaming: {}", thingName, e.getMessage());
+            closeDebugLogSocket(); // at least stop streaming locally even if the device call failed
+        }
+    }
+
+    @Override
+    public void onDebugLogLine(int level, String data) {
+        switch (level) {
+            case SHELLY2_DEBUGLOG_LEVEL_ERROR:
+            case SHELLY2_DEBUGLOG_LEVEL_WARN:
+                logger.warn("{}: [DEVICE] {}", thingName, data);
+                break;
+            case SHELLY2_DEBUGLOG_LEVEL_VERBOSE:
+                logger.trace("{}: [DEVICE] {}", thingName, data);
+                break;
+            default: // INFO, DEBUG
+                logger.debug("{}: [DEVICE] {}", thingName, data);
+                break;
+        }
+    }
+
+    @Override
+    public void onDebugLogClosed() {
+        logger.debug("{}: Debug Log WebSocket closed by the device", thingName);
+        synchronized (this) {
+            debugLogSocket = null;
+        }
+        cancelDebugLogAutoOff();
+        try {
+            updateChannel(CHANNEL_GROUP_DIAG, CHANNEL_DIAG_DEVDEBUG, OnOffType.OFF);
+        } catch (ShellyApiException e) {
+            logger.debug("{}: Unable to reset Debug Log channel after the device closed the stream: {}", thingName,
+                    e.getMessage());
+        }
+    }
+
+    @Override
     public void setLightParm(int lightIndex, String parm, String value) throws ShellyApiException {
         setLightParms(lightIndex, Map.of(parm, value));
     }
@@ -1672,6 +1801,20 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public void close() {
+        ShellyThingInterface thing = this.thing;
+        if (debugLogSocket != null && thing != null && thing.isStopping()) {
+            // Thing is being disabled/removed - tell the device to stop streaming instead of leaving
+            // debug.websocket.enable armed with nothing listening until it reboots.
+            try {
+                setDebugLogEnabled(false);
+            } catch (ShellyApiException e) {
+                logger.debug("{}: Unable to disable Debug Log on the device during shutdown: {}", thingName,
+                        e.getMessage());
+            }
+        }
+        cancelDebugLogAutoOff();
+        closeDebugLogSocket();
+
         Shelly2RpcSocket rpcSocket = this.rpcSocket;
         if (rpcSocket == null) {
             initialized = false;

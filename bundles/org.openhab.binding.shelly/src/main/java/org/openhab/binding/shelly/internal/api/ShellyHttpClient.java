@@ -244,7 +244,12 @@ public class ShellyHttpClient {
 
     protected @Nullable Shelly2AuthRsp buildAuthResponse(String uri, @Nullable Shelly2AuthChallenge challenge,
             String user, String password) throws ShellyApiException {
-        return buildAuthResponse(challenge, user, password, sha256(HttpMethod.POST + ":" + uri));
+        return buildAuthResponse(HttpMethod.POST, uri, challenge, user, password);
+    }
+
+    protected @Nullable Shelly2AuthRsp buildAuthResponse(HttpMethod method, String uri,
+            @Nullable Shelly2AuthChallenge challenge, String user, String password) throws ShellyApiException {
+        return buildAuthResponse(challenge, user, password, sha256(method + ":" + uri));
     }
 
     /**

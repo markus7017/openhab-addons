@@ -493,6 +493,10 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                     logger.debug("{}: Set POWER LED disabled to {}", thingName, command);
                     api.setLedStatus(SHELLY_LED_POWER_DISABLE, command == OnOffType.ON);
                     break;
+                case CHANNEL_DIAG_DEVDEBUG:
+                    logger.debug("{}: Set Debug Log streaming to {}", thingName, command);
+                    api.setDebugLogEnabled(command == OnOffType.ON);
+                    break;
 
                 case CHANNEL_SENSOR_SLEEPTIME:
                     logger.debug("{}: Set sensor sleep time to {}", thingName, command);

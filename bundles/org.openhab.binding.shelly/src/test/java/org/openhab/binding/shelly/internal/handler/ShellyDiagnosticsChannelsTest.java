@@ -83,8 +83,7 @@ public class ShellyDiagnosticsChannelsTest {
 
         Map<String, Channel> channels = ShellyChannelDefinitions.createDiagnosticsChannels(thing(), profile, status);
 
-        // 2 reported utilization fields + 5 always-on binding-computed health stat channels
-        assertThat(channels.size(), is(7));
+        assertThat(channels.size(), is(8));
         assertThat(channels.containsKey(CHANNEL_GROUP_DIAG + "#" + CHANNEL_DIAG_TOTALMEM), is(true));
         assertThat(channels.containsKey(CHANNEL_GROUP_DIAG + "#" + CHANNEL_DIAG_FREEFS), is(true));
         assertThat(channels.containsKey(CHANNEL_GROUP_DIAG + "#" + CHANNEL_DIAG_FREEMEM), is(false));
@@ -96,6 +95,7 @@ public class ShellyDiagnosticsChannelsTest {
         assertThat(channels.containsKey(CHANNEL_GROUP_DIAG + "#" + CHANNEL_DIAG_LASTALARM), is(true));
         assertThat(channels.containsKey(CHANNEL_GROUP_DIAG + "#" + CHANNEL_DIAG_PROTOCOLERRORS), is(true));
         assertThat(channels.containsKey(CHANNEL_GROUP_DIAG + "#" + CHANNEL_DIAG_MAXITEMP), is(false));
+        assertThat(channels.containsKey(CHANNEL_GROUP_DIAG + "#" + CHANNEL_DIAG_DEVDEBUG), is(true));
     }
 
     @Test
@@ -121,8 +121,7 @@ public class ShellyDiagnosticsChannelsTest {
 
         Map<String, Channel> channels = ShellyChannelDefinitions.createDiagnosticsChannels(thing(), profile, status);
 
-        // 5 reported utilization fields + 5 always-on binding-computed health stat channels
-        assertThat(channels.size(), is(10));
+        assertThat(channels.size(), is(11));
     }
 
     @Test
@@ -133,6 +132,18 @@ public class ShellyDiagnosticsChannelsTest {
         Map<String, Channel> channels = ShellyChannelDefinitions.createDiagnosticsChannels(thing(), profile, status);
 
         assertThat(channels.isEmpty(), is(true));
+    }
+
+    @Test
+    void createDiagnosticsChannelsSkipsDeviceDebugWhenNotAlwaysOn() {
+        ShellyDeviceProfile profile = new ShellyDeviceProfile(THING_TYPE_SHELLYPLUS1);
+        profile.alwaysOn = false;
+        ShellySettingsStatus status = new ShellySettingsStatus();
+
+        Map<String, Channel> channels = ShellyChannelDefinitions.createDiagnosticsChannels(thing(), profile, status);
+
+        assertThat(channels.containsKey(CHANNEL_GROUP_DIAG + "#" + CHANNEL_DIAG_DEVDEBUG), is(false));
+        assertThat(channels.containsKey(CHANNEL_GROUP_DIAG + "#" + CHANNEL_DIAG_RESTARTS), is(true));
     }
 
     @Test

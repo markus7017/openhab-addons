@@ -226,6 +226,26 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                         refreshTimer = 3;
                     }
                     break;
+                case ACTION_ENDEBUGLOG:
+                case ACTION_DISDEBUGLOG:
+                    boolean enableDebugLog = ACTION_ENDEBUGLOG.equalsIgnoreCase(action);
+                    if (!"yes".equalsIgnoreCase(update)) {
+                        message = getMessage(enableDebugLog ? "action.debuglog-enable" : "action.debuglog-disable");
+                        actionUrl = buildActionUrl(uid, action);
+                    } else {
+                        new Thread(() -> {
+                            try {
+                                api.setDebugLogEnabled(enableDebugLog);
+                            } catch (ShellyApiException e) {
+                                // maybe the device restarts before returning the http response
+                            }
+                        }, "OH-binding-" + ShellyBindingConstants.BINDING_ID + "-" + uid + "-setDebugLogEnabled")
+                                .start();
+
+                        message = getMessage("action.debuglog-confirm", enableDebugLog ? "enabled" : "disabled");
+                        refreshTimer = 3;
+                    }
+                    break;
                 case ACTION_RESSTA:
                     if (!"yes".equalsIgnoreCase(update)) {
                         message = getMessage("action.resetsta-info");
@@ -434,6 +454,11 @@ public class ShellyManagerActionPage extends ShellyManagerPage {
                 list.put(ACTION_GETDEB, "Get Debug log");
                 list.put(ACTION_GETDEB1, "Get Debug log1");
             }
+        }
+        if (gen2 && !profile.isBlu && profile.alwaysOn) {
+            // Live device state isn't tracked in the profile, so offer both actions unconditionally
+            list.put(ACTION_ENDEBUGLOG, "Enable Debug Log Streaming");
+            list.put(ACTION_DISDEBUGLOG, "Disable Debug Log Streaming");
         }
 
         return list;
