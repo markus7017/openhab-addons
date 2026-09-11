@@ -309,7 +309,7 @@ public class Shelly2RpcSocket implements WriteCallback {
         Session session;
         synchronized (this) {
             session = this.session;
-            cleanup();// set session=null, clear send queue
+            cleanup(session);// set session=null, clear send queue
         }
         if (session != null && session.isOpen()) {
             if (logger.isTraceEnabled()) {
@@ -425,7 +425,7 @@ public class Shelly2RpcSocket implements WriteCallback {
      * @param reason Textual reason
      */
     @OnWebSocketClose
-    public void onClose(int statusCode, String reason) {
+    public void onClose(Session session, int statusCode, String reason) {
         if (statusCode != StatusCode.NORMAL && logger.isTraceEnabled()) {
             logger.trace("{}: RPC connection closed abnormally: {} - {}", thingName, statusCode, getString(reason));
         }
@@ -433,15 +433,18 @@ public class Shelly2RpcSocket implements WriteCallback {
         stopPing();
 
         Shelly2RpctInterface handler;
+        boolean current;
         synchronized (this) {
             handler = this.websocketHandler;
 
-            // set session=null, clear send queue
+            // set session=null, clear send queue - but only if this is still the active session
+            // (a stale session closing after a newer one was already established must not wipe it, nor
+            // reach onClose() where an abnormal status code would force the thing offline)
             // this also prevents another socket closed issued by thingOffline()->api-close()->close()
-            cleanup();
+            current = cleanup(session);
         }
 
-        if (handler != null) {
+        if (current && handler != null) {
             handler.onClose(inbound, statusCode, reason);
         }
     }
@@ -452,23 +455,26 @@ public class Shelly2RpcSocket implements WriteCallback {
      * @param cause WebSocket error/Exception
      */
     @OnWebSocketError
-    public void onError(Throwable cause) {
+    public void onError(Session session, Throwable cause) {
         stopPing();
 
         Shelly2RpctInterface websocketHandler;
+        boolean current;
         synchronized (this) {
             websocketHandler = this.websocketHandler;
 
-            // set session=null, clear send queue
+            // set session=null, clear send queue - but only if this is still the active session
+            // (a stale session erroring out after a newer one was already established must not wipe it, nor
+            // reach onError() where it would force the thing offline)
             // this also prevents another socket closed issued by thingOffline()->api-close()->close()
-            cleanup();
+            current = cleanup(session);
         }
 
         if (inbound) {
             // Ignore disconnect: Device establishes the socket, sends NotifyxFullStatus and disconnects
             return;
         }
-        if (websocketHandler != null) {
+        if (current && websocketHandler != null) {
             websocketHandler.onError(cause);
         }
     }
@@ -523,10 +529,21 @@ public class Shelly2RpcSocket implements WriteCallback {
     /**
      * Clears session and drops queued messages.
      * Must only be called when session has been/is being closed one way or another.
+     *
+     * @param closingSession the session that is closing, or {@code null} if unknown/not applicable. If it no
+     *            longer matches the currently active session (a stale session closing after a newer one was
+     *            already established), the active session is left untouched.
+     * @return {@code true} if this was the active session (the caller should notify the handler), {@code false}
+     *         if a stale session was ignored
      */
-    private void cleanup() {
+    private boolean cleanup(@Nullable Session closingSession) {
         int qLength;
         synchronized (this) {
+            if (closingSession != null && !closingSession.equals(this.session)) {
+                logger.debug("{}: Ignoring close/error from a stale WebSocket session", thingName);
+                return false;
+            }
+
             this.session = null;
 
             qLength = sendQueue.size();
@@ -536,6 +553,7 @@ public class Shelly2RpcSocket implements WriteCallback {
             logger.debug("{}: {} queued RPC message{} dropped, because the socket was closed", thingName, qLength,
                     qLength != 1 ? "s were" : " was");
         }
+        return true;
     }
 
     /**
