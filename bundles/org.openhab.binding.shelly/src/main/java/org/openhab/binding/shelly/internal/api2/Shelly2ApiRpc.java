@@ -44,6 +44,7 @@ import org.eclipse.jetty.websocket.api.StatusCode;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyApiInterface;
+import org.openhab.binding.shelly.internal.api.ShellyApiLightUtil.ShellyLightApiComponent;
 import org.openhab.binding.shelly.internal.api.ShellyApiResult;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyInputState;
@@ -531,7 +532,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             logger.debug("{}: Thing is shutting down, ignore WebSocket message", thingName);
             return;
         }
-        if (!t.isThingOnline() && t.getThingStatusDetail() != ThingStatusDetail.CONFIGURATION_PENDING) {
+        // Sleep devices go OFFLINE/COMMUNICATION_ERROR between wakeups as part of normal operation; their next
+        // wakeup push is the recovery signal and must not be dropped by the always-on connectable check below.
+        boolean sleepDevice = !getProfile().alwaysOn;
+        if (!sleepDevice && !t.isThingOnline() && t.getThingStatusDetail() != ThingStatusDetail.CONFIGURATION_PENDING) {
             logger.debug("{}: Thing is not in online state/connectable, ignore NotifyStatus", thingName);
             return;
         }
@@ -572,6 +576,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                     logger.warn("{}: Device requires restart to activate changes", thingName);
                 }
                 status.uptime = params.sys.uptime;
+                if (params.sys.wakeupPeriod != null && profile.settings.sleepMode != null) {
+                    profile.settings.sleepMode.period = params.sys.wakeupPeriod / 60;
+                    profile.updateWatchdogPeriod();
+                }
             }
             status.temperature = SHELLY_API_INVTEMP; // mark invalid
             updated |= fillDeviceStatus(status, message.params, true);
@@ -586,7 +594,9 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             }
 
             profile.status = status;
-            if (updated) {
+            // Battery devices: an unchanged-value wakeup still proves the device is alive and must reset the
+            // watchdog; always-on devices keep the original updated-only restart.
+            if (updated || !profile.alwaysOn) {
                 getThing().restartWatchdog();
             }
         }
@@ -778,7 +788,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     private void thingOffline(String reason) {
         ShellyThingInterface thing = this.thing;
-        if (thing != null) { // do not reinit of battery powered devices with sleep mode
+        if (thing != null && !thing.isStopping()) { // do not reinit of battery powered devices with sleep mode
             thing.setThingOfflineAndDisconnect(ThingStatusDetail.COMMUNICATION_ERROR,
                     "offline.status-error-unexpected-error", reason);
         }
@@ -801,8 +811,9 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         status.fsSize = ds.sys.fsSize;
         status.discoverable = getBool(profile.settings.discoverable);
 
-        if (ds.sys.wakeupPeriod != null) {
+        if (ds.sys.wakeupPeriod != null && profile.settings.sleepMode != null) {
             profile.settings.sleepMode.period = ds.sys.wakeupPeriod / 60;
+            profile.updateWatchdogPeriod();
         }
 
         Shelly2DeviceStatusSysAvlUpdate avlUpdate = ds.sys.availableUpdates;
