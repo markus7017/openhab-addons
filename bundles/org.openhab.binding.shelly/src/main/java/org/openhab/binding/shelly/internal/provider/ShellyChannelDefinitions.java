@@ -105,6 +105,7 @@ public class ShellyChannelDefinitions {
     private static final String CHGR_CONTROL = CHANNEL_GROUP_CONTROL;
     private static final String CHGR_BAT = CHANNEL_GROUP_BATTERY;
     private static final String CHGR_LORA = CHANNEL_GROUP_LORA;
+    private static final String CHGR_DIAG = CHANNEL_GROUP_DIAG;
 
     public static final String PREFIX_GROUP = "group-type." + BINDING_ID + ".";
     public static final String PREFIX_CHANNEL = "channel-type." + BINDING_ID + ".";
@@ -204,6 +205,19 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_UPDATE, "updateAvailable", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_CALIBRATED, "calibrated", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_DEVST, CHANNEL_DEVST_FIRMWARE, "deviceFirmware", ITEMT_STRING))
+
+                // Diagnostics (Gen2+ only)
+                .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_TOTALMEM, "totalMem", ITEMT_DATA))
+                .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_FREEMEM, "freeMem", ITEMT_DATA))
+                .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_TOTALFS, "totalFS", ITEMT_DATA))
+                .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_FREEFS, "freeFS", ITEMT_DATA))
+                .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_RESTARTREQ, "restartReq", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_RESTARTS, "restarts", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_TIMEOUTERRORS, "timeoutErrors", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_ALARMS, "alarms", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_LASTALARM, "lastAlarm", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_PROTOCOLERRORS, "protocolErrors", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_DIAG, CHANNEL_DIAG_MAXITEMP, "maxInternalTemp", ITEMT_TEMP))
 
                 // Relay
                 .add(new ShellyChannel(m, CHGR_RELAY, CHANNEL_OUTPUT_NAME, "outputName", ITEMT_STRING))
@@ -439,18 +453,7 @@ public class ShellyChannelDefinitions {
         addChannel(thing, add, profile.settings.name != null, CHGR_DEVST, CHANNEL_DEVST_NAME);
         addChannel(thing, add, !profile.gateway.isEmpty() || profile.isBlu, CHGR_DEVST, CHANNEL_DEVST_GATEWAY);
 
-        if (!profile.isSensor && !profile.isIX
-                && ((status.temperature != null && getDouble(status.temperature) != SHELLY_API_INVTEMP)
-                        || (status.tmp != null && getDouble(status.tmp.tC) != SHELLY_API_INVTEMP))) {
-            // Only some devices report the internal device temp
-            boolean hasTemp = !profile.isLight
-                    && (status.temperature != null || (status.tmp != null && !profile.isSensor));
-            if (hasTemp && profile.isGen2 && (profile.numMeters > 0 && !profile.hasRelays)) // Shely Plus PM Mini
-            {
-                hasTemp = false;
-            }
-            addChannel(thing, add, hasTemp, CHGR_DEVST, CHANNEL_DEVST_ITEMP);
-        }
+        addChannel(thing, add, reportsInternalTemp(profile, status), CHGR_DEVST, CHANNEL_DEVST_ITEMP);
         addChannel(thing, add, profile.settings.sleepTime != null, CHGR_SENSOR, CHANNEL_SENSOR_SLEEPTIME);
 
         // Any multi-meter device (relay, pure meter like ProEM50, or the Pro RGBWW PM light profile with
@@ -481,6 +484,53 @@ public class ShellyChannelDefinitions {
         if (!profile.isBlu) { // currently not supported for BLU devices
             addChannel(thing, add, true, CHGR_DEVST, CHANNEL_DEVST_UPDATE);
         }
+        return add;
+    }
+
+    /**
+     * @return true if the device reports its own internal (device) temperature - only some mains-powered relay/meter
+     *         devices do, and the value must be a real reading rather than the SHELLY_API_INVTEMP sentinel
+     */
+    private static boolean reportsInternalTemp(final ShellyDeviceProfile profile, final ShellySettingsStatus status) {
+        if (profile.isSensor || profile.isIX || profile.isLight) {
+            return false;
+        }
+        boolean valid = (status.temperature != null && getDouble(status.temperature) != SHELLY_API_INVTEMP)
+                || (status.tmp != null && getDouble(status.tmp.tC) != SHELLY_API_INVTEMP);
+        boolean hasTemp = status.temperature != null || status.tmp != null;
+        if (profile.isGen2 && profile.numMeters > 0 && !profile.hasRelays) { // Shelly Plus PM Mini
+            return false;
+        }
+        return valid && hasTemp;
+    }
+
+    /**
+     * Auto-create device utilization/diagnostics channels (Gen2+ only): device-reported utilization fields plus the
+     * binding-computed health stats.
+     *
+     * @return {@code ArrayList<Channel>} of channels to be added to the thing
+     */
+    public static Map<String, Channel> createDiagnosticsChannels(final Thing thing, final ShellyDeviceProfile profile,
+            final ShellySettingsStatus status) {
+        Map<String, Channel> add = new LinkedHashMap<>();
+        if (!profile.isGen2 || profile.isBlu) { // BLU devices are proxied, not polled: no meaningful stats
+            return add;
+        }
+
+        addChannel(thing, add, status.ramTotal != null, CHGR_DIAG, CHANNEL_DIAG_TOTALMEM);
+        addChannel(thing, add, status.ramFree != null, CHGR_DIAG, CHANNEL_DIAG_FREEMEM);
+        addChannel(thing, add, status.fsSize != null, CHGR_DIAG, CHANNEL_DIAG_TOTALFS);
+        addChannel(thing, add, status.fsFree != null, CHGR_DIAG, CHANNEL_DIAG_FREEFS);
+        addChannel(thing, add, status.restartRequired != null, CHGR_DIAG, CHANNEL_DIAG_RESTARTREQ);
+
+        // Binding-computed health stats, always tracked once a Gen2+ Thing is initialized
+        addChannel(thing, add, true, CHGR_DIAG, CHANNEL_DIAG_RESTARTS);
+        addChannel(thing, add, true, CHGR_DIAG, CHANNEL_DIAG_TIMEOUTERRORS);
+        addChannel(thing, add, true, CHGR_DIAG, CHANNEL_DIAG_ALARMS);
+        addChannel(thing, add, true, CHGR_DIAG, CHANNEL_DIAG_LASTALARM);
+        addChannel(thing, add, true, CHGR_DIAG, CHANNEL_DIAG_PROTOCOLERRORS);
+        // Only devices that report their own internal temperature can ever feed the max-temp stat
+        addChannel(thing, add, reportsInternalTemp(profile, status), CHGR_DIAG, CHANNEL_DIAG_MAXITEMP);
         return add;
     }
 

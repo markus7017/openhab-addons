@@ -266,9 +266,10 @@ public class ShellyManagerPage {
                 (tz.isEmpty() ? "n/a" : tz) + ", auto-detect: " + getBool(profile.settings.tzautodetect));
         properties.put(ATTRIBUTE_ACTIONS_SKIPPED,
                 profile.status.astats != null ? String.valueOf(profile.status.astats.skipped) : "n/a");
-        int maxInternalTemp = stats.maxInternalTemp.get();
-        properties.put(ATTRIBUTE_MAX_ITEMP, maxInternalTemp > 0 ? maxInternalTemp + " °C" : "n/a");
-        if (maxInternalTemp == 0) {
+        @Nullable
+        Double maxInternalTemp = stats.maxInternalTemp.get();
+        properties.put(ATTRIBUTE_MAX_ITEMP, maxInternalTemp != null ? maxInternalTemp + " °C" : "n/a");
+        if (maxInternalTemp == null) {
             properties.replace(CHANNEL_DEVST_ITEMP, "n/a");
         }
 

@@ -25,6 +25,7 @@ import java.util.Set;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyApiInterface;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
@@ -40,9 +41,6 @@ import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingUID;
 
 /**
- * Tests for the LoRa Add-On channel lifecycle in {@link ShellyChannelDefinitions} and {@link ShellyComponents}:
- * channel creation and reconciliation, status counter updates and TX command handling.
- *
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
@@ -240,8 +238,6 @@ public class ShellyLoraChannelsTest {
     void updateDeviceStatusRemovesFirmwarePropertyOnRecreatedProfileEvenWithEmptyAddOnFw() {
         ShellyThingInterface handler = mock(ShellyThingInterface.class);
         ShellyDeviceProfile profile = new ShellyDeviceProfile(THING_TYPE_SHELLYPLUS1);
-        // simulates getProfile(true): a fresh profile starts with addOnFw empty even though
-        // the Thing still carries the property from before the reload
         when(handler.getProfile()).thenReturn(profile);
         Thing thing = thing();
         when(handler.getThing()).thenReturn(thing);
@@ -292,7 +288,10 @@ public class ShellyLoraChannelsTest {
 
         ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
-        verify(handler).updateThingChannels(eq(Map.of()), argThat(Map::isEmpty));
+        ArgumentCaptor<Map<String, Channel>> captor = ArgumentCaptor.captor();
+        verify(handler, atLeastOnce()).updateThingChannels(eq(Map.of()), captor.capture());
+        assertThat(captor.getAllValues().stream().flatMap(channels -> channels.keySet().stream())
+                .anyMatch(id -> id.startsWith(CHANNEL_GROUP_LORA + "#")), is(false));
     }
 
     @Test

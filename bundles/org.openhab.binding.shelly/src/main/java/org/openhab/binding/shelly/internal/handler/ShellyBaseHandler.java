@@ -940,10 +940,8 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         }
         State internalTemp = getChannelValue(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ITEMP);
         if (internalTemp instanceof Number number) {
-            int temp = number.intValue();
-            if (temp > stats.maxInternalTemp.get()) {
-                stats.maxInternalTemp.set(temp);
-            }
+            double temp = number.doubleValue();
+            stats.maxInternalTemp.updateAndGet(current -> current == null || temp > current ? temp : current);
         }
 
         if (status.uptime != null) {
@@ -953,6 +951,8 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         if (!alarm.isEmpty()) {
             postEvent(alarm, false);
         }
+
+        ShellyComponents.updateDiagnosticsStats(this, stats);
     }
 
     @Override
