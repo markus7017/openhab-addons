@@ -1509,6 +1509,11 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public <T> T apiRequest(String method, @Nullable Object params, Class<T> classOfT) throws ShellyApiException {
+        return apiRequest(method, params, classOfT, false);
+    }
+
+    private <T> T apiRequest(String method, @Nullable Object params, Class<T> classOfT, boolean retried)
+            throws ShellyApiException {
         String json = "";
         Shelly2RpcBaseMessage req = buildRequest(method, params);
         Shelly2AuthChallenge sentAuth = authInfo; // snapshot of the nonce this request is about to use, if any
@@ -1559,8 +1564,23 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                 }
                 req = buildRequest(method, params); // update RPC message id
                 json = rpcPost(gson.toJson(req));
+            } else if (res.isHttpTooManyRequests() && !retried) {
+                // Device throttles briefly once its nonce cache is exhausted. Force a fresh handshake (drop
+                // the cached nonce so the next request re-authenticates from scratch, the same way the very
+                // first request on this connection does) and retry once immediately instead of waiting for
+                // the next poll cycle. If the fresh handshake also gets throttled, propagate as before -
+                // handleApiException() in ShellyBaseHandler classifies 429 as transient so the existing poll
+                // cadence retries a few seconds later instead of forcing the thing offline.
+                logger.debug("{}: Device is throttling requests (429), retrying immediately with a fresh nonce",
+                        thingName);
+                synchronized (authLock) {
+                    if (authInfo == sentAuth) { // NOPMD CompareObjectsWithEquals
+                        authInfo = null;
+                    }
+                }
+                return apiRequest(method, params, classOfT, true);
             } else {
-                // Includes HTTP 429: the device throttles briefly once its nonce cache is exhausted. Left to
+                // Includes any repeated HTTP 429 after the immediate retry above already failed. Left to
                 // propagate as-is rather than retried inline here - handleApiException() in ShellyBaseHandler
                 // classifies it as transient so the existing poll cadence retries a few seconds later instead
                 // of forcing the thing offline.
