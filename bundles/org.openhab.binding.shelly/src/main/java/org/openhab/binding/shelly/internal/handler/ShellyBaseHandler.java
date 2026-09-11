@@ -150,6 +150,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
     private final Object channelLock = new Object();
     private @Nullable ScheduledFuture<?> statusJob;
     private @Nullable ScheduledFuture<?> initJob;
+    private double lastHealthLogTs = 0;
 
     /**
      * Constructor
@@ -729,6 +730,8 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 // map status to channels
                 updateAllChannels(status);
                 ShellyChannelMigration.migrateChannels(this);
+
+                captureHealthData();
             }
         } catch (ShellyApiException e) {
             if (stopping) {
@@ -746,6 +749,20 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                         cacheCount * UPDATE_STATUS_INTERVAL_SECONDS);
                 cache.enable();
             }
+        }
+    }
+
+    /**
+     * Log a periodic HEALTH line at DEBUG level summarizing the device's diagnostic counters, rate-limited to at
+     * most once every {@link ShellyBindingConstants#HEALTH_LOG_INTERVAL_SEC}.
+     */
+    private void captureHealthData() {
+        if (now() - lastHealthLogTs >= HEALTH_LOG_INTERVAL_SEC) {
+            lastHealthLogTs = now();
+            logger.debug(
+                    "{}: HEALTH: status={}, uptime={}s, restarts={}, signal={}dBm, protErrors={}, timeoutErrors={}, alarms={}",
+                    thingName, getThing().getStatus(), stats.lastUptime.get(), stats.restarts.get(),
+                    stats.wifiRssi.get(), stats.protocolErrors.get(), stats.timeoutErrors.get(), stats.alarms.get());
         }
     }
 
