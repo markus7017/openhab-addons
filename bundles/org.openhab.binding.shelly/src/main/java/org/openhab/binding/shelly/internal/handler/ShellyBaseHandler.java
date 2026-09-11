@@ -613,8 +613,8 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                         "{}: Command {} for channel {} timed out, device is likely a sleeping battery-powered sensor: {}",
                         thingName, command, channelUID, e.toString());
             } else {
-                logger.warn("{}: {} - {}", thingName, messages.get("command.failed", command, channelUID),
-                        e.toString());
+                logger.warn("{}: {} - {}{}", thingName, messages.get("command.failed", command, channelUID),
+                        e.toString(), wsCloseCorrelationNote(e));
             }
 
             if (oldValue != UnDefType.NULL) {
@@ -723,6 +723,21 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                     thingName, getThing().getStatus(), stats.lastUptime.get(), stats.restarts.get(),
                     stats.wifiRssi.get(), stats.protocolErrors.get(), stats.timeoutErrors.get(), stats.alarms.get());
         }
+    }
+
+    /**
+     * Build a short diagnostic suffix for a command-failed timeout that coincided with a recent WebSocket close, so
+     * the cause is visible from the WARN line alone instead of requiring TRACE correlation.
+     */
+    private String wsCloseCorrelationNote(ShellyApiException e) {
+        long lastClose = stats.lastWsCloseTs.get();
+        if (e.isTimeout() && lastClose > 0) {
+            double closedAgo = now() - lastClose;
+            if (closedAgo >= 0 && closedAgo <= WS_CLOSE_CORRELATION_SEC) {
+                return String.format(Locale.ROOT, " (WebSocket closed %.1fs earlier)", closedAgo);
+            }
+        }
+        return "";
     }
 
     @Override

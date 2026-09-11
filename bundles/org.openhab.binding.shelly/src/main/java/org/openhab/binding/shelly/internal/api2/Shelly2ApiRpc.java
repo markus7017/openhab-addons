@@ -762,6 +762,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         try {
             String reason = getString(description);
             logger.debug("{}: WebSocket connection closed, status = {}/{}", thingName, statusCode, reason);
+            ShellyThingInterface thing = this.thing;
+            if (thing != null) {
+                thing.getStats().lastWsCloseTs.set((long) now());
+            }
             if ("Bye".equalsIgnoreCase(reason) || inbound) {
                 logger.debug("{}: Device went to sleep mode or was restarted", thingName);
             } else if (statusCode == StatusCode.ABNORMAL && alwaysOn) {
