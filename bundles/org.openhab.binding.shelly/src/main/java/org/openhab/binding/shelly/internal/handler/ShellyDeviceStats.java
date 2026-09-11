@@ -45,6 +45,7 @@ public class ShellyDeviceStats {
     public final AtomicInteger wifiRssi = new AtomicInteger(0);
     // null until the device has reported an internal temperature at least once
     public final AtomicReference<@Nullable Double> maxInternalTemp = new AtomicReference<>();
+    public final AtomicLong lastWsCloseTs = new AtomicLong(0);
 
     public Map<String, String> asProperties() {
         Map<String, String> prop = new HashMap<>();
