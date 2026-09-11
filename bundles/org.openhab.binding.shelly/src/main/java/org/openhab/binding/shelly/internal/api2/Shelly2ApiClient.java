@@ -696,12 +696,18 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
                     status.tmp = new ShellySensorTmp();
                 }
                 status.tmp.isValid = true;
-                status.tmp.tC = tC;
-                status.tmp.tF = temperature.tF;
-                status.tmp.units = "C";
                 sr.temperature = tC;
-                if (status.temperature == null || tC > status.temperature) {
+                // Devices with multiple switch/PM components report one temperature per component; status.tmp
+                // mirrors status.temperature (the hottest component seen so far this cycle) instead of being
+                // overwritten unconditionally by whatever component happens to be processed last. The WS
+                // NotifyStatus path pre-seeds status.temperature with SHELLY_API_INVTEMP, which must not be
+                // treated as a real maximum or the first component's value would never be recorded.
+                boolean noMaxYet = status.temperature == null || status.temperature == SHELLY_API_INVTEMP;
+                if (noMaxYet || tC > status.temperature) {
                     status.temperature = sr.temperature;
+                    status.tmp.tC = tC;
+                    status.tmp.tF = temperature.tF;
+                    status.tmp.units = "C";
                 }
             }
         }
