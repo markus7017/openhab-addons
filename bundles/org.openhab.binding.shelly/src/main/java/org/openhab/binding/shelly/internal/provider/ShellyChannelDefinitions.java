@@ -618,6 +618,26 @@ public class ShellyChannelDefinitions {
     }
 
     /**
+     * Renaming a virtual component in the Shelly App only changes its label, so the channel itself stays in place
+     * and {@link #createVirtualComponentChannels} never gets to apply the new name. Feeding these through the
+     * channel-update path instead keeps the channel's UID, and with it the item links on it.
+     *
+     * @param desired the channels {@link #createVirtualComponentChannels} built for the current profile
+     * @return the subset of them that already exists on the Thing under a stale label
+     */
+    public static Map<String, Channel> getRelabeledVirtualComponentChannels(final Thing thing,
+            final Map<String, Channel> desired) {
+        Map<String, Channel> updates = new LinkedHashMap<>();
+        for (Map.Entry<String, Channel> entry : desired.entrySet()) {
+            Channel current = thing.getChannel(entry.getKey());
+            if (current != null && !getString(current.getLabel()).equals(getString(entry.getValue().getLabel()))) {
+                updates.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return updates;
+    }
+
+    /**
      * @return vcomponents/vgroup&lt;cid&gt; channel ids ("group#channel") no longer present on the device (or moved
      *         to a different virtual Group) and to be removed
      */

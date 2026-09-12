@@ -24,6 +24,7 @@ import static org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponen
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.jupiter.api.BeforeAll;
@@ -71,11 +72,18 @@ public class ShellyVirtualComponentChannelsTest {
         Thing thing = mock(Thing.class);
         when(thing.getUID()).thenReturn(THING_UID);
         when(thing.getChannels()).thenReturn(List.of(existingChannels));
+        when(thing.getChannel(anyString())).thenAnswer(invocation -> Stream.of(existingChannels)
+                .filter(channel -> channel.getUID().getId().equals(invocation.getArgument(0))).findFirst()
+                .orElse(null));
         return thing;
     }
 
     private static Channel channel(String channelId) {
         return ChannelBuilder.create(new ChannelUID(THING_UID, channelId)).build();
+    }
+
+    private static Channel channel(String channelId, String label) {
+        return ChannelBuilder.create(new ChannelUID(THING_UID, channelId)).withLabel(label).build();
     }
 
     private static ShellyDeviceProfile vComponentsProfile(ShellyVirtualComponent... components) {
@@ -102,6 +110,12 @@ public class ShellyVirtualComponentChannelsTest {
     private static ShellyVirtualComponent vcompWithJsonNullValue(String type, int id) {
         ShellyVirtualComponent vc = vcomp(type, id);
         vc.value = JsonNull.INSTANCE;
+        return vc;
+    }
+
+    private static ShellyVirtualComponent vcompNamed(String type, int id, String name) {
+        ShellyVirtualComponent vc = vcomp(type, id);
+        vc.name = name;
         return vc;
     }
 
@@ -213,6 +227,35 @@ public class ShellyVirtualComponentChannelsTest {
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "number201", UnDefType.UNDEF);
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "text202", UnDefType.UNDEF);
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "enum203", UnDefType.UNDEF);
+    }
+
+    @Test
+    void getRelabeledVirtualComponentChannelsReturnsOnlyTheOnesRenamedOnTheDevice() {
+        String renamedOnTheDevice = CHANNEL_GROUP_VCOMPONENTS + "#boolean200";
+        String stillCarryingItsOriginalName = CHANNEL_GROUP_VCOMPONENTS + "#text202";
+        Thing thing = thing(channel(renamedOnTheDevice, "Gate"), channel(stillCarryingItsOriginalName, "Message"));
+        ShellyDeviceProfile profile = vComponentsProfile(vcompNamed(CHANNEL_VCOMP_BOOLEAN, 200, "Garage Door"),
+                vcompNamed(CHANNEL_VCOMP_TEXT, 202, "Message"),
+                vcompNamed(CHANNEL_VCOMP_ENUM, 203, "Not Yet On Thing"));
+        Map<String, Channel> desired = ShellyChannelDefinitions.createVirtualComponentChannels(thing, profile);
+
+        Map<String, Channel> relabeled = ShellyChannelDefinitions.getRelabeledVirtualComponentChannels(thing, desired);
+
+        assertThat(relabeled.keySet(), is(Set.of(renamedOnTheDevice)));
+        assertThat(relabeled.get(renamedOnTheDevice).getLabel(), is("Garage Door"));
+    }
+
+    @Test
+    void updateDeviceStatusFeedsRenamedVirtualComponentChannelsIntoTheChannelUpdatePath() {
+        String renamedOnTheDevice = CHANNEL_GROUP_VCOMPONENTS + "#boolean200";
+        Thing thing = thing(channel(renamedOnTheDevice, "Gate"));
+        ShellyThingInterface handler = mockHandler(
+                vComponentsProfile(vcompNamed(CHANNEL_VCOMP_BOOLEAN, 200, "Garage Door")), thing);
+
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+
+        verify(handler).updateThingChannels(argThat(updates -> updates.keySet().equals(Set.of(renamedOnTheDevice))),
+                any());
     }
 
     @Test
