@@ -680,6 +680,11 @@ Each virtual component is identified by a device-assigned instance id (200-299) 
 |                          | enumNNN    | String  | r/w       | Virtual Enum component; allowed values are provided by the device                         |
 |                          | buttonNNN  | Trigger | yes       | Virtual Button component; fires SHORT_PRESSED / DOUBLE_PRESSED / TRIPLE_PRESSED / LONG_PRESSED |
 
+Two things to keep in mind when you change virtual components on the device:
+
+- Values are read on the regular update cycle (thing configuration `updateInterval`, 60 seconds by default), so a value changed in the Shelly App shows up in openHAB with that delay. Commands sent from openHAB take effect immediately. Button events are immediate as well.
+- Adding a component to a virtual Group (or removing it from one) moves its channel between `vcomponents` and `vgroupN`. This is a different channel, so items linked to the previous one need to be linked again.
+
 ### Shelly 1 (thing-type: shelly1)
 
 | Group   | Channel      | Type     | read-only | Description                                                                       |
