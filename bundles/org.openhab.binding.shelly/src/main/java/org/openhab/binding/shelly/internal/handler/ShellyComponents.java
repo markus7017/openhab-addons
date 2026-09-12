@@ -64,6 +64,7 @@ import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.ImperialUnits;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
+import org.openhab.core.thing.Channel;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.State;
 import org.openhab.core.types.UnDefType;
@@ -105,9 +106,12 @@ public class ShellyComponents {
 
             if (profile.vComponentsProbed) {
                 // Same rationale as LoRa: instances can be added/removed on the device at any time, so this
-                // bypasses the one-time channelsCreated gate and is reconciled on every cycle.
-                thingHandler.updateThingChannels(Map.of(),
-                        ShellyChannelDefinitions.createVirtualComponentChannels(thingHandler.getThing(), profile));
+                // bypasses the one-time channelsCreated gate and is reconciled on every cycle. Components can
+                // also be renamed, which only shows up as a new label on an otherwise unchanged channel.
+                Map<String, Channel> vChannels = ShellyChannelDefinitions
+                        .createVirtualComponentChannels(thingHandler.getThing(), profile);
+                thingHandler.updateThingChannels(ShellyChannelDefinitions
+                        .getRelabeledVirtualComponentChannels(thingHandler.getThing(), vChannels), vChannels);
                 reconcileVirtualComponentChannels(thingHandler, profile);
                 updateVirtualComponentStatus(thingHandler, profile);
             }
