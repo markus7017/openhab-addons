@@ -103,10 +103,6 @@ public class ShellyVirtualComponentChannelsTest {
         return vc;
     }
 
-    /**
-     * Builds a {@link ShellyThingInterface} mock wired to the given profile and thing, as used by every
-     * {@code ShellyComponents.updateDeviceStatus} integration test below.
-     */
     private static ShellyThingInterface mockHandler(ShellyDeviceProfile profile, Thing thing) {
         ShellyThingInterface handler = mock(ShellyThingInterface.class);
         when(handler.getProfile()).thenReturn(profile);
@@ -115,10 +111,6 @@ public class ShellyVirtualComponentChannelsTest {
         return handler;
     }
 
-    /**
-     * Builds a {@link ShellyThingInterface} mock wired to the given profile and a mocked API, as used by every
-     * {@code ShellyComponents.handleVirtualComponentCommand} test below.
-     */
     private static ShellyThingInterface commandHandler(ShellyDeviceProfile profile) {
         ShellyThingInterface handler = mock(ShellyThingInterface.class);
         when(handler.getThingName()).thenReturn("test-vcomp");
@@ -170,23 +162,25 @@ public class ShellyVirtualComponentChannelsTest {
 
     @Test
     void getObsoleteVirtualComponentChannelIdsRemovesOnlyChannelsNoLongerPresent() {
-        // number201 is gone from the device; the unrelated lora channel must never be touched
-        Thing thing = thing(channel(CHANNEL_GROUP_VCOMPONENTS + "#boolean200"),
-                channel(CHANNEL_GROUP_VCOMPONENTS + "#number201"),
-                channel(CHANNEL_GROUP_LORA + "#" + CHANNEL_LORA_TXDATA));
+        String stillReportedByDevice = CHANNEL_GROUP_VCOMPONENTS + "#boolean200";
+        String goneFromDevice = CHANNEL_GROUP_VCOMPONENTS + "#number201";
+        String unrelatedToVirtualComponents = CHANNEL_GROUP_LORA + "#" + CHANNEL_LORA_TXDATA;
+        Thing thing = thing(channel(stillReportedByDevice), channel(goneFromDevice),
+                channel(unrelatedToVirtualComponents));
 
         Set<String> obsolete = ShellyChannelDefinitions.getObsoleteVirtualComponentChannelIds(thing,
                 vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200)));
 
-        assertThat(obsolete, is(Set.of(CHANNEL_GROUP_VCOMPONENTS + "#number201")));
+        assertThat(obsolete, is(Set.of(goneFromDevice)));
     }
 
     @Test
     void updateVirtualComponentStatusPushesValuesAndSkipsUnreportedOnes() {
         Thing thing = thing();
+        ShellyVirtualComponent booleanWithoutAValueYet = vcomp(CHANNEL_VCOMP_BOOLEAN, 299);
         ShellyDeviceProfile profile = vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200, true),
                 vcomp(CHANNEL_VCOMP_NUMBER, 201, 42.5), vcomp(CHANNEL_VCOMP_TEXT, 202, "hello"),
-                vcomp(CHANNEL_VCOMP_ENUM, 203, "high"), vcomp(CHANNEL_VCOMP_BOOLEAN, 299)); // 299: no value yet
+                vcomp(CHANNEL_VCOMP_ENUM, 203, "high"), booleanWithoutAValueYet);
         ShellyThingInterface handler = mockHandler(profile, thing);
 
         ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
@@ -256,13 +250,13 @@ public class ShellyVirtualComponentChannelsTest {
 
     @Test
     void getObsoleteVirtualComponentChannelIdsRemovesChannelMovedToADifferentGroup() {
-        // boolean200 used to live directly under vcomponents; the device now reports it as a member of group 204
-        Thing thing = thing(channel(CHANNEL_GROUP_VCOMPONENTS + "#boolean200"));
+        String locationBeforeTheDeviceMovedItIntoGroup204 = CHANNEL_GROUP_VCOMPONENTS + "#boolean200";
+        Thing thing = thing(channel(locationBeforeTheDeviceMovedItIntoGroup204));
 
         Set<String> obsolete = ShellyChannelDefinitions.getObsoleteVirtualComponentChannelIds(thing,
                 vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200), vgroup(204, "boolean:200")));
 
-        assertThat(obsolete, is(Set.of(CHANNEL_GROUP_VCOMPONENTS + "#boolean200")));
+        assertThat(obsolete, is(Set.of(locationBeforeTheDeviceMovedItIntoGroup204)));
     }
 
     @Test

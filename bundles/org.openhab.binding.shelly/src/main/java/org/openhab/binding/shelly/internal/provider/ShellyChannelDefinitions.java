@@ -997,14 +997,6 @@ public class ShellyChannelDefinitions {
         return newChannels;
     }
 
-    public ChannelTypeUID getChannelTypeUID(String channelId) {
-        ShellyChannel channelDef = getDefinition(channelId);
-        if (channelDef != null) {
-            return new ChannelTypeUID(BINDING_ID, channelDef.typeId);
-        }
-        throw new IllegalArgumentException("Invalid channelId:" + channelId);
-    }
-
     public static @Nullable String getReplacementChannelId(String channelId) {
         int groupSeparator = channelId.indexOf(ChannelUID.CHANNEL_GROUP_SEPARATOR);
         if (groupSeparator < 0) {

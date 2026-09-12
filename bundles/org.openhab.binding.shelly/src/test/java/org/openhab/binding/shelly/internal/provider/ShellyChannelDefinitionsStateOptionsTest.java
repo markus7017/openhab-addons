@@ -43,9 +43,8 @@ public class ShellyChannelDefinitionsStateOptionsTest {
     }
 
     @Test
-    void getStateOptionsKeepsSeparateListsPerChannelId() {
+    void twoVirtualEnumsOnTheSameThingKeepSeparateOptionLists() {
         ShellyChannelDefinitions channelDefinitions = newInstance();
-        // simulates two Virtual Enum vcomponents on the same Thing with different options[]
         channelDefinitions.addStateOption("vcomponents#enum200", "low", "low");
         channelDefinitions.addStateOption("vcomponents#enum200", "high", "high");
         channelDefinitions.addStateOption("vcomponents#enum201", "on", "on");
@@ -78,9 +77,7 @@ public class ShellyChannelDefinitionsStateOptionsTest {
     }
 
     @Test
-    void differentChannelIdsSharingTheSameChannelTypeStayIndependent() {
-        // TRV valve profile names and roller favorites both reuse the same channel-type pattern this mechanism
-        // originally served; verify unrelated channel ids never bleed into each other's option list
+    void trvProfileAndRollerFavoriteOptionsDoNotBleedIntoEachOther() {
         ShellyChannelDefinitions channelDefinitions = newInstance();
         channelDefinitions.addStateOption("control#profile", "1", "1: Home");
         channelDefinitions.addStateOption("rollerControl#rollerFav", "1", "1: Open");
