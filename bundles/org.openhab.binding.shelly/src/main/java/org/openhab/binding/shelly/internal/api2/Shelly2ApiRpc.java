@@ -314,12 +314,14 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             Shelly2GetComponentsResult result = apiRequest(SHELLYRPC_METHOD_GETCOMPONENTS,
                     new Shelly2GetComponentsParams(), Shelly2GetComponentsResult.class);
             profile.vComponents = parseVirtualComponents(gson, result);
+            profile.vComponentsProbed = true;
         } catch (ShellyApiException e) {
+            // Keep the previously discovered components: a transient RPC failure must not make the next
+            // reconciliation drop the device's vcomponent channels (and the item links on them). A device that
+            // doesn't support the method simply stays unprobed, which skips vcomponent handling for it entirely.
             logger.debug("{}: Unable to read virtual components (device may not support Shelly.GetComponents)",
                     thingName, e);
-            profile.vComponents = new ArrayList<>();
         }
-        profile.vComponentsProbed = true;
     }
 
     static List<ShellyVirtualComponent> parseVirtualComponents(Gson gson, @Nullable Shelly2GetComponentsResult result) {
