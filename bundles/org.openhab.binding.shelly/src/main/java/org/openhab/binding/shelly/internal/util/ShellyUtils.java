@@ -367,13 +367,9 @@ public class ShellyUtils {
         return c >= '0' && c <= '9';
     }
 
-    public static char lastChar(String s) {
-        return s.length() > 1 ? s.charAt(s.length() - 1) : '*';
-    }
-
     /**
      * @return the maximal run of trailing digits in {@code s} (e.g. "boolean200" -&gt; "200"), empty if {@code s}
-     *         doesn't end in a digit. Unlike {@link #lastChar(String)} this survives multi-digit suffixes.
+     *         doesn't end in a digit
      */
     public static String trailingDigits(String s) {
         int i = s.length();

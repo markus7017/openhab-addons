@@ -115,7 +115,8 @@ public class Shelly2ApiRpcVirtualButtonDispatchTest {
     @Test
     void singlePushOnVirtualButtonTriggersItsOwnChannelNotThePhysicalInputPath() throws ShellyApiException {
         ShellyDeviceProfile profile = new ShellyDeviceProfile(new ThingTypeUID("shelly", "shellyplus1"));
-        profile.numInputs = 0; // no physical inputs at all - the id<numInputs guard would drop this if misrouted
+        int noPhysicalInputsSoMisroutingWouldDropTheEvent = 0;
+        profile.numInputs = noPhysicalInputsSoMisroutingWouldDropTheEvent;
         profile.vComponents = List.of(button(205));
         Shelly2ApiRpc rpc = newRpc(profile);
 
@@ -137,11 +138,13 @@ public class Shelly2ApiRpcVirtualButtonDispatchTest {
 
     @Test
     void virtualButtonEventForUnknownComponentIdIsIgnored() throws ShellyApiException {
+        int knownButtonId = 205;
+        int idNotPresentInProfile = 299;
         ShellyDeviceProfile profile = new ShellyDeviceProfile(new ThingTypeUID("shelly", "shellyplus1"));
-        profile.vComponents = List.of(button(205)); // event below is for 299, not present in profile
+        profile.vComponents = List.of(button(knownButtonId));
 
         Shelly2ApiRpc rpc = newRpc(profile);
-        rpc.onNotifyEvent(pushEventJson(299, "single_push"));
+        rpc.onNotifyEvent(pushEventJson(idNotPresentInProfile, "single_push"));
 
         verify(thing, never()).triggerChannel(anyString(), anyString(), anyString());
     }
