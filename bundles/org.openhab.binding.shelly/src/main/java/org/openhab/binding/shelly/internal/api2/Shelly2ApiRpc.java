@@ -308,14 +308,33 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
      *            probe is skipped once it's established the device has none, to avoid an extra RPC call every
      *            cycle for the vast majority of devices that don't use this feature.
      */
-    private void refreshVirtualComponents(ShellyDeviceProfile profile, boolean forceProbe) {
+    void refreshVirtualComponents(ShellyDeviceProfile profile, boolean forceProbe) {
         if (!forceProbe && (!profile.vComponentsProbed || profile.vComponents.isEmpty())) {
             return;
         }
         try {
-            Shelly2GetComponentsResult result = apiRequest(SHELLYRPC_METHOD_GETCOMPONENTS,
-                    new Shelly2GetComponentsParams(), Shelly2GetComponentsResult.class);
-            profile.vComponents = parseVirtualComponents(gson, result);
+            // Shelly.GetComponents pages its result: a device returning fewer entries than it reports in "total"
+            // must be asked again with the next offset, otherwise components on the later pages look deleted and
+            // their channels get reconciled away. Dynamic components of other features (BLU/BTHome, presence
+            // zones, LNM) share the same list and push the virtual ones further back, so this is not limited to
+            // setups with many virtual components.
+            List<ShellyVirtualComponent> components = new ArrayList<>();
+            Shelly2GetComponentsParams params = new Shelly2GetComponentsParams();
+            int offset = 0, total = 0;
+            do {
+                params.offset = offset;
+                Shelly2GetComponentsResult result = apiRequest(SHELLYRPC_METHOD_GETCOMPONENTS, params,
+                        Shelly2GetComponentsResult.class);
+                List<Shelly2ComponentEntry> page = result.components;
+                int returned = page != null ? page.size() : 0;
+                if (returned == 0) {
+                    break; // device announced more than it delivers, don't keep asking for the same page
+                }
+                components.addAll(parseVirtualComponents(gson, result));
+                offset += returned;
+                total = getInteger(result.total);
+            } while (offset < total);
+            profile.vComponents = components;
             profile.vComponentsProbed = true;
         } catch (ShellyApiException e) {
             // Keep the previously discovered components: a transient RPC failure must not make the next
