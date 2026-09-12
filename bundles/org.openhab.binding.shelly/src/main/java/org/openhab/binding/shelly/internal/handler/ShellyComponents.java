@@ -1104,23 +1104,30 @@ public class ShellyComponents {
             if (jvalue == null) {
                 continue; // not yet reported, e.g. right after discovery; also always null for button
             }
-            String group = ShellyChannelDefinitions.getVirtualComponentChannelGroup(profile, vc);
-            String channel = vc.type + vc.id;
-            switch (vc.type) {
-                case CHANNEL_VCOMP_BOOLEAN:
-                    thingHandler.updateChannel(group, channel, OnOffType.from(jvalue.getAsBoolean()));
-                    break;
-                case CHANNEL_VCOMP_NUMBER:
-                    thingHandler.updateChannel(group, channel, new DecimalType(jvalue.getAsDouble()));
-                    break;
-                case CHANNEL_VCOMP_TEXT:
-                case CHANNEL_VCOMP_ENUM:
-                    thingHandler.updateChannel(group, channel, getStringType(jvalue.getAsString()));
-                    break;
-                default:
-                    break; // group/button: no channel to update
+            State state = toVirtualComponentState(vc.type, jvalue);
+            if (state != null) {
+                thingHandler.updateChannel(ShellyChannelDefinitions.getVirtualComponentChannelGroup(profile, vc),
+                        vc.type + vc.id, state);
             }
         }
+    }
+
+    /**
+     * @return the channel state for a Boolean/Number/Text/Enum component's reported value, or null for a type that
+     *         has no state channel (Group carries a member array, Button is stateless)
+     */
+    private static @Nullable State toVirtualComponentState(String type, JsonElement value) {
+        // A component can report a JSON null instead of a value - an Enum with no default_value does so after a
+        // reboot. getAsBoolean()/getAsDouble()/getAsString() throw on anything but a primitive, and an invented
+        // OFF/0/"" would read like a genuine device value, so publish UNDEF in that case.
+        boolean reported = value.isJsonPrimitive();
+        return switch (type) {
+            case CHANNEL_VCOMP_BOOLEAN -> reported ? OnOffType.from(value.getAsBoolean()) : UnDefType.UNDEF;
+            case CHANNEL_VCOMP_NUMBER -> reported ? new DecimalType(value.getAsDouble()) : UnDefType.UNDEF;
+            case CHANNEL_VCOMP_TEXT, CHANNEL_VCOMP_ENUM ->
+                reported ? getStringType(value.getAsString()) : UnDefType.UNDEF;
+            default -> null;
+        };
     }
 
     public static void handleLoraCommand(ShellyThingInterface thingHandler, String channelId, Command command)

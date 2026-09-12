@@ -44,7 +44,9 @@ import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingUID;
 import org.openhab.core.thing.binding.builder.ChannelBuilder;
 import org.openhab.core.thing.type.ChannelKind;
+import org.openhab.core.types.UnDefType;
 
+import com.google.gson.JsonNull;
 import com.google.gson.JsonPrimitive;
 
 /**
@@ -94,6 +96,12 @@ public class ShellyVirtualComponentChannelsTest {
         ShellyVirtualComponent vc = vcomp(type, id);
         vc.value = value instanceof Boolean b ? new JsonPrimitive(b)
                 : value instanceof String s ? new JsonPrimitive(s) : new JsonPrimitive((Double) value);
+        return vc;
+    }
+
+    private static ShellyVirtualComponent vcompWithJsonNullValue(String type, int id) {
+        ShellyVirtualComponent vc = vcomp(type, id);
+        vc.value = JsonNull.INSTANCE;
         return vc;
     }
 
@@ -190,6 +198,21 @@ public class ShellyVirtualComponentChannelsTest {
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "text202", new StringType("hello"));
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "enum203", new StringType("high"));
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_VCOMPONENTS), eq("boolean299"), any());
+    }
+
+    @Test
+    void updateVirtualComponentStatusPublishesUndefWhenDeviceReportsJsonNullValue() {
+        ShellyDeviceProfile profile = vComponentsProfile(vcompWithJsonNullValue(CHANNEL_VCOMP_BOOLEAN, 200),
+                vcompWithJsonNullValue(CHANNEL_VCOMP_NUMBER, 201), vcompWithJsonNullValue(CHANNEL_VCOMP_TEXT, 202),
+                vcompWithJsonNullValue(CHANNEL_VCOMP_ENUM, 203));
+        ShellyThingInterface handler = mockHandler(profile, thing());
+
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+
+        verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "boolean200", UnDefType.UNDEF);
+        verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "number201", UnDefType.UNDEF);
+        verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "text202", UnDefType.UNDEF);
+        verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "enum203", UnDefType.UNDEF);
     }
 
     @Test
