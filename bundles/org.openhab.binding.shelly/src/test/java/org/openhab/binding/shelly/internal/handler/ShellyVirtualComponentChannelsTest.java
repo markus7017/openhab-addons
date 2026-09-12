@@ -296,6 +296,46 @@ public class ShellyVirtualComponentChannelsTest {
     }
 
     @Test
+    void handleVirtualComponentCommandIgnoresNumberOutsideTheConfiguredRange() throws ShellyApiException {
+        ShellyVirtualComponent ranged = vcomp(CHANNEL_VCOMP_NUMBER, 201);
+        ranged.min = 0.0;
+        ranged.max = 100.0;
+        ShellyThingInterface handler = commandHandler(vComponentsProfile(ranged));
+
+        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(100.5));
+        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(-0.5));
+
+        verify(handler.getApi(), never()).setVirtualNumber(anyInt(), anyDouble());
+    }
+
+    @Test
+    void handleVirtualComponentCommandForwardsNumberOnTheRangeBoundaries() throws ShellyApiException {
+        ShellyVirtualComponent ranged = vcomp(CHANNEL_VCOMP_NUMBER, 201);
+        ranged.min = 0.0;
+        ranged.max = 100.0;
+        ShellyThingInterface handler = commandHandler(vComponentsProfile(ranged));
+
+        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(0));
+        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(100));
+
+        verify(handler.getApi()).setVirtualNumber(201, 0.0);
+        verify(handler.getApi()).setVirtualNumber(201, 100.0);
+    }
+
+    @Test
+    void handleVirtualComponentCommandIgnoresTextLongerThanTheConfiguredMaxLength() throws ShellyApiException {
+        ShellyVirtualComponent limited = vcomp(CHANNEL_VCOMP_TEXT, 202);
+        limited.maxLen = 5;
+        ShellyThingInterface handler = commandHandler(vComponentsProfile(limited));
+
+        ShellyComponents.handleVirtualComponentCommand(handler, "text202", new StringType("123456"));
+        ShellyComponents.handleVirtualComponentCommand(handler, "text202", new StringType("12345"));
+
+        verify(handler.getApi(), never()).setVirtualText(202, "123456");
+        verify(handler.getApi()).setVirtualText(202, "12345");
+    }
+
+    @Test
     void handleVirtualComponentCommandIgnoresUnknownChannel() throws ShellyApiException {
         ShellyThingInterface handler = commandHandler(vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200)));
 
