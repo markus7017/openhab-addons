@@ -1190,10 +1190,26 @@ public class ShellyComponents {
                 api.setVirtualBoolean(vc.id, command == OnOffType.ON);
                 break;
             case CHANNEL_VCOMP_NUMBER:
-                api.setVirtualNumber(vc.id, getNumber(command));
+                // The device rejects a value outside the configured range / longer than max_len anyway, but only
+                // as an RPC error after the fact - checking here turns that into a log line naming the limit.
+                double number = getNumber(command);
+                Double min = vc.min, max = vc.max;
+                if ((min != null && number < min) || (max != null && number > max)) {
+                    LOGGER.warn("{}: Value {} is outside the range {}..{} configured for Virtual Number {}, ignoring",
+                            thingName, number, min, max, vc.id);
+                    return;
+                }
+                api.setVirtualNumber(vc.id, number);
                 break;
             case CHANNEL_VCOMP_TEXT:
-                api.setVirtualText(vc.id, getString(command));
+                String text = getString(command);
+                Integer maxLen = vc.maxLen;
+                if (maxLen != null && text.length() > maxLen) {
+                    LOGGER.warn("{}: Text is {} characters, more than the {} configured for Virtual Text {}, ignoring",
+                            thingName, text.length(), maxLen, vc.id);
+                    return;
+                }
+                api.setVirtualText(vc.id, text);
                 break;
             case CHANNEL_VCOMP_ENUM:
                 api.setVirtualEnum(vc.id, getString(command));
