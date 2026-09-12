@@ -25,6 +25,7 @@ import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonD
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 
 /**
@@ -182,5 +183,18 @@ public class Shelly2ApiRpcVirtualComponentsTest {
     @Test
     void nullResultYieldsEmptyList() {
         assertTrue(Shelly2ApiRpc.parseVirtualComponents(gson, null).isEmpty());
+    }
+
+    @Test
+    void reportedJsonNullValueIsKeptAsJsonNullNotAsJavaNull() {
+        JsonObject status = new JsonObject();
+        status.add("value", JsonNull.INSTANCE);
+
+        List<ShellyVirtualComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
+                result(entry("enum:203", null, status)));
+
+        ShellyVirtualComponent vc = list.get(0);
+        assertNotNull(vc.value);
+        assertTrue(vc.value.isJsonNull());
     }
 }
