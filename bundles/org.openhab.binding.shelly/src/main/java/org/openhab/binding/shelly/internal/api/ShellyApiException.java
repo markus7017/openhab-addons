@@ -142,10 +142,6 @@ public class ShellyApiException extends Exception {
         return apiResult.isHttpAccessUnauthorized();
     }
 
-    public boolean isHttpTooManyRequests() {
-        return apiResult.isHttpTooManyRequests();
-    }
-
     public boolean isJSONException() {
         return getCauseClass() == JsonSyntaxException.class;
     }
