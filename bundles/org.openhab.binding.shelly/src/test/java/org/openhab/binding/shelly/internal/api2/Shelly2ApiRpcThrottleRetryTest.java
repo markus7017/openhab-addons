@@ -36,7 +36,6 @@ import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyBindingRuntimeConfig;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
-import org.openhab.core.net.NetworkAddressChangeListener;
 import org.openhab.core.net.NetworkAddressService;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingUID;
@@ -98,43 +97,12 @@ public class Shelly2ApiRpcThrottleRetryTest {
         ShellyThingTable thingTable = mock(ShellyThingTable.class);
         ShellyBindingConfiguration raw = ShellyBindingConfiguration
                 .fromProperties(Map.of(ShellyBindingConfiguration.CONFIG_LOCAL_IP, "192.168.1.1"));
-        ShellyBindingRuntimeConfig bindingConfig = new ShellyBindingRuntimeConfig(raw, 8080, nullNas());
+        ShellyBindingRuntimeConfig bindingConfig = new ShellyBindingRuntimeConfig(raw, 8080,
+                mock(NetworkAddressService.class));
         ShellyApiConfiguration config = new ShellyApiConfiguration(bindingConfig, "test-rpc", "");
 
         return new ThrottlingApi("test-rpc", thingTable, thing, config, mock(WebSocketClient.class),
                 mock(ScheduledExecutorService.class));
-    }
-
-    private static NetworkAddressService nullNas() {
-        return new NetworkAddressService() {
-            @Override
-            public @Nullable String getPrimaryIpv4HostAddress() {
-                return null;
-            }
-
-            @Override
-            public @Nullable String getConfiguredBroadcastAddress() {
-                return null;
-            }
-
-            @Override
-            public boolean isUseOnlyOneAddress() {
-                return false;
-            }
-
-            @Override
-            public boolean isUseIPv6() {
-                return false;
-            }
-
-            @Override
-            public void addNetworkAddressChangeListener(NetworkAddressChangeListener listener) {
-            }
-
-            @Override
-            public void removeNetworkAddressChangeListener(NetworkAddressChangeListener listener) {
-            }
-        };
     }
 
     @NonNullByDefault
