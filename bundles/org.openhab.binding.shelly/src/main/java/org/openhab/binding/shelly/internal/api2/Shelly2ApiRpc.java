@@ -551,7 +551,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                  * error message instead of a WWW-Authenticate header. Requests sent over this channel are
                  * fire-and-forget, so the rejected one has to be resent explicitly once the challenge is known.
                  */
-                Shelly2AuthChallenge auth = gson.fromJson(message.error.message, Shelly2AuthChallenge.class);
+                Shelly2AuthChallenge auth = fromJson(gson, message.error.message, Shelly2AuthChallenge.class, false);
                 if (auth != null) {
                     logger.debug("{}: Authentication requested on WebSocket channel: {}", thingName,
                             message.error.message);
