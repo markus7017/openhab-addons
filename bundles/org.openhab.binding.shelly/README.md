@@ -682,7 +682,8 @@ Each virtual component is identified by a device-assigned instance id (200-299) 
 
 Two things to keep in mind when you change virtual components on the device:
 
-- Values are read on the regular update cycle (thing configuration `updateInterval`, 60 seconds by default), so a value changed in the Shelly App shows up in openHAB with that delay. Commands sent from openHAB take effect immediately. Button events are immediate as well.
+- Value changes are pushed by the device and show up in openHAB immediately when the device is connected via WebSocket. Otherwise they are picked up on the regular update cycle (thing configuration `updateInterval`, 60 seconds by default). Commands sent from openHAB take effect immediately. Button events are immediate as well.
+- The selection list of an Enum channel shows the titles configured for the options in the Shelly App, the raw option value is what gets sent to the device.
 - Adding a component to a virtual Group (or removing it from one) moves its channel between `vcomponents` and `vgroupN`. This is a different channel, so items linked to the previous one need to be linked again.
 
 ### Shelly 1 (thing-type: shelly1)

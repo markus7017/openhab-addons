@@ -396,6 +396,7 @@ public class Shelly2RpcSocket implements WriteCallback {
                         if (status.params == null) {
                             status.params = status.result;
                         }
+                        status.vcomponents = Shelly2ApiRpc.parseVirtualComponentStatus(receivedMessage);
                         handler.onNotifyStatus(status);
                         return;
                     case SHELLYRPC_METHOD_NOTIFYEVENT:

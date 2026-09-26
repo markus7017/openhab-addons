@@ -33,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -97,6 +98,7 @@ import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonD
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.Shelly2VCompStatus;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVirtualComponent;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
+import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
@@ -111,6 +113,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 
 /**
  * {@link Shelly2ApiRpc} implements Gen2 RPC interface
@@ -387,6 +392,8 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                     vc.max = vconfig.max;
                     vc.maxLen = vconfig.maxLen;
                     vc.options = vconfig.options;
+                    Shelly2VCompConfig.Ui ui = vconfig.meta != null ? vconfig.meta.ui : null;
+                    vc.optionTitles = ui != null ? ui.titles : null;
                 }
             }
             if (entry.status != null) {
@@ -402,6 +409,67 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             list.add(vc);
         }
         return list;
+    }
+
+    /**
+     * Extracts the status objects of virtual components from a NotifyStatus/NotifyFullStatus message.
+     * The device sends them under dynamic keys ("boolean:200") that the typed status DTO can't hold.
+     */
+    static Map<String, JsonObject> parseVirtualComponentStatus(String json) {
+        Map<String, JsonObject> result = new HashMap<>();
+        try {
+            JsonElement root = JsonParser.parseString(json);
+            if (!root.isJsonObject()) {
+                return result;
+            }
+            JsonObject message = root.getAsJsonObject();
+            JsonElement params = message.has("params") ? message.get("params") : message.get("result");
+            if (params == null || !params.isJsonObject()) {
+                return result;
+            }
+            for (Map.Entry<String, JsonElement> entry : params.getAsJsonObject().entrySet()) {
+                String type = entry.getKey().substring(0, Math.max(0, entry.getKey().indexOf(':')));
+                if (isVirtualValueType(type) && entry.getValue().isJsonObject()) {
+                    result.put(entry.getKey(), entry.getValue().getAsJsonObject());
+                }
+            }
+        } catch (JsonParseException e) {
+            // not a status message we can inspect, the typed parsing reports real problems
+        }
+        return result;
+    }
+
+    private static boolean isVirtualValueType(String type) {
+        return SHELLY2_VCOMP_BOOLEAN.equals(type) || SHELLY2_VCOMP_NUMBER.equals(type)
+                || SHELLY2_VCOMP_TEXT.equals(type) || SHELLY2_VCOMP_ENUM.equals(type);
+    }
+
+    private boolean updateVirtualComponentValues(ShellyDeviceProfile profile, Map<String, JsonObject> changes)
+            throws ShellyApiException {
+        boolean updated = false;
+        for (Map.Entry<String, JsonObject> change : changes.entrySet()) {
+            JsonElement value = change.getValue().get("value");
+            if (value == null) {
+                continue; // only other attributes changed
+            }
+            String key = change.getKey();
+            String type = key.substring(0, key.indexOf(':'));
+            int id;
+            try {
+                id = Integer.parseInt(key.substring(key.indexOf(':') + 1));
+            } catch (NumberFormatException e) {
+                continue;
+            }
+            for (ShellyVirtualComponent vc : profile.vComponents) {
+                if (vc.type.equals(type) && vc.id == id) {
+                    vc.value = value;
+                    ShellyComponents.updateVirtualComponentChannel(getThing(), profile, vc);
+                    updated = true;
+                    break;
+                }
+            }
+        }
+        return updated;
     }
 
     protected void installScript(String script, boolean install) throws ShellyApiException {
@@ -687,6 +755,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             }
             status.temperature = SHELLY_API_INVTEMP; // mark invalid
             updated |= fillDeviceStatus(status, message.params, true);
+            updated |= updateVirtualComponentValues(profile, message.vcomponents);
             if (getDouble(status.temperature) == SHELLY_API_INVTEMP) {
                 // no device temp available
                 status.temperature = null;

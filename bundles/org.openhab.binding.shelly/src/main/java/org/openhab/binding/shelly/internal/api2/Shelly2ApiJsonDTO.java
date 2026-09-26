@@ -13,6 +13,8 @@
 package org.openhab.binding.shelly.internal.api2;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
@@ -29,6 +31,7 @@ import org.openhab.binding.shelly.internal.util.ShellyUtils;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -1377,6 +1380,9 @@ public class Shelly2ApiJsonDTO {
         public Shelly2NotifyStatus params;
         public Shelly2NotifyStatus result;
         public Shelly2RpcMessageError error;
+
+        // "boolean:200" etc. are dynamic component keys that can't be modelled as fields, filled by the socket
+        public transient Map<String, JsonObject> vcomponents = new HashMap<>();
     }
 
     public static final String SHELLY2_AUTHDEF_USER = "admin";

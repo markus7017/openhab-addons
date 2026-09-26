@@ -834,8 +834,11 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 logger.debug("{}: Adding {} option(s) to Virtual Enum channel {}", thingName, vcOptions.length,
                         channelId);
                 channelDefinitions.clearStateOptions(channelId);
+                Map<String, String> titles = vc.optionTitles;
                 for (String option : vcOptions) {
-                    channelDefinitions.addStateOption(channelId, option, option);
+                    String title = titles != null ? titles.get(option) : null;
+                    channelDefinitions.addStateOption(channelId, option,
+                            title != null && !title.isBlank() ? title : option);
                 }
             }
         }
