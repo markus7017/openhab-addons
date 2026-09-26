@@ -257,9 +257,18 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         } else if (res.isNotCalibrated()) {
             calibrationError = true; // device needs calibration; don't go offline, keep retrying
         } else if (res.isHttpTooManyRequests()) {
-            // Device throttles briefly (~2s) once its nonce cache is exhausted; treat as transient so the
-            // existing poll cadence retries a few seconds later instead of taking the thing offline.
-            logger.debug("{}: Device is throttling requests (429), retrying on next poll", thingName);
+            /*
+             * The device throttles for ~2s once its nonce cache is exhausted, so retry after that window
+             * rather than inside it. scheduledUpdates > 0 means this poll is already that retry, which is
+             * what bounds it to one - re-arming here would poll a throttled device every 3s instead of 60s.
+             */
+            if (scheduledUpdates == 0) {
+                logger.debug("{}: Device is throttling requests (429), retrying in {}s", thingName,
+                        UPDATE_STATUS_INTERVAL_SECONDS);
+                requestUpdates(2, false); // 2, because refreshStatus() decrements one again in its finally block
+            } else {
+                logger.debug("{}: Device is still throttling requests (429), retrying on next poll", thingName);
+            }
             handled = true;
         } else if (res.httpCode >= 400) {
             logger.debug("{}: Unexpected API result: {}/{}", thingName, res.httpCode, res.httpReason, e);

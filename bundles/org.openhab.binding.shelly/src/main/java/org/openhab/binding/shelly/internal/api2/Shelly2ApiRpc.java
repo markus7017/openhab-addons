@@ -115,12 +115,12 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     protected final boolean alwaysOn;
     private @Nullable Shelly2RpcSocket rpcSocket;
     private volatile @Nullable Shelly2AuthChallenge authInfo;
-    // Guards the read-challenge/refresh-on-401 section of apiRequest() so concurrent calls (e.g. several
-    // init-time requests racing on the same instance) collapse onto a single refreshed nonce instead of each
-    // independently requesting - and being issued - their own new one.
+    /*
+     * Guards the challenge refresh in apiRequest() so concurrent calls on a stale nonce collapse onto a single
+     * new one instead of each being issued its own, which is what exhausts the device's nonce cache.
+     */
     private final Object authLock = new Object();
-    // Written by the caller thread in asyncApiRequest(), read/cleared on the WebSocket thread in
-    // retryPendingAsyncRequest() when the device answers with a 401 challenge.
+    // Written in asyncApiRequest(), read and cleared on the WebSocket thread by retryPendingAsyncRequest()
     private volatile @Nullable String pendingAsyncMethod;
     private final WebSocketClient client;
     private final ScheduledExecutorService scheduler;
@@ -546,10 +546,11 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         getThing().incProtMessages();
         if (message.error != null) {
             if (message.error.code == HttpStatus.UNAUTHORIZED_401 && !getString(message.error.message).isEmpty()) {
-                // The WebSocket channel has no HTTP headers, so the device embeds the auth challenge in the
-                // error message instead of a WWW-Authenticate header. Requests sent over this channel (see
-                // asyncApiRequest()) are fire-and-forget, so the rejected request has to be resent explicitly
-                // once the challenge is known - unlike apiRequest(), which retries inline on the HTTP response.
+                /*
+                 * The WebSocket channel has no HTTP headers, so the device embeds the auth challenge in the
+                 * error message instead of a WWW-Authenticate header. Requests sent over this channel are
+                 * fire-and-forget, so the rejected one has to be resent explicitly once the challenge is known.
+                 */
                 Shelly2AuthChallenge auth = gson.fromJson(message.error.message, Shelly2AuthChallenge.class);
                 if (auth != null) {
                     logger.debug("{}: Authentication requested on WebSocket channel: {}", thingName,
@@ -1569,11 +1570,6 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public <T> T apiRequest(String method, @Nullable Object params, Class<T> classOfT) throws ShellyApiException {
-        return apiRequest(method, params, classOfT, false);
-    }
-
-    private <T> T apiRequest(String method, @Nullable Object params, Class<T> classOfT, boolean retried)
-            throws ShellyApiException {
         String json = "";
         Shelly2RpcBaseMessage req = buildRequest(method, params);
         Shelly2AuthChallenge sentAuth = authInfo; // snapshot of the nonce this request is about to use, if any
@@ -1589,15 +1585,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             String auth = getString(res.authChallenge);
             if (res.isHttpAccessUnauthorized() && !auth.isEmpty()) {
                 synchronized (authLock) {
-                    // A concurrent call on this instance may already have refreshed the nonce while this one
-                    // was in flight or waiting for the lock - reuse it instead of parsing and requesting yet
-                    // another new one for what is really the same 401 storm. Left unguarded, several
-                    // init-time requests racing on a stale/absent nonce each get their own fresh challenge,
-                    // which is what exhausts the device's nonce cache and drives it into 429 throttling.
-                    // Deliberate identity check, not equals(): sentAuth is a snapshot reference, and
-                    // Shelly2AuthChallenge has no equals() of its own, so this asks "is it still the same
-                    // challenge instance" rather than "an equal one" - which is what determines whether the
-                    // nonce was already refreshed by someone else.
+                    /*
+                     * Identity, not equals(): sentAuth is a snapshot of the challenge instance, so this asks
+                     * whether another thread already refreshed the nonce while this request was in flight.
+                     */
                     if (authInfo == sentAuth) { // NOPMD CompareObjectsWithEquals
                         Shelly2AuthChallenge newAuth = new Shelly2AuthChallenge();
                         String[] options = auth.split(",");
@@ -1624,26 +1615,11 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                 }
                 req = buildRequest(method, params); // update RPC message id
                 json = rpcPost(gson.toJson(req));
-            } else if (res.isHttpTooManyRequests() && !retried) {
-                // Device throttles briefly once its nonce cache is exhausted. Force a fresh handshake (drop
-                // the cached nonce so the next request re-authenticates from scratch, the same way the very
-                // first request on this connection does) and retry once immediately instead of waiting for
-                // the next poll cycle. If the fresh handshake also gets throttled, propagate as before -
-                // handleApiException() in ShellyBaseHandler classifies 429 as transient so the existing poll
-                // cadence retries a few seconds later instead of forcing the thing offline.
-                logger.debug("{}: Device is throttling requests (429), retrying immediately with a fresh nonce",
-                        thingName);
-                synchronized (authLock) {
-                    if (authInfo == sentAuth) { // NOPMD CompareObjectsWithEquals
-                        authInfo = null;
-                    }
-                }
-                return apiRequest(method, params, classOfT, true);
             } else {
-                // Includes any repeated HTTP 429 after the immediate retry above already failed. Left to
-                // propagate as-is rather than retried inline here - handleApiException() in ShellyBaseHandler
-                // classifies it as transient so the existing poll cadence retries a few seconds later instead
-                // of forcing the thing offline.
+                /*
+                 * A 429 is left to propagate: a retry issued here would land inside the device's ~2s throttle
+                 * window, handleApiException() schedules it after the window instead.
+                 */
                 throw e;
             }
         }
