@@ -274,10 +274,11 @@ public class ShellyHttpClient {
         response.nonce = challenge.nonce;
         response.cnonce = Long.toHexString((long) Math.floor(Math.random() * 10e8));
         synchronized (ncLock) {
-            // RFC 2617 requires nc to increase by one on every request that reuses the same server nonce. The
-            // challenge is cached and resent until rejected (see Shelly2ApiRpc#authInfo), so the count is kept
-            // here per nonce - a device that checks for nc reuse otherwise sees every request as a replay,
-            // keeps issuing fresh challenges and eventually exhausts its nonce cache into 429 throttling.
+            /*
+             * RFC 2617 requires nc to increase on every request that reuses the same server nonce. The
+             * challenge is cached and resent until rejected (Shelly2ApiRpc#authInfo), so a device that checks nc
+             * reuse otherwise sees every request as a replay and exhausts its nonce cache into 429 throttling.
+             */
             if (!getString(challenge.nonce).equals(ncNonce)) {
                 ncNonce = challenge.nonce;
                 ncCounter = 0;
