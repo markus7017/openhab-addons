@@ -174,6 +174,14 @@ public class Shelly2GetDeviceProfileTest {
                 + "\"cover:0\":{\"in_mode\":\"single\",\"invert_directions\":false}}");
     }
 
+    /** GetConfig with cover:0 and cover:1 (Pro Dual Cover PM) */
+    private static Shelly2GetConfigResult withCover0And1(Gson gson) {
+        return parseConfig(gson,
+                "{\"sys\":{\"device\":{},\"location\":{},\"ui_data\":{}},\"wifi\":{},"
+                        + "\"cover:0\":{\"id\":0,\"in_mode\":\"single\",\"invert_directions\":false},"
+                        + "\"cover:1\":{\"id\":1,\"in_mode\":\"dual\",\"invert_directions\":true}}");
+    }
+
     /** GetConfig with cover:0 including safety_switch and obstruction_detection */
     private static Shelly2GetConfigResult withCover0SafetyAndObstruction(Gson gson) {
         return parseConfig(gson, "{\"sys\":{\"device\":{},\"location\":{},\"ui_data\":{}},\"wifi\":{},"
@@ -491,6 +499,22 @@ public class Shelly2GetDeviceProfileTest {
         assertThat(profile.numRollers, is(1));
         // No pm10/em0/em10 → else branch: roller count
         assertThat(profile.numMeters, is(1));
+    }
+
+    @Test
+    void discoveryTwoCoversCreateTwoRollersAndMeters() throws ShellyApiException {
+        Gson gson = new Gson();
+        StubApiClient client = new StubApiClient(discoveryConfig(), withCover0And1(gson));
+        ShellyDeviceProfile profile = client.getDeviceProfile(THING_TYPE_SHELLYUNKNOWN, deviceInfo());
+        List<ShellySettingsRoller> rollers = Objects.requireNonNull(profile.settings.rollers);
+        assertThat(profile.isRoller, is(true));
+        assertThat(profile.numRollers, is(2));
+        assertThat(profile.numMeters, is(2));
+        assertThat(rollers.get(0).id, is(0));
+        assertThat(rollers.get(1).id, is(1));
+        assertThat(rollers.get(1).btnReverse, is(1));
+        assertThat(profile.getControlGroup(0), is("roller1"));
+        assertThat(profile.getControlGroup(1), is("roller2"));
     }
 
     @Test

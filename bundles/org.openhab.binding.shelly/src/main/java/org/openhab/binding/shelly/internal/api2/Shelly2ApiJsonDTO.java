@@ -576,6 +576,8 @@ public class Shelly2ApiJsonDTO {
 
             @SerializedName("cover:0")
             public Shelly2DevConfigCover cover0;
+            @SerializedName("cover:1")
+            public @Nullable Shelly2DevConfigCover cover1; // Pro Dual Cover PM: 2nd cover
 
             @SerializedName("light:0")
             public @Nullable Shelly2GetConfigLight light0;
@@ -983,6 +985,8 @@ public class Shelly2ApiJsonDTO {
 
             @SerializedName("cover:0")
             public Shelly2CoverStatus cover0;
+            @SerializedName("cover:1")
+            public @Nullable Shelly2CoverStatus cover1; // Pro Dual Cover PM: 2nd cover
 
             @SerializedName("light:0")
             public @Nullable Shelly2DeviceStatusLight light0;

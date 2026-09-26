@@ -809,14 +809,16 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
             }
         }
         if (prf.isRoller && prf.settings.favorites != null) {
-            String channelId = mkChannelId(CHANNEL_GROUP_ROL_CONTROL, CHANNEL_ROL_CONTROL_FAV);
             logger.debug("{}: Adding {} roler favorite(s) to channel description", thingName,
                     prf.settings.favorites.size());
-            channelDefinitions.clearStateOptions(channelId);
-            int fid = 1;
-            for (ShellyFavPos fav : prf.settings.favorites) {
-                channelDefinitions.addStateOption(channelId, "" + fid, fid + ": " + fav.name);
-                fid++;
+            for (int r = 0; r < Math.max(1, prf.numRollers); r++) {
+                String channelId = mkChannelId(prf.getControlGroup(r), CHANNEL_ROL_CONTROL_FAV);
+                channelDefinitions.clearStateOptions(channelId);
+                int fid = 1;
+                for (ShellyFavPos fav : prf.settings.favorites) {
+                    channelDefinitions.addStateOption(channelId, "" + fid, fid + ": " + fav.name);
+                    fid++;
+                }
             }
         }
     }

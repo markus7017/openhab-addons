@@ -432,6 +432,10 @@ public class ShellyDeviceProfile {
             return CHANNEL_GROUP_STATUS + idx;
         } else if (isButton) {
             return CHANNEL_GROUP_STATUS;
+        } else if (isRoller && numRollers > 1) {
+            // multi-cover device (e.g. Pro Dual Cover PM): inputs are shared evenly between the covers
+            int inputsPerRoller = Math.max(1, numInputs / numRollers);
+            return CHANNEL_GROUP_ROL_CONTROL + (Math.min(i / inputsPerRoller, numRollers - 1) + 1);
         } else if (isRoller) {
             return numRelays <= 2 ? CHANNEL_GROUP_ROL_CONTROL : CHANNEL_GROUP_ROL_CONTROL + idx;
         } else if (isDimmer) {
@@ -459,6 +463,9 @@ public class ShellyDeviceProfile {
         int idx = i + 1; // channel names are 1-based
         if (isRGBW2 || isIX || isMultiButton) {
             return ""; // RGBW2 has only 1 channel
+        } else if (isRoller && numRollers > 1) {
+            int inputsPerRoller = Math.max(1, numInputs / numRollers);
+            return String.valueOf(i % inputsPerRoller + 1);
         } else if (isRoller) {
             // Roller has 2 relays, but it will be mapped to 1 roller with 2 inputs
             return String.valueOf(idx);

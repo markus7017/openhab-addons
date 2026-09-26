@@ -149,6 +149,7 @@ See section [Discovery](#discovery) for details.
 | shellypro2-relay    | Shelly Pro 2 with 2x relay, relay mode                             | SPSW-002XE16EU, SPSW-102XE16EU, SPSW-202XE16EU |
 | shellypro2pm-relay  | Shelly Pro 2 PM with 2x relay + power meter, relay mode            | SPSW-002PE16EU, SPSW-102PE16EU, SPSW-202PE16EU |
 | shellypro2pm-roller | Shelly Pro 2 PM with 2x relay + power meter, roller mode           | SPSW-002PE16EU, SPSW-102PE16EU, SPSW-202PE16EU |
+| shellypro2cover     | Shelly Pro Dual Cover/Shutter PM with 2x roller + power meter      | SPSH-002PE16EU                                 |
 | shellypro3          | Shelly Pro 3 with 3x relay (dry contacts)                          | SPSW-003XE16EU                                 |
 | shellypro4pm        | Shelly Pro 4 PM with 4x relay + power meter                        | SHPSW04P, SPSW-004PE16EU, SPSW-104PE16EU       |
 | shellyproem50       | Shelly Pro EM-50 - 2 channel, single phase energy meter            | SPEM-002CEBEU50                                |
@@ -2236,6 +2237,49 @@ totalEnergy might reset on restart depending on device type and firmware version
 |        | totalEnergy       | Number        | yes       | Total energy consumption in kWh                                                                    |
 |        | resetTotals       | Switch        | r/w       | Send ON to reset the accumulated energy counters for this meter                                    |
 |        | lastUpdate        | DateTime      | yes       | Timestamp of the last measurement                                                                  |
+
+`Note`:
+totalEnergy might reset on restart depending on device type and firmware version
+
+### Shelly Pro Dual Cover PM (thing-type: shellypro2cover)
+
+The device controls 2 independent covers, each cover has its own roller and meter channel group.
+The 4 inputs S1-S4 are assigned to the covers: S1/S2 to roller1 (`input1`/`input2`), S3/S4 to roller2.
+
+| Group   | Channel           | Type          | read-only | Description                                                                                        |
+| ------- | ----------------- | ------------- | --------- | -------------------------------------------------------------------------------------------------- |
+| roller1 | control           | Rollershutter | r/w       | can be open (0%), stop, or close (100%); could also handle ON (open) and OFF (close)               |
+|         | rollerPos         | Dimmer        | r/w       | Roller position: 100%=open...0%=closed; gets updated when the roller stopped                       |
+|         | input1            | Switch        | yes       | ON: Input/Button is powered, see General Notes on Channels                                         |
+|         | input2            | Switch        | yes       | ON: Input/Button is powered, see General Notes on Channels                                         |
+|         | state             | String        | yes       | Roller state: open/close/stop                                                                      |
+|         | stopReason        | String        | yes       | Last stop reasons: normal, safety_switch or obstacle                                               |
+|         | safety            | Switch        | yes       | Indicates status of the Safety Switch, ON=problem detected, powered off                            |
+|         | event             | Trigger       | yes       | Roller event/trigger with payload ROLLER_OPEN / ROLLER_CLOSE / ROLLER_STOP                         |
+| meter1  | currentPower      | Number        | yes       | Current power consumption in Watts                                                                 |
+|         | energyHistMin1    | Number        | yes       | Total energy consumed during the previous complete minute, minute -1 (Wh)                          |
+|         | energyHistMin2    | Number        | yes       | Total energy consumed during the complete minute 2 minutes ago, minute -2 (Wh)                     |
+|         | energyHistMin3    | Number        | yes       | Total energy consumed during the complete minute 3 minutes ago, minute -3 (Wh)                     |
+|         | energyAvgLast3Min | Number        | yes       | Average of the total energy per minute over the previous 3 complete minutes, minutes -1 to -3 (Wh) |
+|         | totalEnergy       | Number        | yes       | Total energy consumption in kWh                                                                    |
+|         | resetTotals       | Switch        | r/w       | Send ON to reset the accumulated energy counters for this meter                                    |
+|         | lastUpdate        | DateTime      | yes       | Timestamp of the last measurement                                                                  |
+| roller2 | control           | Rollershutter | r/w       | can be open (0%), stop, or close (100%); could also handle ON (open) and OFF (close)               |
+|         | rollerPos         | Dimmer        | r/w       | Roller position: 100%=open...0%=closed; gets updated when the roller stopped                       |
+|         | input1            | Switch        | yes       | ON: Input/Button is powered, see General Notes on Channels                                         |
+|         | input2            | Switch        | yes       | ON: Input/Button is powered, see General Notes on Channels                                         |
+|         | state             | String        | yes       | Roller state: open/close/stop                                                                      |
+|         | stopReason        | String        | yes       | Last stop reasons: normal, safety_switch or obstacle                                               |
+|         | safety            | Switch        | yes       | Indicates status of the Safety Switch, ON=problem detected, powered off                            |
+|         | event             | Trigger       | yes       | Roller event/trigger with payload ROLLER_OPEN / ROLLER_CLOSE / ROLLER_STOP                         |
+| meter2  | currentPower      | Number        | yes       | Current power consumption in Watts                                                                 |
+|         | energyHistMin1    | Number        | yes       | Total energy consumed during the previous complete minute, minute -1 (Wh)                          |
+|         | energyHistMin2    | Number        | yes       | Total energy consumed during the complete minute 2 minutes ago, minute -2 (Wh)                     |
+|         | energyHistMin3    | Number        | yes       | Total energy consumed during the complete minute 3 minutes ago, minute -3 (Wh)                     |
+|         | energyAvgLast3Min | Number        | yes       | Average of the total energy per minute over the previous 3 complete minutes, minutes -1 to -3 (Wh) |
+|         | totalEnergy       | Number        | yes       | Total energy consumption in kWh                                                                    |
+|         | resetTotals       | Switch        | r/w       | Send ON to reset the accumulated energy counters for this meter                                    |
+|         | lastUpdate        | DateTime      | yes       | Timestamp of the last measurement                                                                  |
 
 `Note`:
 totalEnergy might reset on restart depending on device type and firmware version

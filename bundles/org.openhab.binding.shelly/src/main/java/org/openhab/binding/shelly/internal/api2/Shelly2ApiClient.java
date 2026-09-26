@@ -656,6 +656,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         updated |= updateEmStatus(11, status, result.em11, channelUpdate);
         updated |= updateEmStatus(12, status, result.em12, channelUpdate);
         updated |= updateRollerStatus(0, status, result.cover0, channelUpdate);
+        updated |= updateRollerStatus(1, status, result.cover1, channelUpdate);
         // Must run before updateDimmerStatus(): the latter triggers createDimmerChannels() on the first
         // status refresh, which gates the DALI diagnostic channels on status.daliCgCount/daliScanActive
         // already being populated.
@@ -1097,6 +1098,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         ArrayList<@Nullable ShellySettingsRoller> rollers = new ArrayList<>();
 
         addRollerSettings(rollers, 0, dc.cover0);
+        addRollerSettings(rollers, 1, dc.cover1);
         fillRollerFavorites(profile, dc);
         return rollers;
     }

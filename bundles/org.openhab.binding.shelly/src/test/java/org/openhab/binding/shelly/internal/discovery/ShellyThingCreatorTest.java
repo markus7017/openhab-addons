@@ -81,6 +81,7 @@ public class ShellyThingCreatorTest {
                 Arguments.of("shellyplusplugs-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPLUGS), //
                 Arguments.of("shellyplugsg3-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPLUGS), //
                 Arguments.of("shellyplugmg3-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPLUGS), //
+                Arguments.of("shellypro2cover-" + DEVICE_ID, "", THING_TYPE_SHELLYPROCOVER2PM), //
                 Arguments.of("shellyplugus-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPLUGUS), //
                 Arguments.of("shellyplugusg4-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUGUSG4), //
                 Arguments.of("shellyplusplugcpm-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPLUGCPM), //
@@ -302,6 +303,7 @@ public class ShellyThingCreatorTest {
                 Arguments.of(SHELLYDT_PRO2PM, "roller", THING_TYPE_SHELLYPRO2PM_ROLLER), //
                 Arguments.of(SHELLYDT_PRO2PM_2, "roller", THING_TYPE_SHELLYPRO2PM_ROLLER), //
                 Arguments.of(SHELLYDT_PRO2PM_3, "roller", THING_TYPE_SHELLYPRO2PM_ROLLER), //
+                Arguments.of(SHELLYDT_PROCOVER2PM, "", THING_TYPE_SHELLYPROCOVER2PM), //
                 Arguments.of(SHELLYDT_PRO3, "", THING_TYPE_SHELLYPRO3), //
                 Arguments.of(SHELLYDT_PRO4PM, "", THING_TYPE_SHELLYPRO4PM), //
                 Arguments.of(SHELLYDT_PRO4PM_2, "", THING_TYPE_SHELLYPRO4PM), //

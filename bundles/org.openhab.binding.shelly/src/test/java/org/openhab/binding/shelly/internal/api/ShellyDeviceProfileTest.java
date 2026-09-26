@@ -173,6 +173,7 @@ public class ShellyDeviceProfileTest {
                 Arguments.of(THING_TYPE_SHELLYPRO2, true, false), //
                 Arguments.of(THING_TYPE_SHELLYPRO2PM_RELAY, true, false), //
                 Arguments.of(THING_TYPE_SHELLYPRO2PM_ROLLER, true, false), //
+                Arguments.of(THING_TYPE_SHELLYPROCOVER2PM, true, false), //
                 Arguments.of(THING_TYPE_SHELLYPRO3, true, false), //
                 Arguments.of(THING_TYPE_SHELLYPRO3EM, true, false), //
                 Arguments.of(THING_TYPE_SHELLYPROEM50, true, false), //
@@ -687,6 +688,28 @@ public class ShellyDeviceProfileTest {
                 Arguments.of(THING_TYPE_SHELLYPRODIMMER1PM), //
                 Arguments.of(THING_TYPE_SHELLYPRODIMMER2PM), //
                 Arguments.of(THING_TYPE_SHELLYPRODIMMER10V)); //
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideTestCasesForMultiRollerInputs")
+    void getInputGroupAndSuffixForMultiRoller(int numRollers, int numInputs, int inputIdx, String expectedGroup,
+            String expectedSuffix) {
+        ShellyDeviceProfile deviceProfile = new ShellyDeviceProfile(THING_TYPE_SHELLYPROCOVER2PM);
+        deviceProfile.isRoller = true;
+        deviceProfile.numRollers = numRollers;
+        deviceProfile.numInputs = numInputs;
+
+        assertThat(deviceProfile.getInputGroup(inputIdx), is(equalTo(expectedGroup)));
+        assertThat(deviceProfile.getInputSuffix(inputIdx), is(equalTo(expectedSuffix)));
+    }
+
+    private static Stream<Arguments> provideTestCasesForMultiRollerInputs() {
+        return Stream.of( //
+                Arguments.of(2, 4, 0, CHANNEL_GROUP_ROL_CONTROL + "1", "1"), //
+                Arguments.of(2, 4, 1, CHANNEL_GROUP_ROL_CONTROL + "1", "2"), //
+                Arguments.of(2, 4, 2, CHANNEL_GROUP_ROL_CONTROL + "2", "1"), //
+                Arguments.of(2, 4, 3, CHANNEL_GROUP_ROL_CONTROL + "2", "2"), //
+                Arguments.of(2, 0, 0, CHANNEL_GROUP_ROL_CONTROL + "1", "1")); //
     }
 
     @ParameterizedTest

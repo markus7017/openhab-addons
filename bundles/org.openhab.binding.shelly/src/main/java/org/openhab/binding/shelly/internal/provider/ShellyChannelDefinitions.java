@@ -681,24 +681,25 @@ public class ShellyChannelDefinitions {
     }
 
     public static Map<String, Channel> createRollerChannels(final Thing thing, final ShellyDeviceProfile profile,
-            final ShellyRollerStatus roller) {
+            final ShellyRollerStatus roller, int idx) {
         Map<String, Channel> add = new LinkedHashMap<>();
-        addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_ROL_CONTROL_CONTROL);
-        addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STATE);
-        addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_EVENT_TRIGGER);
-        addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_ROL_CONTROL_POS);
-        addChannel(thing, add, roller.stopReason != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_STOPR);
-        addChannel(thing, add, roller.safetySwitch != null, CHGR_ROLLER, CHANNEL_ROL_CONTROL_SAFETY);
+        String group = profile.getControlGroup(idx);
+        addChannel(thing, add, true, group, CHANNEL_ROL_CONTROL_CONTROL);
+        addChannel(thing, add, true, group, CHANNEL_ROL_CONTROL_STATE);
+        addChannel(thing, add, true, group, CHANNEL_EVENT_TRIGGER);
+        addChannel(thing, add, true, group, CHANNEL_ROL_CONTROL_POS);
+        addChannel(thing, add, roller.stopReason != null, group, CHANNEL_ROL_CONTROL_STOPR);
+        addChannel(thing, add, roller.safetySwitch != null, group, CHANNEL_ROL_CONTROL_SAFETY);
 
         ShellyThingInterface handler = (ShellyThingInterface) thing.getHandler();
         if (handler != null) {
             ShellySettingsGlobal settings = handler.getProfile().settings;
             if (getBool(settings.favoritesEnabled) && settings.favorites != null) {
-                addChannel(thing, add, true, CHGR_ROLLER, CHANNEL_ROL_CONTROL_FAV);
+                addChannel(thing, add, true, group, CHANNEL_ROL_CONTROL_FAV);
             }
         }
 
-        addAddonChannels(thing, profile, 0, add);
+        addAddonChannels(thing, profile, idx, add);
 
         return add;
     }

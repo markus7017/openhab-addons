@@ -145,6 +145,7 @@ public class ShellyDevices {
     public static final String SHELLYDT_PRO2PM_2 = "SPSW-102PE16EU";
     public static final String SHELLYDT_PRO2PM_3 = "SPSW-202PE16EU";
     public static final String SHELLYDT_PRO3 = "SPSW-003XE16EU";
+    public static final String SHELLYDT_PROCOVER2PM = "SPSH-002PE16EU";
     public static final String SHELLYDT_PRO4PM = "SPSW-004PE16EU";
     public static final String SHELLYDT_PRO4PM_2 = "SPSW-104PE16EU";
     public static final String SHELLYDT_4PRO = "SHPSW04P";
@@ -304,6 +305,7 @@ public class ShellyDevices {
     public static final ThingTypeUID THING_TYPE_SHELLYPRO2PM_ROLLER = new ThingTypeUID(BINDING_ID,
             "shellypro2pm-roller");
     public static final ThingTypeUID THING_TYPE_SHELLYPRO3 = new ThingTypeUID(BINDING_ID, "shellypro3");
+    public static final ThingTypeUID THING_TYPE_SHELLYPROCOVER2PM = new ThingTypeUID(BINDING_ID, "shellypro2cover");
     public static final ThingTypeUID THING_TYPE_SHELLYPRO4PM = new ThingTypeUID(BINDING_ID, "shellypro4pm");
     public static final ThingTypeUID THING_TYPE_SHELLYPROEM50 = new ThingTypeUID(BINDING_ID, "shellyproem50");
     public static final ThingTypeUID THING_TYPE_SHELLYPRO3EM = new ThingTypeUID(BINDING_ID, "shellypro3em");
@@ -539,6 +541,7 @@ public class ShellyDevices {
             Map.entry(SHELLYDT_PRO2_2, THING_TYPE_SHELLYPRO2), //
             Map.entry(SHELLYDT_PRO2_3, THING_TYPE_SHELLYPRO2), //
             Map.entry(SHELLYDT_PRO3, THING_TYPE_SHELLYPRO3), //
+            Map.entry(SHELLYDT_PROCOVER2PM, THING_TYPE_SHELLYPROCOVER2PM), //
             Map.entry(SHELLYDT_PRO4PM, THING_TYPE_SHELLYPRO4PM), //
             Map.entry(SHELLYDT_PRO4PM_2, THING_TYPE_SHELLYPRO4PM), //
             Map.entry(SHELLYDT_4PRO, THING_TYPE_SHELLYPRO4PM), //
@@ -745,6 +748,7 @@ public class ShellyDevices {
             Map.entry("shellypro2pm-roller", THING_TYPE_SHELLYPRO2PM_ROLLER),
             Map.entry("shellypro2", THING_TYPE_SHELLYPRO2), //
             Map.entry("shellypro3", THING_TYPE_SHELLYPRO3), //
+            Map.entry("shellypro2cover", THING_TYPE_SHELLYPROCOVER2PM), //
             Map.entry("shellypro4pm", THING_TYPE_SHELLYPRO4PM), //
             Map.entry("shellyproem50", THING_TYPE_SHELLYPROEM50), //
             Map.entry("shellypro3em", THING_TYPE_SHELLYPRO3EM), //

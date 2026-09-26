@@ -310,9 +310,9 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
         }
     }
 
-    private void createRollerChannels(ShellyRollerStatus roller) {
+    private void createRollerChannels(ShellyRollerStatus roller, int idx) {
         if (!areChannelsCreated()) {
-            updateChannelDefinitions(ShellyChannelDefinitions.createRollerChannels(getThing(), profile, roller));
+            updateChannelDefinitions(ShellyChannelDefinitions.createRollerChannels(getThing(), profile, roller, idx));
         }
     }
 
@@ -356,7 +356,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                 logger.trace("{}: Updating {} rollers", thingName, profile.numRollers);
                 for (int i = 0; i < profile.numRollers; i++) {
                     ShellyRollerStatus roller = status.rollers.get(i);
-                    createRollerChannels(roller);
+                    createRollerChannels(roller, i);
                     updated |= ShellyComponents.updateRoller(this, roller, i);
                 }
             }
