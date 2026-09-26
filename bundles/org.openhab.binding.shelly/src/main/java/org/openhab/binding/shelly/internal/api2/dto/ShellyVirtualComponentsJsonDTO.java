@@ -13,6 +13,7 @@
 package org.openhab.binding.shelly.internal.api2.dto;
 
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.jdt.annotation.Nullable;
 
@@ -80,6 +81,15 @@ public class ShellyVirtualComponentsJsonDTO {
         @SerializedName("max_len")
         public @Nullable Integer maxLen; // text
         public @Nullable String[] options; // enum
+        public @Nullable Meta meta;
+
+        public static class Meta {
+            public @Nullable Ui ui;
+        }
+
+        public static class Ui {
+            public @Nullable Map<String, String> titles; // enum option -> display text
+        }
     }
 
     /**
@@ -122,6 +132,7 @@ public class ShellyVirtualComponentsJsonDTO {
         public @Nullable Double max;
         public @Nullable Integer maxLen;
         public @Nullable String[] options;
+        public @Nullable Map<String, String> optionTitles; // enum option -> display text as set in the Shelly app
         public @Nullable JsonElement value; // current status value, type-dependent; null for button
         public @Nullable List<String> groupMembers; // group type only, from status.value (e.g. "boolean:200")
     }

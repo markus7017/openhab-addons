@@ -1108,11 +1108,17 @@ public class ShellyComponents {
             if (jvalue == null) {
                 continue; // not yet reported, e.g. right after discovery; also always null for button
             }
-            State state = toVirtualComponentState(vc.type, jvalue);
-            if (state != null) {
-                thingHandler.updateChannel(ShellyChannelDefinitions.getVirtualComponentChannelGroup(profile, vc),
-                        vc.type + vc.id, state);
-            }
+            updateVirtualComponentChannel(thingHandler, profile, vc);
+        }
+    }
+
+    public static void updateVirtualComponentChannel(ShellyThingInterface thingHandler, ShellyDeviceProfile profile,
+            ShellyVirtualComponent vc) {
+        JsonElement jvalue = vc.value;
+        State state = jvalue != null ? toVirtualComponentState(vc.type, jvalue) : null;
+        if (state != null) {
+            thingHandler.updateChannel(ShellyChannelDefinitions.getVirtualComponentChannelGroup(profile, vc),
+                    vc.type + vc.id, state);
         }
     }
 

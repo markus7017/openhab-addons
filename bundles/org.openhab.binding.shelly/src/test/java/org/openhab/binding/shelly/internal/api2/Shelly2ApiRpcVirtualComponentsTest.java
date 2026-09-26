@@ -313,4 +313,45 @@ public class Shelly2ApiRpcVirtualComponentsTest {
         assertEquals(1, profile.vComponents.size());
         verifyPagesRequested(api, 1);
     }
+
+    @Test
+    void notifyStatusExtractsOnlyVirtualValueComponents() {
+        String json = "{\"src\":\"shellyplus1-aabbcc\",\"method\":\"NotifyStatus\",\"params\":{\"ts\":1.0,"
+                + "\"boolean:200\":{\"value\":true},\"number:201\":{\"value\":21.5},\"enum:202\":{\"value\":\"a\"},"
+                + "\"button:203\":{},\"switch:0\":{\"output\":true}}}";
+
+        Map<String, JsonObject> result = Shelly2ApiRpc.parseVirtualComponentStatus(json);
+
+        assertEquals(3, result.size());
+        assertTrue(result.get("boolean:200").get("value").getAsBoolean());
+        assertEquals(21.5, result.get("number:201").get("value").getAsDouble());
+        assertEquals("a", result.get("enum:202").get("value").getAsString());
+    }
+
+    @Test
+    void notifyFullStatusReadsComponentsFromResult() {
+        String json = "{\"result\":{\"text:204\":{\"value\":\"hi\"}}}";
+
+        Map<String, JsonObject> result = Shelly2ApiRpc.parseVirtualComponentStatus(json);
+
+        assertEquals("hi", result.get("text:204").get("value").getAsString());
+    }
+
+    @Test
+    void malformedNotifyStatusYieldsNoComponents() {
+        assertTrue(Shelly2ApiRpc.parseVirtualComponentStatus("not json {").isEmpty());
+        assertTrue(Shelly2ApiRpc.parseVirtualComponentStatus("[]").isEmpty());
+    }
+
+    @Test
+    void enumComponentParsesOptionTitles() {
+        JsonObject config = gson.fromJson(
+                "{\"options\":[\"low\",\"high\"],\"meta\":{\"ui\":{\"titles\":{\"low\":\"Low power\",\"high\":\"High power\"}}}}",
+                JsonObject.class);
+
+        ShellyVirtualComponent vc = Shelly2ApiRpc.parseVirtualComponents(gson, result(entry("enum:203", config, null)))
+                .get(0);
+
+        assertEquals(Map.of("low", "Low power", "high", "High power"), vc.optionTitles);
+    }
 }
