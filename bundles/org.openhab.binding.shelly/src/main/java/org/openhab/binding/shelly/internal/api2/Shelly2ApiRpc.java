@@ -91,16 +91,16 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptLi
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptPutCodeParams;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptResponse;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.Shelly2StatusPresence;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.Shelly2ComponentEntry;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.Shelly2GetComponentsParams;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.Shelly2GetComponentsResult;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.Shelly2VCompConfig;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.Shelly2VCompStatus;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVirtualComponent;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponentEntry;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCConfig;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCGetComponentsParams;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCGetComponentsResult;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCStatus;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
-import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
+import org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
 import org.openhab.core.library.unit.SIUnits;
@@ -323,14 +323,14 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             // their channels get reconciled away. Dynamic components of other features (BLU/BTHome, presence
             // zones, LNM) share the same list and push the virtual ones further back, so this is not limited to
             // setups with many virtual components.
-            List<ShellyVirtualComponent> components = new ArrayList<>();
-            Shelly2GetComponentsParams params = new Shelly2GetComponentsParams();
+            List<ShellyVCComponent> components = new ArrayList<>();
+            ShellyVCGetComponentsParams params = new ShellyVCGetComponentsParams();
             int offset = 0, total = 0;
             do {
                 params.offset = offset;
-                Shelly2GetComponentsResult result = apiRequest(SHELLYRPC_METHOD_GETCOMPONENTS, params,
-                        Shelly2GetComponentsResult.class);
-                List<Shelly2ComponentEntry> page = result.components;
+                ShellyVCGetComponentsResult result = apiRequest(SHELLYRPC_METHOD_GETCOMPONENTS, params,
+                        ShellyVCGetComponentsResult.class);
+                List<ShellyVCComponentEntry> page = result.components;
                 int returned = page != null ? page.size() : 0;
                 if (returned == 0) {
                     break; // device announced more than it delivers, don't keep asking for the same page
@@ -350,13 +350,13 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         }
     }
 
-    static List<ShellyVirtualComponent> parseVirtualComponents(Gson gson, @Nullable Shelly2GetComponentsResult result) {
-        List<ShellyVirtualComponent> list = new ArrayList<>();
-        List<Shelly2ComponentEntry> entries = result != null ? result.components : null;
+    static List<ShellyVCComponent> parseVirtualComponents(Gson gson, @Nullable ShellyVCGetComponentsResult result) {
+        List<ShellyVCComponent> list = new ArrayList<>();
+        List<ShellyVCComponentEntry> entries = result != null ? result.components : null;
         if (entries == null) {
             return list;
         }
-        for (Shelly2ComponentEntry entry : entries) {
+        for (ShellyVCComponentEntry entry : entries) {
             String key = getString(entry.key);
             int sep = key.indexOf(':');
             if (sep < 0) {
@@ -381,23 +381,25 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                 continue;
             }
 
-            ShellyVirtualComponent vc = new ShellyVirtualComponent();
+            ShellyVCComponent vc = new ShellyVCComponent();
             vc.type = type;
             vc.id = id;
             if (entry.config != null) {
-                Shelly2VCompConfig vconfig = gson.fromJson(entry.config, Shelly2VCompConfig.class);
+                ShellyVCConfig vconfig = gson.fromJson(entry.config, ShellyVCConfig.class);
                 if (vconfig != null) {
                     vc.name = vconfig.name;
                     vc.min = vconfig.min;
                     vc.max = vconfig.max;
                     vc.maxLen = vconfig.maxLen;
                     vc.options = vconfig.options;
-                    Shelly2VCompConfig.Ui ui = vconfig.meta != null ? vconfig.meta.ui : null;
+                    ShellyVCConfig.ShellyVCUi ui = vconfig.meta != null ? vconfig.meta.ui : null;
                     vc.optionTitles = ui != null ? ui.titles : null;
+                    vc.step = ui != null ? ui.step : null;
+                    vc.unit = ui != null ? ui.unit : null;
                 }
             }
             if (entry.status != null) {
-                Shelly2VCompStatus vstatus = gson.fromJson(entry.status, Shelly2VCompStatus.class);
+                ShellyVCStatus vstatus = gson.fromJson(entry.status, ShellyVCStatus.class);
                 vc.value = vstatus != null ? vstatus.value : null;
             }
             JsonElement value = vc.value;
@@ -460,10 +462,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             } catch (NumberFormatException e) {
                 continue;
             }
-            for (ShellyVirtualComponent vc : profile.vComponents) {
+            for (ShellyVCComponent vc : profile.vComponents) {
                 if (vc.type.equals(type) && vc.id == id) {
                     vc.value = value;
-                    ShellyComponents.updateVirtualComponentChannel(getThing(), profile, vc);
+                    ShellyVirtualComponents.updateVirtualComponentChannel(getThing(), profile, vc);
                     updated = true;
                     break;
                 }
@@ -953,11 +955,12 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             logger.debug("{}: Unmapped Virtual Button event {}, ignoring", thingName, event);
             return;
         }
-        for (ShellyVirtualComponent vc : profile.vComponents) {
+        for (ShellyVCComponent vc : profile.vComponents) {
             if (SHELLY2_VCOMP_BUTTON.equals(vc.type) && vc.id == id) {
-                String group = ShellyChannelDefinitions.getVirtualComponentChannelGroup(profile, vc);
                 logger.debug("{}: Virtual Button {} triggered: {}", thingName, id, trigger);
-                getThing().triggerChannel(group, CHANNEL_VCOMP_BUTTON + id, trigger);
+                for (String group : ShellyChannelDefinitions.getVirtualComponentChannelGroups(profile, vc)) {
+                    getThing().triggerChannel(group, CHANNEL_VCOMP_BUTTON + id, trigger);
+                }
                 return;
             }
         }
@@ -1663,7 +1666,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public void setVirtualBoolean(int id, boolean value) throws ShellyApiException {
-        Shelly2BooleanSetParams params = new Shelly2BooleanSetParams();
+        ShellyVCBooleanSetParams params = new ShellyVCBooleanSetParams();
         params.id = id;
         params.value = value;
         apiRequest(SHELLYRPC_METHOD_BOOLEAN_SET, params, String.class);
@@ -1671,7 +1674,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public void setVirtualNumber(int id, double value) throws ShellyApiException {
-        Shelly2NumberSetParams params = new Shelly2NumberSetParams();
+        ShellyVCNumberSetParams params = new ShellyVCNumberSetParams();
         params.id = id;
         params.value = value;
         apiRequest(SHELLYRPC_METHOD_NUMBER_SET, params, String.class);
@@ -1679,7 +1682,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public void setVirtualText(int id, String value) throws ShellyApiException {
-        Shelly2TextSetParams params = new Shelly2TextSetParams();
+        ShellyVCTextSetParams params = new ShellyVCTextSetParams();
         params.id = id;
         params.value = value;
         apiRequest(SHELLYRPC_METHOD_TEXT_SET, params, String.class);
@@ -1687,7 +1690,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public void setVirtualEnum(int id, String value) throws ShellyApiException {
-        Shelly2EnumSetParams params = new Shelly2EnumSetParams();
+        ShellyVCEnumSetParams params = new ShellyVCEnumSetParams();
         params.id = id;
         params.value = value;
         apiRequest(SHELLYRPC_METHOD_ENUM_SET, params, String.class);

@@ -13,6 +13,7 @@
 package org.openhab.binding.shelly.internal;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.core.thing.type.ChannelGroupTypeUID;
 
 /**
  * The {@link ShellyBindingConstants} class defines common constants, which are
@@ -296,8 +297,16 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_VCOMP_ENUM = "enum";
     // no state, trigger channel only, fired from a Button.Trigger NotifyEvent
     public static final String CHANNEL_VCOMP_BUTTON = "button";
-    // a member vcomponent of virtual Group <cid> gets its channel under "vgroup<cid>" instead of "vcomponents"
+    // a member vcomponent of virtual Group <cid> gets its channel under "vgroup<cid>" instead of "vcomponents";
+    // a vcomponent that is a member of several Groups at once gets one duplicate channel per "vgroup<cid>"
     public static final String CHANNEL_GROUP_VGROUP_PREFIX = "vgroup";
+    // shared channel-group-type (device.xml) used for every "vgroup<cid>" ChannelGroupDefinition; the device's own
+    // Group name is supplied per-definition as a label override, this type only provides the fallback label
+    public static final ChannelGroupTypeUID VGROUP_TYPE_UID = new ChannelGroupTypeUID(BINDING_ID,
+            CHANNEL_GROUP_VGROUP_PREFIX);
+    // marker segment of the synthetic ThingTypeUID used to trigger/identify the per-Thing dynamic ThingType that
+    // adds "vgroup<cid>" ChannelGroupDefinitions once a device has at least one named Virtual Components Group
+    public static final String VGROUP_TYPE_MARKER = "_vg_";
 
     // General
     public static final String CHANNEL_LAST_UPDATE = "lastUpdate";

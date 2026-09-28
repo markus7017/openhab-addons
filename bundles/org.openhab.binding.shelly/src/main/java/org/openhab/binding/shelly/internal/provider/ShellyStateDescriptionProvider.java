@@ -14,12 +14,14 @@ package org.openhab.binding.shelly.internal.provider;
 
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.BINDING_ID;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
+import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions.NumberRange;
 import org.openhab.core.events.EventPublisher;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.Thing;
@@ -75,9 +77,35 @@ public class ShellyStateDescriptionProvider extends BaseDynamicStateDescriptionP
             return null;
         }
 
-        List<StateOption> stateOptions = handler.getStateOptions(channel.getUID().getId());
-        return stateOptions == null ? null
-                : StateDescriptionFragmentBuilder.create(originalStateDescription).withOptions(stateOptions).build()
-                        .toStateDescription();
+        String channelId = channel.getUID().getId();
+        List<StateOption> stateOptions = handler.getStateOptions(channelId);
+        NumberRange numberRange = handler.getNumberRange(channelId);
+        if (stateOptions == null && numberRange == null) {
+            return null;
+        }
+
+        StateDescriptionFragmentBuilder builder = StateDescriptionFragmentBuilder.create(originalStateDescription);
+        if (stateOptions != null) {
+            builder.withOptions(stateOptions);
+        }
+        if (numberRange != null) {
+            Double min = numberRange.min;
+            Double max = numberRange.max;
+            Double step = numberRange.step;
+            String unit = numberRange.unit;
+            if (min != null) {
+                builder.withMinimum(BigDecimal.valueOf(min));
+            }
+            if (max != null) {
+                builder.withMaximum(BigDecimal.valueOf(max));
+            }
+            if (step != null) {
+                builder.withStep(BigDecimal.valueOf(step));
+            }
+            if (unit != null && !unit.isBlank()) {
+                builder.withPattern("%.2f " + unit);
+            }
+        }
+        return builder.build().toStateDescription();
     }
 }

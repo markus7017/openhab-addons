@@ -13,6 +13,8 @@
 package org.openhab.binding.shelly.internal.provider;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -20,9 +22,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.jupiter.api.Test;
+import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions.NumberRange;
 import org.openhab.core.types.StateOption;
 
 /**
@@ -30,6 +34,8 @@ import org.openhab.core.types.StateOption;
  * and {@link ShellyChannelDefinitions#clearStateOptions}: options are kept per-instance channel id (e.g.
  * {@code ChannelUID.getId()}), not per channel type, so several channels that share one channel type (TRV profile,
  * roller favorites, several Virtual Enum components on the same Thing) each keep their own independent list.
+ * Also tests {@link ShellyChannelDefinitions#getNumberRange(String)}, {@link ShellyChannelDefinitions#setNumberRange}
+ * and {@link ShellyChannelDefinitions#clearNumberRange}, which mirror the same per-instance keying.
  *
  * @author Markus Michels - Initial contribution
  */
@@ -85,5 +91,57 @@ public class ShellyChannelDefinitionsStateOptionsTest {
         assertThat(channelDefinitions.getStateOptions("control#profile"), is(List.of(new StateOption("1", "1: Home"))));
         assertThat(channelDefinitions.getStateOptions("rollerControl#rollerFav"),
                 is(List.of(new StateOption("1", "1: Open"))));
+    }
+
+    @Test
+    void twoVirtualNumbersOnTheSameThingKeepSeparateRanges() {
+        ShellyChannelDefinitions channelDefinitions = newInstance();
+        channelDefinitions.setNumberRange("vcomponents#number201", 0.0, 100.0, 0.5, "%");
+        channelDefinitions.setNumberRange("vcomponents#number202", -10.0, 10.0, null, null);
+
+        NumberRange number201 = Objects.requireNonNull(channelDefinitions.getNumberRange("vcomponents#number201"));
+        NumberRange number202 = Objects.requireNonNull(channelDefinitions.getNumberRange("vcomponents#number202"));
+
+        assertThat(number201.min, is(0.0));
+        assertThat(number201.max, is(100.0));
+        assertThat(number201.step, is(0.5));
+        assertThat(number201.unit, is("%"));
+        assertThat(number202.min, is(-10.0));
+        assertThat(number202.max, is(10.0));
+        assertThat(number202.step, is(nullValue()));
+        assertThat(number202.unit, is(nullValue()));
+    }
+
+    @Test
+    void numberRangeStillResolvesForAVirtualNumberChannelInsideAVgroup() {
+        ShellyChannelDefinitions channelDefinitions = newInstance();
+        channelDefinitions.setNumberRange("vgroup200#number201", 0.0, 100.0, 0.5, "%");
+
+        NumberRange numberRange = Objects.requireNonNull(channelDefinitions.getNumberRange("vgroup200#number201"));
+
+        assertThat(numberRange.min, is(0.0));
+        assertThat(numberRange.max, is(100.0));
+        assertThat(numberRange.step, is(0.5));
+        assertThat(numberRange.unit, is("%"));
+    }
+
+    @Test
+    void getNumberRangeReturnsNullForUnknownChannelId() {
+        ShellyChannelDefinitions channelDefinitions = newInstance();
+        channelDefinitions.setNumberRange("vcomponents#number201", 0.0, 100.0, null, null);
+
+        assertThat(channelDefinitions.getNumberRange("vcomponents#number299"), is(nullValue()));
+    }
+
+    @Test
+    void clearNumberRangeOnlyRemovesTheGivenChannelId() {
+        ShellyChannelDefinitions channelDefinitions = newInstance();
+        channelDefinitions.setNumberRange("vcomponents#number201", 0.0, 100.0, null, null);
+        channelDefinitions.setNumberRange("vcomponents#number202", -10.0, 10.0, null, null);
+
+        channelDefinitions.clearNumberRange("vcomponents#number201");
+
+        assertThat(channelDefinitions.getNumberRange("vcomponents#number201"), is(nullValue()));
+        assertThat(channelDefinitions.getNumberRange("vcomponents#number202"), is(notNullValue()));
     }
 }

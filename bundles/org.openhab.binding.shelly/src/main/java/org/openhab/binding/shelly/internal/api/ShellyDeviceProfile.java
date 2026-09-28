@@ -39,7 +39,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettings
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRgbwLight;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyThermnostat;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVirtualComponent;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
 import org.openhab.binding.shelly.internal.discovery.ShellyThingCreator;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
 import org.openhab.core.thing.ThingTypeUID;
@@ -142,7 +142,7 @@ public class ShellyDeviceProfile {
 
     // Virtual Components (Gen3/Gen4/Gen2 Pro): discovered dynamically via Shelly.GetComponents, no static
     // per-model/generation flag is available to gate on
-    public List<ShellyVirtualComponent> vComponents = new ArrayList<>();
+    public List<ShellyVCComponent> vComponents = new ArrayList<>();
     public boolean vComponentsProbed; // true once Shelly.GetComponents has been tried for this profile
 
     public ShellyDeviceProfile(ThingTypeUID thingTypeUID) {

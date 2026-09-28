@@ -27,7 +27,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Verifies the BASE64 encode/decode logic used for LoRa TX/RX channels in
- * {@link ShellyComponents#handleLoraCommand} and {@code Shelly2ApiRpc}.
+ * {@link ShellyVirtualComponents#handleLoraCommand} and {@code Shelly2ApiRpc}.
  *
  * <p>
  * The encode path (CHANNEL_LORA_TXDATA) produces standard padded base64.

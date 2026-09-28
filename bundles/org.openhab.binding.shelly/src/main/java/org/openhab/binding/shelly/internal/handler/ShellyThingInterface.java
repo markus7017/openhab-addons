@@ -25,10 +25,12 @@ import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
+import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
+import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.types.State;
 import org.openhab.core.types.StateOption;
 
@@ -49,6 +51,24 @@ public interface ShellyThingInterface {
      */
     @Nullable
     List<StateOption> getStateOptions(String channelId);
+
+    /**
+     * @param channelId the full "group#channel" instance id, kept per-instance for the same reason as
+     *            {@link #getStateOptions(String)}
+     */
+    ShellyChannelDefinitions.@Nullable NumberRange getNumberRange(String channelId);
+
+    void clearStateOptions(String channelId);
+
+    void addStateOption(String channelId, String value, String label);
+
+    void setNumberRange(String channelId, @Nullable Double min, @Nullable Double max, @Nullable Double step,
+            @Nullable String unit);
+
+    /**
+     * Migrates this Thing to a different {@link ThingTypeUID}, reusing the current configuration.
+     */
+    void changeThingType(ThingTypeUID thingTypeUID);
 
     double getChannelDouble(String group, String channel);
 

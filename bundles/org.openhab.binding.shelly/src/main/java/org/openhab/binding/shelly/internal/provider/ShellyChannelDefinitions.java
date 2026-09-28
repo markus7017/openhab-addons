@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,9 +45,9 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettings
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortLightStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLightChannel;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVirtualComponent;
-import org.openhab.binding.shelly.internal.handler.ShellyComponents;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
+import org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
@@ -124,7 +125,27 @@ public class ShellyChannelDefinitions {
         }
     }
 
+    /**
+     * Min/max/step/unit for a Virtual Number channel, as configured on the device ({@code meta.ui}); any field may
+     * be {@code null} when the device didn't report it (or, for min/max, when it's still at its sentinel default -
+     * see {@link ShellyVirtualComponentsJsonDTO}).
+     */
+    public static class NumberRange {
+        public final @Nullable Double min;
+        public final @Nullable Double max;
+        public final @Nullable Double step;
+        public final @Nullable String unit;
+
+        public NumberRange(@Nullable Double min, @Nullable Double max, @Nullable Double step, @Nullable String unit) {
+            this.min = min;
+            this.max = max;
+            this.step = step;
+            this.unit = unit;
+        }
+    }
+
     private final CopyOnWriteArrayList<OptionEntry> stateOptions = new CopyOnWriteArrayList<>();
+    private final Map<String, NumberRange> numberRanges = new ConcurrentHashMap<>();
 
     private static final ChannelMap CHANNEL_DEFINITIONS = new ChannelMap();
     // Channel types selected per device instead of per channel id, complete definitions keyed by channel type id
@@ -567,22 +588,24 @@ public class ShellyChannelDefinitions {
             CHANNEL_VCOMP_TEXT, CHANNEL_VCOMP_ENUM, CHANNEL_VCOMP_BUTTON);
 
     /**
-     * Channel-group prefix a Boolean/Number/Text/Enum vcomponent's channel lives under: the fixed
-     * {@link #CHGR_VCOMPONENTS} group, or {@code vgroup<cid>} when the device currently lists it as a member of
-     * virtual Group {@code <cid>} (see {@code Group.GetStatus}'s membership array). Group membership is only
-     * picked up on the next full reconciliation, not live, matching how other dynamic-channel-set changes are
-     * handled elsewhere in the binding.
+     * Channel-group prefix(es) a Boolean/Number/Text/Enum/Button vcomponent's channel lives under: the fixed
+     * {@link #CHGR_VCOMPONENTS} group when it's not a member of any virtual Group, or one {@code vgroup<cid>}
+     * per virtual Group {@code <cid>} it currently is a member of (see {@code Group.GetStatus}'s membership
+     * array) - a component can be a member of more than one Group at once, in which case its channel is
+     * duplicated under every one of them. Group membership is only picked up on the next full reconciliation,
+     * not live, matching how other dynamic-channel-set changes are handled elsewhere in the binding.
      */
-    public static String getVirtualComponentChannelGroup(final ShellyDeviceProfile profile,
-            final ShellyVirtualComponent vc) {
+    public static List<String> getVirtualComponentChannelGroups(final ShellyDeviceProfile profile,
+            final ShellyVCComponent vc) {
         String memberKey = vc.type + ":" + vc.id;
-        for (ShellyVirtualComponent candidate : profile.vComponents) {
+        List<String> groups = new ArrayList<>();
+        for (ShellyVCComponent candidate : profile.vComponents) {
             List<String> members = candidate.groupMembers;
             if (SHELLY2_VCOMP_GROUP.equals(candidate.type) && members != null && members.contains(memberKey)) {
-                return CHANNEL_GROUP_VGROUP_PREFIX + candidate.id;
+                groups.add(CHANNEL_GROUP_VGROUP_PREFIX + candidate.id);
             }
         }
-        return CHGR_VCOMPONENTS;
+        return groups.isEmpty() ? List.of(CHGR_VCOMPONENTS) : groups;
     }
 
     /**
@@ -591,25 +614,26 @@ public class ShellyChannelDefinitions {
      * channel set, both the channel count and the per-channel id suffix vary and must be reconciled against the
      * Thing's current channels on every cycle, see {@link #getObsoleteVirtualComponentChannelIds}. A component's
      * user-assigned {@code name} (if any) overrides the generic "Virtual Boolean 200"-style default label. A
-     * component that's a member of a virtual Group gets its channel under that group's {@code vgroup<cid>} prefix
-     * instead, see {@link #getVirtualComponentChannelGroup}.
+     * component that's a member of one or more virtual Groups gets its channel duplicated under each of those
+     * groups' {@code vgroup<cid>} prefix instead, see {@link #getVirtualComponentChannelGroups}.
      *
      * @return {@code Map<String, Channel>} of channels to be added to the thing
      */
     public static Map<String, Channel> createVirtualComponentChannels(final Thing thing,
             final ShellyDeviceProfile profile) {
         Map<String, Channel> add = new LinkedHashMap<>();
-        for (ShellyVirtualComponent vc : profile.vComponents) {
+        for (ShellyVCComponent vc : profile.vComponents) {
             if (VCOMP_CHANNEL_TYPES.contains(vc.type)) {
                 String channelName = vc.type + vc.id;
-                String group = getVirtualComponentChannelGroup(profile, vc);
-                addChannel(thing, add, true, group, channelName);
-                String name = vc.name;
-                if (name != null && !name.isBlank()) {
-                    String channelId = group + ChannelUID.CHANNEL_GROUP_SEPARATOR + channelName;
-                    Channel channel = add.get(channelId);
-                    if (channel != null) {
-                        add.put(channelId, ChannelBuilder.create(channel).withLabel(name).build());
+                for (String group : getVirtualComponentChannelGroups(profile, vc)) {
+                    addChannel(thing, add, true, group, channelName);
+                    String name = vc.name;
+                    if (name != null && !name.isBlank()) {
+                        String channelId = group + ChannelUID.CHANNEL_GROUP_SEPARATOR + channelName;
+                        Channel channel = add.get(channelId);
+                        if (channel != null) {
+                            add.put(channelId, ChannelBuilder.create(channel).withLabel(name).build());
+                        }
                     }
                 }
             }
@@ -644,10 +668,11 @@ public class ShellyChannelDefinitions {
     public static Set<String> getObsoleteVirtualComponentChannelIds(final Thing thing,
             final ShellyDeviceProfile profile) {
         Set<String> desired = new HashSet<>();
-        for (ShellyVirtualComponent vc : profile.vComponents) {
+        for (ShellyVCComponent vc : profile.vComponents) {
             if (VCOMP_CHANNEL_TYPES.contains(vc.type)) {
-                String group = getVirtualComponentChannelGroup(profile, vc);
-                desired.add(group + ChannelUID.CHANNEL_GROUP_SEPARATOR + vc.type + vc.id);
+                for (String group : getVirtualComponentChannelGroups(profile, vc)) {
+                    desired.add(group + ChannelUID.CHANNEL_GROUP_SEPARATOR + vc.type + vc.id);
+                }
             }
         }
         Set<String> obsolete = new HashSet<>();
@@ -715,7 +740,7 @@ public class ShellyChannelDefinitions {
         addChannel(thing, add, profile.status.extDigitalInput != null, CHGR_SENSOR, CHANNEL_ESENSOR_DIGITALINPUT);
         addChannel(thing, add, profile.status.extAnalogInput != null, CHGR_SENSOR, CHANNEL_ESENSOR_ANALOGINPUT);
 
-        addChannel(thing, add, ShellyComponents.hasAddon(profile.status), CHGR_SENSOR, CHANNEL_LAST_UPDATE);
+        addChannel(thing, add, ShellyVirtualComponents.hasAddon(profile.status), CHGR_SENSOR, CHANNEL_LAST_UPDATE);
     }
 
     public static Map<String, Channel> createDimmerChannels(final Thing thing, final ShellyDeviceProfile profile,
@@ -1214,6 +1239,19 @@ public class ShellyChannelDefinitions {
                 stateOptions.remove(oe);
             }
         }
+    }
+
+    public @Nullable NumberRange getNumberRange(String channelId) {
+        return numberRanges.get(channelId);
+    }
+
+    public void setNumberRange(String channelId, @Nullable Double min, @Nullable Double max, @Nullable Double step,
+            @Nullable String unit) {
+        numberRanges.put(channelId, new NumberRange(min, max, step, unit));
+    }
+
+    public void clearNumberRange(String channelId) {
+        numberRanges.remove(channelId);
     }
 
     private class ShellyChannel {

@@ -13,6 +13,11 @@
 		</channels>
 	</channel-group-type>
 
+	<channel-group-type id="vgroup">
+		<label>Virtual Group</label>
+		<description>A user-defined Virtual Components Group, discovered from the device</description>
+	</channel-group-type>
+
 	<channel-type id="alarmTrigger">
 		<kind>trigger</kind>
 		<label>Alarm</label>

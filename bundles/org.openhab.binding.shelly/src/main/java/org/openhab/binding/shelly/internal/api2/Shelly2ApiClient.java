@@ -104,8 +104,8 @@ import org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.Shelly
 import org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.Shelly2StatusPresence;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
-import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
+import org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents;
 import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.types.State;
 import org.slf4j.Logger;
@@ -674,7 +674,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         updated |= updateLightModeStatus(1, status, result.cct1, channelUpdate);
         updated |= updateLoraStatus(result.lora100);
         if (channelUpdate) {
-            updated |= ShellyComponents.updateMeters(getThing(), status);
+            updated |= ShellyVirtualComponents.updateMeters(getThing(), status);
         }
 
         updateHumidityStatus(sensorData, result.humidity0);
@@ -689,7 +689,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         }
         updateBatteryStatus(sensorData, result.devicepower0);
         updateAddonStatus(status, result);
-        updated |= ShellyComponents.updateSensors(getThing(), status);
+        updated |= ShellyVirtualComponents.updateSensors(getThing(), status);
         return updated;
     }
 
@@ -789,7 +789,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
 
         updateMeter(status, rIdx, emeter, channelUpdate);
         return channelUpdate && profile.hasRelays
-                ? ShellyComponents.updateRelay((ShellyBaseHandler) getThing(), status, rIdx)
+                ? ShellyVirtualComponents.updateRelay((ShellyBaseHandler) getThing(), status, rIdx)
                 : false;
     }
 
@@ -857,7 +857,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
 
         updateMeter(status, rIdx, emeter, channelUpdate);
         return channelUpdate && profile.hasRelays
-                ? ShellyComponents.updateRelay((ShellyBaseHandler) getThing(), status, rIdx)
+                ? ShellyVirtualComponents.updateRelay((ShellyBaseHandler) getThing(), status, rIdx)
                 : false;
     }
 
@@ -966,7 +966,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         // Gen3 separate per-phase EM: em:N.a_* holds the single phase's measurement; no per-phase energy totals here
         updateEmPhase(status, phaseIdx, em.aActPower, em.aVoltage, em.aCurrent, em.aPF, em.aFreq, em.aAprtPower, null,
                 null, channelUpdate);
-        return channelUpdate ? ShellyComponents.updateMeters(getThing(), status) : false;
+        return channelUpdate ? ShellyVirtualComponents.updateMeters(getThing(), status) : false;
     }
 
     private boolean updateEmStatus(int id, ShellySettingsStatus status, @Nullable Shelly2StatusEm1 em,
@@ -1005,7 +1005,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         updateMeter(status, emId, emeter, channelUpdate);
 
         postAlarms(em.errors);
-        return channelUpdate ? ShellyComponents.updateMeters(getThing(), status) : false;
+        return channelUpdate ? ShellyVirtualComponents.updateMeters(getThing(), status) : false;
     }
 
     private boolean updateEmStatus(int id, ShellySettingsStatus status, @Nullable Shelly2DeviceStatusEm em,
@@ -1050,7 +1050,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
             status.neutralCurrent.isValid = true;
         }
 
-        return channelUpdate ? ShellyComponents.updateMeters(getThing(), status) : false;
+        return channelUpdate ? ShellyVirtualComponents.updateMeters(getThing(), status) : false;
     }
 
     private void updateEmPhase(ShellySettingsStatus status, int phaseIdx, @Nullable Double actPower,
@@ -1217,7 +1217,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
             getThing().postEvent(SHELLY_EVENT_ROLLER_CALIB, false);
         }
 
-        return updateChannels ? ShellyComponents.updateRoller((ShellyBaseHandler) getThing(), rs, rIdx) : false;
+        return updateChannels ? ShellyVirtualComponents.updateRoller((ShellyBaseHandler) getThing(), rs, rIdx) : false;
     }
 
     private int getRollerIdx(ShellyDeviceProfile profile, Integer id) {
@@ -1358,7 +1358,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
     /**
      * Merges a {@code light:N} NotifyStatus payload into the Gen1-compatible dimmer status arrays and,
      * when {@code channelUpdate} is {@code true}, triggers a channel refresh via
-     * {@link ShellyComponents#updateDimmers}.
+     * {@link ShellyVirtualComponents#updateDimmers}.
      *
      * @param id the component index used as a fallback when fw 1.6.1 omits {@code value.id}
      * @return {@code true} if channels were updated
@@ -1413,7 +1413,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
 
         updateDeviceInnerTemp(status, value.temperature);
 
-        return channelUpdate ? ShellyComponents.updateDimmers(getThing(), status) : false;
+        return channelUpdate ? ShellyVirtualComponents.updateDimmers(getThing(), status) : false;
     }
 
     private boolean updateDaliStatus(ShellySettingsStatus status, @Nullable Shelly2DaliStatus value,
@@ -1423,7 +1423,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         }
         status.daliCgCount = value.cgCount;
         status.daliScanActive = value.scan != null;
-        return channelUpdate ? ShellyComponents.updateDali(getThing(), status) : false;
+        return channelUpdate ? ShellyVirtualComponents.updateDali(getThing(), status) : false;
     }
 
     private boolean updateRGBWStatus(int id, ShellySettingsStatus status, @Nullable Shelly2RGBWStatus value,
@@ -1499,12 +1499,12 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         if (ct != null) {
             ds.temp = ct;
         }
-        boolean updated = triggerUpdate && channelUpdate && ShellyComponents.updateRGBW(getThing(), status);
+        boolean updated = triggerUpdate && channelUpdate && ShellyVirtualComponents.updateRGBW(getThing(), status);
         ShellyDeviceProfile profile = getProfile();
         if (channelUpdate && profile.isDuo) {
             // push brightness/CCT channels immediately for white/CCT mode; updateLightMode() itself skips the
             // color-tagged slot while the bulb is actually in RGB mode, so this is a safe no-op there
-            updated |= ShellyComponents.updateLightMode(getThing(), status);
+            updated |= ShellyVirtualComponents.updateLightMode(getThing(), status);
         }
         return updated;
     }
@@ -1548,14 +1548,14 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
                     channelUpdate);
         }
         if (channelUpdate) {
-            ShellyComponents.updateLightMode(getThing(), status);
+            ShellyVirtualComponents.updateLightMode(getThing(), status);
         }
         // Always true: signals the watchdog even if the channel value itself didn't change.
         return true;
     }
 
     private boolean updateLoraStatus(@Nullable Shelly2DeviceStatusLora value) throws ShellyApiException {
-        return value != null && ShellyComponents.updateLoraStatus(getThing(), value);
+        return value != null && ShellyVirtualComponents.updateLoraStatus(getThing(), value);
     }
 
     /**

@@ -47,9 +47,9 @@ import org.openhab.binding.shelly.internal.api2.ShellyBluJsonDTO.Shelly2NotifyBl
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.discovery.ShellyThingCreator;
 import org.openhab.binding.shelly.internal.handler.ShellyBluHandler;
-import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
+import org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents;
 import org.openhab.core.i18n.LocationProvider;
 import org.openhab.core.library.types.PointType;
 import org.openhab.core.thing.ThingTypeUID;
@@ -423,8 +423,8 @@ public class ShellyBluApi extends Shelly2ApiRpc {
                                 }
                             }
                         }
-                        ShellyComponents.updateDeviceStatus(t, deviceStatus);
-                        ShellyComponents.updateSensors(getThing(), deviceStatus);
+                        ShellyVirtualComponents.updateDeviceStatus(t, deviceStatus);
+                        ShellyVirtualComponents.updateSensors(getThing(), deviceStatus);
                         break;
                     case SHELLY2_EVENT_BLUALARM:
                         String alarmCode = blu != null ? blu.alarmCode : null;

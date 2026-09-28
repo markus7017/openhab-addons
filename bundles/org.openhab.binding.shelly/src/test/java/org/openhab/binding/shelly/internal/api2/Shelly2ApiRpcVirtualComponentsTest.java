@@ -28,10 +28,10 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.junit.jupiter.api.Test;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.Shelly2ComponentEntry;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.Shelly2GetComponentsParams;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.Shelly2GetComponentsResult;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVirtualComponent;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponentEntry;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCGetComponentsParams;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCGetComponentsResult;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyBindingRuntimeConfig;
@@ -47,7 +47,7 @@ import com.google.gson.JsonObject;
 
 /**
  * Unit tests for {@link Shelly2ApiRpc#parseVirtualComponents}: verifies the {@code Shelly.GetComponents} response is
- * filtered to virtual-component types only and mapped into {@link ShellyVirtualComponent} correctly per type, and for
+ * filtered to virtual-component types only and mapped into {@link ShellyVCComponent} correctly per type, and for
  * {@link Shelly2ApiRpc#refreshVirtualComponents}: the paged response is read until the device's reported total.
  *
  * @author Markus Michels - Initial contribution
@@ -57,27 +57,27 @@ public class Shelly2ApiRpcVirtualComponentsTest {
 
     private final Gson gson = new Gson();
 
-    private Shelly2ComponentEntry entry(String key, @Nullable JsonObject config, @Nullable JsonObject status) {
-        Shelly2ComponentEntry entry = new Shelly2ComponentEntry();
+    private ShellyVCComponentEntry entry(String key, @Nullable JsonObject config, @Nullable JsonObject status) {
+        ShellyVCComponentEntry entry = new ShellyVCComponentEntry();
         entry.key = key;
         entry.config = config;
         entry.status = status;
         return entry;
     }
 
-    private Shelly2GetComponentsResult result(Shelly2ComponentEntry... entries) {
-        Shelly2GetComponentsResult result = new Shelly2GetComponentsResult();
+    private ShellyVCGetComponentsResult result(ShellyVCComponentEntry... entries) {
+        ShellyVCGetComponentsResult result = new ShellyVCGetComponentsResult();
         result.components = List.of(entries);
         return result;
     }
 
-    private Shelly2GetComponentsResult page(int total, Shelly2ComponentEntry... entries) {
-        Shelly2GetComponentsResult result = result(entries);
+    private ShellyVCGetComponentsResult page(int total, ShellyVCComponentEntry... entries) {
+        ShellyVCGetComponentsResult result = result(entries);
         result.total = total;
         return result;
     }
 
-    private Shelly2ApiRpc apiServing(Map<Integer, Shelly2GetComponentsResult> pagesByOffset,
+    private Shelly2ApiRpc apiServing(Map<Integer, ShellyVCGetComponentsResult> pagesByOffset,
             ShellyDeviceProfile profile) throws ShellyApiException {
         ShellyThingInterface thing = mock(ShellyThingInterface.class);
         when(thing.getProfile()).thenReturn(profile);
@@ -88,14 +88,14 @@ public class Shelly2ApiRpcVirtualComponentsTest {
         Shelly2ApiRpc api = spy(new Shelly2ApiRpc("test-vcomp", mock(ShellyThingTable.class), thing, config,
                 mock(WebSocketClient.class), mock(ScheduledExecutorService.class)));
         doAnswer(invocation -> pagesByOffset
-                .getOrDefault(((Shelly2GetComponentsParams) invocation.getArgument(1)).offset, result())).when(api)
-                .apiRequest(eq(SHELLYRPC_METHOD_GETCOMPONENTS), any(), eq(Shelly2GetComponentsResult.class));
+                .getOrDefault(((ShellyVCGetComponentsParams) invocation.getArgument(1)).offset, result())).when(api)
+                .apiRequest(eq(SHELLYRPC_METHOD_GETCOMPONENTS), any(), eq(ShellyVCGetComponentsResult.class));
         return api;
     }
 
     private void verifyPagesRequested(Shelly2ApiRpc api, int count) throws ShellyApiException {
         verify(api, times(count)).apiRequest(eq(SHELLYRPC_METHOD_GETCOMPONENTS), any(),
-                eq(Shelly2GetComponentsResult.class));
+                eq(ShellyVCGetComponentsResult.class));
     }
 
     private static NetworkAddressService nullNas() {
@@ -137,11 +137,11 @@ public class Shelly2ApiRpcVirtualComponentsTest {
         JsonObject status = new JsonObject();
         status.addProperty("value", true);
 
-        List<ShellyVirtualComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
+        List<ShellyVCComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
                 result(entry("boolean:200", config, status)));
 
         assertEquals(1, list.size());
-        ShellyVirtualComponent vc = list.get(0);
+        ShellyVCComponent vc = list.get(0);
         assertEquals("boolean", vc.type);
         assertEquals(200, vc.id);
         assertEquals("My Switch", vc.name);
@@ -157,10 +157,10 @@ public class Shelly2ApiRpcVirtualComponentsTest {
         JsonObject status = new JsonObject();
         status.addProperty("value", 42.5);
 
-        List<ShellyVirtualComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
+        List<ShellyVCComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
                 result(entry("number:201", config, status)));
 
-        ShellyVirtualComponent vc = list.get(0);
+        ShellyVCComponent vc = list.get(0);
         assertEquals("number", vc.type);
         assertEquals(201, vc.id);
         assertEquals(0.0, vc.min);
@@ -174,10 +174,10 @@ public class Shelly2ApiRpcVirtualComponentsTest {
         JsonObject config = new JsonObject();
         config.addProperty("max_len", 64);
 
-        List<ShellyVirtualComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
+        List<ShellyVCComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
                 result(entry("text:202", config, null)));
 
-        ShellyVirtualComponent vc = list.get(0);
+        ShellyVCComponent vc = list.get(0);
         assertEquals("text", vc.type);
         assertEquals(Integer.valueOf(64), vc.maxLen);
         assertNull(vc.value);
@@ -191,10 +191,10 @@ public class Shelly2ApiRpcVirtualComponentsTest {
         options.add("high");
         config.add("options", options);
 
-        List<ShellyVirtualComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
+        List<ShellyVCComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
                 result(entry("enum:203", config, null)));
 
-        ShellyVirtualComponent vc = list.get(0);
+        ShellyVCComponent vc = list.get(0);
         assertEquals("enum", vc.type);
         assertNotNull(vc.options);
         assertArrayEquals(new String[] { "low", "high" }, vc.options);
@@ -208,27 +208,27 @@ public class Shelly2ApiRpcVirtualComponentsTest {
         JsonObject status = new JsonObject();
         status.add("value", members);
 
-        List<ShellyVirtualComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
+        List<ShellyVCComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
                 result(entry("group:204", null, status)));
 
-        ShellyVirtualComponent vc = list.get(0);
+        ShellyVCComponent vc = list.get(0);
         assertEquals("group", vc.type);
         assertEquals(List.of("boolean:200", "enum:203"), vc.groupMembers);
     }
 
     @Test
     void buttonComponentHasNoStatusValue() {
-        List<ShellyVirtualComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
+        List<ShellyVCComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
                 result(entry("button:205", null, new JsonObject())));
 
-        ShellyVirtualComponent vc = list.get(0);
+        ShellyVCComponent vc = list.get(0);
         assertEquals("button", vc.type);
         assertNull(vc.value);
     }
 
     @Test
     void nonVirtualComponentInSharedIdRangeIsIgnored() {
-        List<ShellyVirtualComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
+        List<ShellyVCComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
                 result(entry("presencezone:200", null, null), entry("lnm:201", null, null),
                         entry("bthomesensor:202", null, null), entry("boolean:203", null, null)));
 
@@ -238,15 +238,14 @@ public class Shelly2ApiRpcVirtualComponentsTest {
 
     @Test
     void keyWithoutColonIsIgnored() {
-        List<ShellyVirtualComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
-                result(entry("boolean", null, null)));
+        List<ShellyVCComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson, result(entry("boolean", null, null)));
 
         assertTrue(list.isEmpty());
     }
 
     @Test
     void nonNumericIdIsIgnored() {
-        List<ShellyVirtualComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
+        List<ShellyVCComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
                 result(entry("boolean:abc", null, null)));
 
         assertTrue(list.isEmpty());
@@ -254,7 +253,7 @@ public class Shelly2ApiRpcVirtualComponentsTest {
 
     @Test
     void nullComponentsListYieldsEmptyList() {
-        assertTrue(Shelly2ApiRpc.parseVirtualComponents(gson, new Shelly2GetComponentsResult()).isEmpty());
+        assertTrue(Shelly2ApiRpc.parseVirtualComponents(gson, new ShellyVCGetComponentsResult()).isEmpty());
     }
 
     @Test
@@ -267,10 +266,10 @@ public class Shelly2ApiRpcVirtualComponentsTest {
         JsonObject status = new JsonObject();
         status.add("value", JsonNull.INSTANCE);
 
-        List<ShellyVirtualComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
+        List<ShellyVCComponent> list = Shelly2ApiRpc.parseVirtualComponents(gson,
                 result(entry("enum:203", null, status)));
 
-        ShellyVirtualComponent vc = list.get(0);
+        ShellyVCComponent vc = list.get(0);
         assertNotNull(vc.value);
         assertTrue(vc.value.isJsonNull());
     }
@@ -344,12 +343,37 @@ public class Shelly2ApiRpcVirtualComponentsTest {
     }
 
     @Test
+    void numberComponentParsesStepAndUnitFromMetaUi() {
+        JsonObject config = gson.fromJson("{\"min\":0.0,\"max\":100.0,\"meta\":{\"ui\":{\"step\":0.5,\"unit\":\"%\"}}}",
+                JsonObject.class);
+
+        ShellyVCComponent vc = Shelly2ApiRpc.parseVirtualComponents(gson, result(entry("number:201", config, null)))
+                .get(0);
+
+        assertEquals(0.5, vc.step);
+        assertEquals("%", vc.unit);
+    }
+
+    @Test
+    void numberComponentWithoutMetaUiLeavesStepAndUnitNull() {
+        JsonObject config = new JsonObject();
+        config.addProperty("min", 0.0);
+        config.addProperty("max", 100.0);
+
+        ShellyVCComponent vc = Shelly2ApiRpc.parseVirtualComponents(gson, result(entry("number:201", config, null)))
+                .get(0);
+
+        assertNull(vc.step);
+        assertNull(vc.unit);
+    }
+
+    @Test
     void enumComponentParsesOptionTitles() {
         JsonObject config = gson.fromJson(
                 "{\"options\":[\"low\",\"high\"],\"meta\":{\"ui\":{\"titles\":{\"low\":\"Low power\",\"high\":\"High power\"}}}}",
                 JsonObject.class);
 
-        ShellyVirtualComponent vc = Shelly2ApiRpc.parseVirtualComponents(gson, result(entry("enum:203", config, null)))
+        ShellyVCComponent vc = Shelly2ApiRpc.parseVirtualComponents(gson, result(entry("enum:203", config, null)))
                 .get(0);
 
         assertEquals(Map.of("low", "Low power", "high", "High power"), vc.optionTitles);

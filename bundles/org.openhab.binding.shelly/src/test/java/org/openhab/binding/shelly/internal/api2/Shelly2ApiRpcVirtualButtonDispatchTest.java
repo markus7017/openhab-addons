@@ -14,7 +14,9 @@ package org.openhab.binding.shelly.internal.api2;
 
 import static org.mockito.Mockito.*;
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.CHANNEL_GROUP_VCOMPONENTS;
+import static org.openhab.binding.shelly.internal.ShellyBindingConstants.CHANNEL_GROUP_VGROUP_PREFIX;
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.CHANNEL_VCOMP_BUTTON;
+import static org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.SHELLY2_VCOMP_GROUP;
 
 import java.util.List;
 import java.util.Map;
@@ -30,7 +32,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVirtualComponent;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyBindingRuntimeConfig;
@@ -94,10 +96,18 @@ public class Shelly2ApiRpcVirtualButtonDispatchTest {
         };
     }
 
-    private static ShellyVirtualComponent button(int id) {
-        ShellyVirtualComponent vc = new ShellyVirtualComponent();
+    private static ShellyVCComponent button(int id) {
+        ShellyVCComponent vc = new ShellyVCComponent();
         vc.type = CHANNEL_VCOMP_BUTTON;
         vc.id = id;
+        return vc;
+    }
+
+    private static ShellyVCComponent group(int id, String... memberKeys) {
+        ShellyVCComponent vc = new ShellyVCComponent();
+        vc.type = SHELLY2_VCOMP_GROUP;
+        vc.id = id;
+        vc.groupMembers = List.of(memberKeys);
         return vc;
     }
 
@@ -147,5 +157,20 @@ public class Shelly2ApiRpcVirtualButtonDispatchTest {
         rpc.onNotifyEvent(pushEventJson(idNotPresentInProfile, "single_push"));
 
         verify(thing, never()).triggerChannel(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void pushOnAVirtualButtonThatIsAMemberOfTwoGroupsTriggersBothGroupChannels() throws ShellyApiException {
+        ShellyDeviceProfile profile = new ShellyDeviceProfile(new ThingTypeUID("shelly", "shellyplus1"));
+        profile.vComponents = List.of(button(205), group(200, CHANNEL_VCOMP_BUTTON + ":205"),
+                group(201, CHANNEL_VCOMP_BUTTON + ":205"));
+        Shelly2ApiRpc rpc = newRpc(profile);
+
+        rpc.onNotifyEvent(pushEventJson(205, "single_push"));
+
+        verify(thing).triggerChannel(CHANNEL_GROUP_VGROUP_PREFIX + "200", CHANNEL_VCOMP_BUTTON + "205",
+                "SHORT_PRESSED");
+        verify(thing).triggerChannel(CHANNEL_GROUP_VGROUP_PREFIX + "201", CHANNEL_VCOMP_BUTTON + "205",
+                "SHORT_PRESSED");
     }
 }

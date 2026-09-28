@@ -15,7 +15,7 @@ package org.openhab.binding.shelly.internal.handler;
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.ShellyDevices.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
-import static org.openhab.binding.shelly.internal.handler.ShellyComponents.*;
+import static org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 import static org.openhab.core.thing.Thing.*;
 
@@ -53,7 +53,6 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2APClientList.Shelly2APClient;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiRpc;
 import org.openhab.binding.shelly.internal.api2.ShellyBluApi;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVirtualComponent;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyBindingRuntimeConfig;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
@@ -611,14 +610,14 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                     break;
                 case CHANNEL_LORA_TXDATA:
                 case CHANNEL_LORA_TXDATARAW:
-                    ShellyComponents.handleLoraCommand(this, channelUID.getIdWithoutGroup(), command);
+                    ShellyVirtualComponents.handleLoraCommand(this, channelUID.getIdWithoutGroup(), command);
                     break;
                 default:
                     // Virtual Component channel names are device-assigned (e.g. "boolean200") and can't be matched
                     // as a literal case label like the fixed LoRa channels above, so they're dispatched by group.
                     // A member of a virtual Group lives under "vgroup<cid>" instead of "vcomponents".
                     if (CHANNEL_GROUP_VCOMPONENTS.equals(group) || group.startsWith(CHANNEL_GROUP_VGROUP_PREFIX)) {
-                        ShellyComponents.handleVirtualComponentCommand(this, channel, command);
+                        ShellyVirtualComponents.handleVirtualComponentCommand(this, channel, command);
                     } else {
                         update = handleDeviceCommand(channelUID, command);
                     }
@@ -752,7 +751,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
     private boolean updateAllChannels(ShellySettingsStatus status) throws ShellyApiException {
         updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_NAME, getStringType(profile.settings.name));
         boolean updated = this.updateDeviceStatus(status);
-        updated |= ShellyComponents.updateDeviceStatus(this, status);
+        updated |= ShellyVirtualComponents.updateDeviceStatus(this, status);
         fillDeviceStatus(status, updated);
         updated |= updateInputs(status);
         updated |= updateMeters(this, status);
@@ -834,22 +833,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 fid++;
             }
         }
-        for (ShellyVirtualComponent vc : prf.vComponents) {
-            String[] vcOptions = vc.options;
-            if (CHANNEL_VCOMP_ENUM.equals(vc.type) && vcOptions != null) {
-                String group = ShellyChannelDefinitions.getVirtualComponentChannelGroup(prf, vc);
-                String channelId = mkChannelId(group, vc.type + vc.id);
-                logger.debug("{}: Adding {} option(s) to Virtual Enum channel {}", thingName, vcOptions.length,
-                        channelId);
-                channelDefinitions.clearStateOptions(channelId);
-                Map<String, String> titles = vc.optionTitles;
-                for (String option : vcOptions) {
-                    String title = titles != null ? titles.get(option) : null;
-                    channelDefinitions.addStateOption(channelId, option,
-                            title != null && !title.isBlank() ? title : option);
-                }
-            }
-        }
+        ShellyVirtualComponents.addVirtualComponentStateOptions(this, prf);
     }
 
     @Override
@@ -952,7 +936,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         String alarm = "";
 
         // Update uptime and WiFi, internal temp
-        ShellyComponents.updateDeviceStatus(this, status);
+        ShellyVirtualComponents.updateDeviceStatus(this, status);
         stats.wifiRssi.set(status.wifiSta != null && status.wifiSta.rssi != null ? status.wifiSta.rssi : 0);
 
         if (api.isInitialized()) {
@@ -1794,6 +1778,32 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
             return options;
         }
         return null;
+    }
+
+    @Override
+    public ShellyChannelDefinitions.@Nullable NumberRange getNumberRange(String channelId) {
+        return channelDefinitions.getNumberRange(channelId);
+    }
+
+    @Override
+    public void clearStateOptions(String channelId) {
+        channelDefinitions.clearStateOptions(channelId);
+    }
+
+    @Override
+    public void addStateOption(String channelId, String value, String label) {
+        channelDefinitions.addStateOption(channelId, value, label);
+    }
+
+    @Override
+    public void setNumberRange(String channelId, @Nullable Double min, @Nullable Double max, @Nullable Double step,
+            @Nullable String unit) {
+        channelDefinitions.setNumberRange(channelId, min, max, step, unit);
+    }
+
+    @Override
+    public void changeThingType(ThingTypeUID thingTypeUID) {
+        changeThingType(thingTypeUID, getConfig());
     }
 
     protected ShellyDeviceProfile getDeviceProfile() {
