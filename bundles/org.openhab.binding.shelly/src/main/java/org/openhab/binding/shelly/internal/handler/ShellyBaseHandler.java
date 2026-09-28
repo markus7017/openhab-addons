@@ -166,8 +166,10 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         this.channelDefinitions = new ShellyChannelDefinitions(messages);
         this.httpClient = httpClient;
 
-        // Create thing handler depending on device generation
-        ThingTypeUID thingTypeUID = thing.getThingTypeUID();
+        // Create thing handler depending on device generation; resolve a per-Thing synthetic vgroup type (see
+        // ShellyBindingConstants.resolveVGroupBaseType) back to the real device type first, since every
+        // classification below is keyed off exact matches against the real, static ThingTypeUID
+        ThingTypeUID thingTypeUID = resolveVGroupBaseType(thing.getThingTypeUID());
         profile = new ShellyDeviceProfile(thingTypeUID);
         blu = ShellyDeviceProfile.isBluSeries(thingTypeUID);
         gen2 = ShellyDeviceProfile.isGeneration2(thingTypeUID);
@@ -335,7 +337,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         cache.clear();
         resetStats();
 
-        profile.initFromThingType(thing.getThingTypeUID());
+        profile.initFromThingType(resolveVGroupBaseType(thing.getThingTypeUID()));
         if (logger.isDebugEnabled()) {
             InetSocketAddress socketAddr = apiConfig.getDeviceSocketAddress();
             InetAddress ipAddr = socketAddr == null ? null : socketAddr.getAddress();
@@ -376,14 +378,15 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
             apiConfig.setRealm(getString(device.hostname).toLowerCase(Locale.ROOT));
         }
 
-        ShellyDeviceProfile tmpPrf = api.getDeviceProfile(thing.getThingTypeUID(), profile.device);
-        tmpPrf.initFromThingType(thing.getThingTypeUID());
+        ThingTypeUID realThingTypeUID = resolveVGroupBaseType(thing.getThingTypeUID());
+        ShellyDeviceProfile tmpPrf = api.getDeviceProfile(realThingTypeUID, profile.device);
+        tmpPrf.initFromThingType(realThingTypeUID);
         if (tmpPrf.isRGBW2 && !tmpPrf.isGen2) {
             tmpPrf.hasLegacyLightChannels = thing.getChannels().stream()
                     .anyMatch(c -> c.getUID().getId().startsWith(CHANNEL_GROUP_LIGHT_CHANNEL));
         }
         String mode = getString(tmpPrf.device.mode);
-        if (this.getThing().getThingTypeUID().equals(THING_TYPE_SHELLYPROTECTED)) {
+        if (realThingTypeUID.equals(THING_TYPE_SHELLYPROTECTED)) {
             changeThingType(thingName, mode);
             return false; // force re-initialization
         }
@@ -838,7 +841,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
 
     @Override
     public String getThingType() {
-        return thing.getThingTypeUID().getId();
+        return resolveVGroupBaseType(thing.getThingTypeUID()).getId();
     }
 
     @Override
@@ -1186,8 +1189,9 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
      * Initialize the binding's thing configuration, calc update counts
      */
     protected boolean initializeThingConfig() {
-        thingType = getThing().getThingTypeUID().getId();
-        if (THING_TYPE_SHELLYUNKNOWN.equals(getThing().getThingTypeUID())) {
+        ThingTypeUID realThingTypeUID = resolveVGroupBaseType(getThing().getThingTypeUID());
+        thingType = realThingTypeUID.getId();
+        if (THING_TYPE_SHELLYUNKNOWN.equals(realThingTypeUID)) {
             setThingOfflineAndDisconnect(ThingStatusDetail.COMMUNICATION_ERROR, "offline.device-unsupported");
             return false;
         }
@@ -1752,7 +1756,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         try {
             refreshSettings |= forceRefresh;
             if (refreshSettings) {
-                profile = api.getDeviceProfile(thing.getThingTypeUID(), null);
+                profile = api.getDeviceProfile(resolveVGroupBaseType(thing.getThingTypeUID()), null);
                 if (!isThingOnline()) {
                     logger.debug("{}: Device profile re-initialized (thingType={})", thingName, thingType);
                 }

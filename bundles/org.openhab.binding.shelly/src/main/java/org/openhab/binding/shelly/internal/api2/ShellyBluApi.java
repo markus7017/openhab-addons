@@ -110,7 +110,7 @@ public class ShellyBluApi extends Shelly2ApiRpc {
         super(thingName, thingTable, thing, config, webSocketClient, scheduler);
         this.locationProvider = locationProvider;
 
-        ThingTypeUID uid = thing.getThing().getThingTypeUID();
+        ThingTypeUID uid = resolveVGroupBaseType(thing.getThing().getThingTypeUID());
         profile.initializeInputs(uid, SHELLY_BTNT_MOMENTARY);
         deviceStatus = profile.status;
     }

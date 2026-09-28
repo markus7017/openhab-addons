@@ -13,6 +13,7 @@
 package org.openhab.binding.shelly.internal;
 
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.DEFAULT_LOCAL_PORT;
+import static org.openhab.binding.shelly.internal.ShellyBindingConstants.resolveVGroupBaseType;
 import static org.openhab.binding.shelly.internal.ShellyDevices.*;
 
 import java.util.HashMap;
@@ -121,12 +122,14 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
 
     @Override
     public boolean supportsThingType(ThingTypeUID thingTypeUID) {
-        return SUPPORTED_THING_TYPES.contains(thingTypeUID);
+        return SUPPORTED_THING_TYPES.contains(resolveVGroupBaseType(thingTypeUID));
     }
 
     @Override
     protected @Nullable ThingHandler createHandler(Thing thing) {
-        ThingTypeUID thingTypeUID = thing.getThingTypeUID();
+        // a Thing swapped to its per-Thing synthetic vgroup type is dispatched using the real device type it was
+        // swapped from; the handler classes resolve the same real type again internally from the Thing itself
+        ThingTypeUID thingTypeUID = resolveVGroupBaseType(thing.getThingTypeUID());
         ShellyBaseHandler handler = null;
 
         if (THING_TYPE_SHELLYPROTECTED.equals(thingTypeUID)) {
