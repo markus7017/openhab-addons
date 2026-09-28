@@ -592,7 +592,7 @@ public class Shelly2GetDeviceProfileTest {
         // Regression test for the disable/enable channel-flip-to-OFF bug: a NotifyStatus event can set
         // ison before initProfile() runs again in the same refreshStatus() cycle (refreshSettings=true).
         // Unconditionally rebuilding the relay list would wipe ison back to null, which then gets
-        // flattened to OFF by getOnOff(null) in ShellyVirtualComponents.updateRelay().
+        // flattened to OFF by getOnOff(null) in ShellyComponents.updateRelay().
         Gson gson = new Gson();
         StubApiClient client = new StubApiClient(discoveryConfig(), withSwitch0(gson));
         ShellyDeviceProfile profile = client.getDeviceProfile(THING_TYPE_SHELLYPLUS1PM, deviceInfo());

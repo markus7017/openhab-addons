@@ -77,14 +77,14 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
 /***
- * The{@link ShellyVirtualComponents} implements updates for supplemental components
+ * The{@link ShellyComponents} implements updates for supplemental components
  * Meter will be used by Relay + Light; Sensor is part of H&amp;T, Flood, Door Window, Sense
  *
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public class ShellyVirtualComponents {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ShellyVirtualComponents.class);
+public class ShellyComponents {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShellyComponents.class);
 
     /**
      * Update device status

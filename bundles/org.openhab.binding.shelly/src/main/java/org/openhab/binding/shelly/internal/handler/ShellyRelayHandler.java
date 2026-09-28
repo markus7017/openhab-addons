@@ -206,7 +206,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
         // map status to channels
         boolean updated = false;
         updated |= updateRelays(status);
-        updated |= ShellyVirtualComponents.updateDimmers(this, status);
+        updated |= ShellyComponents.updateDimmers(this, status);
         updated |= updateLed(status);
         return updated;
     }
@@ -346,7 +346,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                 logger.trace("{}: Updating {} relay(s)", thingName, profile.numRelays);
                 for (int i = 0; i < status.relays.size(); i++) {
                     createRelayChannels(status.relays.get(i), i);
-                    updated |= ShellyVirtualComponents.updateRelay(this, status, i);
+                    updated |= ShellyComponents.updateRelay(this, status, i);
                 }
             } else {
                 // Check for Relay in Roller Mode
@@ -357,7 +357,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                 for (int i = 0; i < profile.numRollers; i++) {
                     ShellyRollerStatus roller = status.rollers.get(i);
                     createRollerChannels(roller);
-                    updated |= ShellyVirtualComponents.updateRoller(this, roller, i);
+                    updated |= ShellyComponents.updateRoller(this, roller, i);
                 }
             }
         }

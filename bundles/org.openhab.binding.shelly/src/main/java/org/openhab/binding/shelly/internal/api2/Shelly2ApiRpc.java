@@ -98,9 +98,9 @@ import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonD
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCGetComponentsResult;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCStatus;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
+import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
-import org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
 import org.openhab.core.library.unit.SIUnits;
@@ -465,7 +465,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             for (ShellyVCComponent vc : profile.vComponents) {
                 if (vc.type.equals(type) && vc.id == id) {
                     vc.value = value;
-                    ShellyVirtualComponents.updateVirtualComponentChannel(getThing(), profile, vc);
+                    ShellyComponents.updateVirtualComponentChannel(getThing(), profile, vc);
                     updated = true;
                     break;
                 }

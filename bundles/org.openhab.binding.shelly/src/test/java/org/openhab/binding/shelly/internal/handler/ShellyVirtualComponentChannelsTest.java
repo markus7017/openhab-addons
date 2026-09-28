@@ -54,7 +54,7 @@ import com.google.gson.JsonPrimitive;
 
 /**
  * Tests for the Virtual Components (Gen3/Gen4/Gen2 Pro) channel lifecycle in {@link ShellyChannelDefinitions} and
- * {@link ShellyVirtualComponents}: channel creation, reconciliation and status updates for Boolean/Number/Text/Enum.
+ * {@link ShellyComponents}: channel creation, reconciliation and status updates for Boolean/Number/Text/Enum.
  *
  * @author Markus Michels - Initial contribution
  */
@@ -209,7 +209,7 @@ public class ShellyVirtualComponentChannelsTest {
                 vcomp(CHANNEL_VCOMP_ENUM, 203, "high"), booleanWithoutAValueYet);
         ShellyThingInterface handler = mockHandler(profile, thing);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "boolean200", OnOffType.ON);
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "number201", new DecimalType(42.5));
@@ -225,7 +225,7 @@ public class ShellyVirtualComponentChannelsTest {
                 vcompWithJsonNullValue(CHANNEL_VCOMP_ENUM, 203));
         ShellyThingInterface handler = mockHandler(profile, thing());
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "boolean200", UnDefType.UNDEF);
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "number201", UnDefType.UNDEF);
@@ -256,7 +256,7 @@ public class ShellyVirtualComponentChannelsTest {
         ShellyThingInterface handler = mockHandler(
                 vComponentsProfile(vcompNamed(CHANNEL_VCOMP_BOOLEAN, 200, "Garage Door")), thing);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler).updateThingChannels(argThat(updates -> updates.keySet().equals(Set.of(renamedOnTheDevice))),
                 any());
@@ -267,7 +267,7 @@ public class ShellyVirtualComponentChannelsTest {
         Thing thing = thing();
         ShellyThingInterface handler = mockHandler(vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200)), thing);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler).updateThingChannels(eq(Map.of()),
                 argThat(channels -> channels.containsKey(CHANNEL_GROUP_VCOMPONENTS + "#boolean200")));
@@ -278,7 +278,7 @@ public class ShellyVirtualComponentChannelsTest {
         Thing thing = thing();
         ShellyThingInterface handler = mockHandler(new ShellyDeviceProfile(THING_TYPE_SHELLYPLUS1), thing);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_VCOMPONENTS), anyString(), any());
     }
@@ -289,7 +289,7 @@ public class ShellyVirtualComponentChannelsTest {
         when(thing.getThingTypeUID()).thenReturn(THING_TYPE_SHELLYPLUS1);
         ShellyThingInterface handler = mockHandler(vComponentsProfile(vgroup(200, "boolean:201")), thing);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler).changeThingType(
                 new ThingTypeUID(BINDING_ID, THING_TYPE_SHELLYPLUS1.getId() + VGROUP_TYPE_MARKER + THING_UID.getId()));
@@ -303,7 +303,7 @@ public class ShellyVirtualComponentChannelsTest {
         when(thing.getThingTypeUID()).thenReturn(vgType);
         ShellyThingInterface handler = mockHandler(vComponentsProfile(vgroup(200, "boolean:201")), thing);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler, never()).changeThingType(any());
     }
@@ -314,7 +314,7 @@ public class ShellyVirtualComponentChannelsTest {
         when(thing.getThingTypeUID()).thenReturn(THING_TYPE_SHELLYPLUS1);
         ShellyThingInterface handler = mockHandler(vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200)), thing);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler, never()).changeThingType(any());
     }
@@ -324,10 +324,10 @@ public class ShellyVirtualComponentChannelsTest {
         ShellyThingInterface handler = commandHandler(vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200),
                 vcomp(CHANNEL_VCOMP_NUMBER, 201), vcomp(CHANNEL_VCOMP_TEXT, 202), vcomp(CHANNEL_VCOMP_ENUM, 203)));
 
-        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "boolean200", OnOffType.ON);
-        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(12.5));
-        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "text202", new StringType("hi"));
-        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "enum203", new StringType("high"));
+        ShellyComponents.handleVirtualComponentCommand(handler, "boolean200", OnOffType.ON);
+        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(12.5));
+        ShellyComponents.handleVirtualComponentCommand(handler, "text202", new StringType("hi"));
+        ShellyComponents.handleVirtualComponentCommand(handler, "enum203", new StringType("high"));
 
         verify(handler.getApi()).setVirtualBoolean(200, true);
         verify(handler.getApi()).setVirtualNumber(201, 12.5);
@@ -342,8 +342,8 @@ public class ShellyVirtualComponentChannelsTest {
         ranged.max = 100.0;
         ShellyThingInterface handler = commandHandler(vComponentsProfile(ranged));
 
-        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(100.5));
-        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(-0.5));
+        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(100.5));
+        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(-0.5));
 
         verify(handler.getApi(), never()).setVirtualNumber(anyInt(), anyDouble());
     }
@@ -355,8 +355,8 @@ public class ShellyVirtualComponentChannelsTest {
         ranged.max = 100.0;
         ShellyThingInterface handler = commandHandler(vComponentsProfile(ranged));
 
-        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(0));
-        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(100));
+        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(0));
+        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(100));
 
         verify(handler.getApi()).setVirtualNumber(201, 0.0);
         verify(handler.getApi()).setVirtualNumber(201, 100.0);
@@ -368,8 +368,8 @@ public class ShellyVirtualComponentChannelsTest {
         limited.maxLen = 5;
         ShellyThingInterface handler = commandHandler(vComponentsProfile(limited));
 
-        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "text202", new StringType("123456"));
-        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "text202", new StringType("12345"));
+        ShellyComponents.handleVirtualComponentCommand(handler, "text202", new StringType("123456"));
+        ShellyComponents.handleVirtualComponentCommand(handler, "text202", new StringType("12345"));
 
         verify(handler.getApi(), never()).setVirtualText(202, "123456");
         verify(handler.getApi()).setVirtualText(202, "12345");
@@ -379,7 +379,7 @@ public class ShellyVirtualComponentChannelsTest {
     void handleVirtualComponentCommandIgnoresUnknownChannel() throws ShellyApiException {
         ShellyThingInterface handler = commandHandler(vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200)));
 
-        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "boolean299", OnOffType.ON);
+        ShellyComponents.handleVirtualComponentCommand(handler, "boolean299", OnOffType.ON);
 
         verify(handler.getApi(), never()).setVirtualBoolean(anyInt(), anyBoolean());
     }
@@ -422,7 +422,7 @@ public class ShellyVirtualComponentChannelsTest {
                 vgroup(204, "boolean:200"));
         ShellyThingInterface handler = mockHandler(profile, thing);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(CHANNEL_GROUP_VGROUP_PREFIX + "204", "boolean200", OnOffType.ON);
     }
@@ -455,7 +455,7 @@ public class ShellyVirtualComponentChannelsTest {
                 vgroup(200, "enum:200"), vgroup(201, "enum:200"));
         ShellyThingInterface handler = mockHandler(profile, thing);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(CHANNEL_GROUP_VGROUP_PREFIX + "200", "enum200", new StringType("high"));
         verify(handler).updateChannel(CHANNEL_GROUP_VGROUP_PREFIX + "201", "enum200", new StringType("high"));

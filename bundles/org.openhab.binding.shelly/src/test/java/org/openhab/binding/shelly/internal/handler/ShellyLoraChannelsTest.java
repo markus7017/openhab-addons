@@ -40,7 +40,7 @@ import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingUID;
 
 /**
- * Tests for the LoRa Add-On channel lifecycle in {@link ShellyChannelDefinitions} and {@link ShellyVirtualComponents}:
+ * Tests for the LoRa Add-On channel lifecycle in {@link ShellyChannelDefinitions} and {@link ShellyComponents}:
  * channel creation and reconciliation, status counter updates and TX command handling.
  *
  * @author Markus Michels - Initial contribution
@@ -119,7 +119,7 @@ public class ShellyLoraChannelsTest {
         status.txErrors = 2L;
         status.airtime = 893342L;
 
-        ShellyVirtualComponents.updateLoraStatus(handler, status);
+        ShellyComponents.updateLoraStatus(handler, status);
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_LORA), eq(CHANNEL_LORA_RXBYTES),
                 argThat(s -> s instanceof QuantityType<?> && ((QuantityType<?>) s).longValue() == 44));
@@ -139,11 +139,11 @@ public class ShellyLoraChannelsTest {
         full.txBytes = 69280L;
         full.txErrors = 2L;
         full.airtime = 893342L;
-        ShellyVirtualComponents.updateLoraStatus(handler, full);
+        ShellyComponents.updateLoraStatus(handler, full);
 
         Shelly2DeviceStatusLora delta = new Shelly2DeviceStatusLora();
         delta.rxBytes = 50L;
-        ShellyVirtualComponents.updateLoraStatus(handler, delta);
+        ShellyComponents.updateLoraStatus(handler, delta);
 
         verify(handler, times(2)).updateChannel(eq(CHANNEL_GROUP_LORA), eq(CHANNEL_LORA_RXBYTES), any());
         verify(handler, times(1)).updateChannel(eq(CHANNEL_GROUP_LORA), eq(CHANNEL_LORA_TXBYTES), any());
@@ -158,7 +158,7 @@ public class ShellyLoraChannelsTest {
         Shelly2DeviceStatusLora status = new Shelly2DeviceStatusLora();
         status.fw = "1.11.1";
 
-        ShellyVirtualComponents.updateLoraStatus(handler, status);
+        ShellyComponents.updateLoraStatus(handler, status);
 
         verify(handler).updateProperties(PROPERTY_ADDON_FIRMWARE, "1.11.1");
     }
@@ -170,8 +170,8 @@ public class ShellyLoraChannelsTest {
         Shelly2DeviceStatusLora status = new Shelly2DeviceStatusLora();
         status.fw = "1.11.1";
 
-        ShellyVirtualComponents.updateLoraStatus(handler, status);
-        ShellyVirtualComponents.updateLoraStatus(handler, status);
+        ShellyComponents.updateLoraStatus(handler, status);
+        ShellyComponents.updateLoraStatus(handler, status);
 
         verify(handler, times(1)).updateProperties(PROPERTY_ADDON_FIRMWARE, "1.11.1");
     }
@@ -181,7 +181,7 @@ public class ShellyLoraChannelsTest {
         ShellyThingInterface handler = mock(ShellyThingInterface.class);
         when(handler.getProfile()).thenReturn(loraProfile(true));
 
-        ShellyVirtualComponents.updateLoraStatus(handler, new Shelly2DeviceStatusLora());
+        ShellyComponents.updateLoraStatus(handler, new Shelly2DeviceStatusLora());
 
         verify(handler, never()).updateProperties(anyString(), anyString());
     }
@@ -193,7 +193,7 @@ public class ShellyLoraChannelsTest {
         Shelly2DeviceStatusLora status = new Shelly2DeviceStatusLora();
         status.rxBytes = 44L;
 
-        ShellyVirtualComponents.updateLoraStatus(handler, status);
+        ShellyComponents.updateLoraStatus(handler, status);
 
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_LORA), anyString(), any());
     }
@@ -230,7 +230,7 @@ public class ShellyLoraChannelsTest {
         when(handler.getThing()).thenReturn(thing);
         when(handler.areChannelsCreated()).thenReturn(true);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler).removeChannels(argThat(ids -> ids.contains("lora#" + CHANNEL_LORA_TXDATA)));
         verify(handler).removeProperty(PROPERTY_ADDON_FIRMWARE);
@@ -247,7 +247,7 @@ public class ShellyLoraChannelsTest {
         when(handler.getThing()).thenReturn(thing);
         when(handler.areChannelsCreated()).thenReturn(true);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler).removeProperty(PROPERTY_ADDON_FIRMWARE);
     }
@@ -260,7 +260,7 @@ public class ShellyLoraChannelsTest {
         when(handler.getThing()).thenReturn(thing);
         when(handler.areChannelsCreated()).thenReturn(true);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler).removeChannels(argThat(ids -> ids.contains("lora#" + CHANNEL_LORA_RXDATA)));
         verify(handler, never()).removeProperty(PROPERTY_ADDON_FIRMWARE);
@@ -274,7 +274,7 @@ public class ShellyLoraChannelsTest {
         when(handler.getThing()).thenReturn(thing);
         when(handler.areChannelsCreated()).thenReturn(true);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler, never()).updateChannelDefinitions(any());
         verify(handler).updateThingChannels(eq(Map.of()),
@@ -290,7 +290,7 @@ public class ShellyLoraChannelsTest {
         when(handler.getThing()).thenReturn(thing);
         when(handler.areChannelsCreated()).thenReturn(true);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler).updateThingChannels(eq(Map.of()), argThat(Map::isEmpty));
     }
@@ -303,7 +303,7 @@ public class ShellyLoraChannelsTest {
         when(handler.getThing()).thenReturn(thing);
         when(handler.areChannelsCreated()).thenReturn(true);
 
-        ShellyVirtualComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
 
         verify(handler, never()).removeChannels(any());
     }
@@ -312,7 +312,7 @@ public class ShellyLoraChannelsTest {
     void handleLoraCommandTxDataEncodesTextAsBase64AndSends() throws ShellyApiException {
         ShellyThingInterface handler = loraCommandHandler();
 
-        ShellyVirtualComponents.handleLoraCommand(handler, CHANNEL_LORA_TXDATA, new StringType("Hello"));
+        ShellyComponents.handleLoraCommand(handler, CHANNEL_LORA_TXDATA, new StringType("Hello"));
 
         verify(handler.getApi()).loraSendData(0, "SGVsbG8=");
         verify(handler).updateChannel(CHANNEL_GROUP_LORA, CHANNEL_LORA_TXDATARAW, new StringType("SGVsbG8="));
@@ -322,7 +322,7 @@ public class ShellyLoraChannelsTest {
     void handleLoraCommandTxDataRawSendsAndDecodesValidUtf8Payload() throws ShellyApiException {
         ShellyThingInterface handler = loraCommandHandler();
 
-        ShellyVirtualComponents.handleLoraCommand(handler, CHANNEL_LORA_TXDATARAW, new StringType("SGVsbG8="));
+        ShellyComponents.handleLoraCommand(handler, CHANNEL_LORA_TXDATARAW, new StringType("SGVsbG8="));
 
         verify(handler.getApi()).loraSendData(0, "SGVsbG8=");
         verify(handler).updateChannel(CHANNEL_GROUP_LORA, CHANNEL_LORA_TXDATA, new StringType("Hello"));
@@ -332,7 +332,7 @@ public class ShellyLoraChannelsTest {
     void handleLoraCommandTxDataRawSendsRawButSkipsTextChannelOnNonUtf8Payload() throws ShellyApiException {
         ShellyThingInterface handler = loraCommandHandler();
 
-        ShellyVirtualComponents.handleLoraCommand(handler, CHANNEL_LORA_TXDATARAW, new StringType("//4="));
+        ShellyComponents.handleLoraCommand(handler, CHANNEL_LORA_TXDATARAW, new StringType("//4="));
 
         verify(handler.getApi()).loraSendData(0, "//4=");
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_LORA), eq(CHANNEL_LORA_TXDATA), any());
@@ -342,7 +342,7 @@ public class ShellyLoraChannelsTest {
     void handleLoraCommandTxDataRawSkipsSendOnInvalidBase64() throws ShellyApiException {
         ShellyThingInterface handler = loraCommandHandler();
 
-        ShellyVirtualComponents.handleLoraCommand(handler, CHANNEL_LORA_TXDATARAW, new StringType("not base64!!"));
+        ShellyComponents.handleLoraCommand(handler, CHANNEL_LORA_TXDATARAW, new StringType("not base64!!"));
 
         verify(handler.getApi(), never()).loraSendData(anyInt(), anyString());
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_LORA), anyString(), any());

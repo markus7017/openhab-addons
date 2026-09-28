@@ -77,13 +77,13 @@ import org.openhab.core.types.UnDefType;
 import org.slf4j.LoggerFactory;
 
 /**
- * Tests for {@link ShellyVirtualComponents} — addon sensor update path and meter update path.
+ * Tests for {@link ShellyComponents} — addon sensor update path and meter update path.
  *
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
 @SuppressWarnings({ "null" })
-public class ShellyVirtualComponentsTest {
+public class ShellyComponentsTest {
 
     @BeforeAll
     static void initChannelDefinitions() {
@@ -94,30 +94,30 @@ public class ShellyVirtualComponentsTest {
 
     @Test
     void hasAddonAllNullReturnsFalse() {
-        assertThat(ShellyVirtualComponents.hasAddon(new ShellySettingsStatus()), is(false));
+        assertThat(ShellyComponents.hasAddon(new ShellySettingsStatus()), is(false));
     }
 
     @Test
     void hasAddonSingleExtFieldReturnsTrue() {
         ShellySettingsStatus s = new ShellySettingsStatus();
         s.extTemperature = new ShellyExtTemperature();
-        assertThat(ShellyVirtualComponents.hasAddon(s), is(true));
+        assertThat(ShellyComponents.hasAddon(s), is(true));
 
         s = new ShellySettingsStatus();
         s.extHumidity = new ShellyExtHumidity();
-        assertThat(ShellyVirtualComponents.hasAddon(s), is(true));
+        assertThat(ShellyComponents.hasAddon(s), is(true));
 
         s = new ShellySettingsStatus();
         s.extVoltage = new ShellyExtVoltage();
-        assertThat(ShellyVirtualComponents.hasAddon(s), is(true));
+        assertThat(ShellyComponents.hasAddon(s), is(true));
 
         s = new ShellySettingsStatus();
         s.extDigitalInput = new ShellyExtDigitalInput();
-        assertThat(ShellyVirtualComponents.hasAddon(s), is(true));
+        assertThat(ShellyComponents.hasAddon(s), is(true));
 
         s = new ShellySettingsStatus();
         s.extAnalogInput = new ShellyExtAnalogInput();
-        assertThat(ShellyVirtualComponents.hasAddon(s), is(true));
+        assertThat(ShellyComponents.hasAddon(s), is(true));
     }
 
     @Test
@@ -125,13 +125,13 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus s = new ShellySettingsStatus();
         s.extTemperature = new ShellyExtTemperature();
         s.extHumidity = new ShellyExtHumidity();
-        assertThat(ShellyVirtualComponents.hasAddon(s), is(true));
+        assertThat(ShellyComponents.hasAddon(s), is(true));
     }
 
     @Test
     void updateTempChannelNullSensorReturnsFalse() {
         ShellyThingInterface handler = mock(ShellyThingInterface.class);
-        assertThat(ShellyVirtualComponents.updateTempChannel(null, handler, CHANNEL_ESENSOR_TEMP1), is(false));
+        assertThat(ShellyComponents.updateTempChannel(null, handler, CHANNEL_ESENSOR_TEMP1), is(false));
         verify(handler, never()).updateChannel(anyString(), anyString(), any());
     }
 
@@ -143,7 +143,7 @@ public class ShellyVirtualComponentsTest {
         ShellyShortTemp sensor = new ShellyShortTemp();
         sensor.tC = SHELLY_API_INVTEMP;
 
-        assertThat(ShellyVirtualComponents.updateTempChannel(sensor, handler, CHANNEL_ESENSOR_TEMP1), is(true));
+        assertThat(ShellyComponents.updateTempChannel(sensor, handler, CHANNEL_ESENSOR_TEMP1), is(true));
         verify(handler).updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_ESENSOR_TEMP1, UnDefType.UNDEF);
     }
 
@@ -155,7 +155,7 @@ public class ShellyVirtualComponentsTest {
         ShellyShortTemp sensor = new ShellyShortTemp();
         sensor.tC = 22.5;
 
-        assertThat(ShellyVirtualComponents.updateTempChannel(sensor, handler, CHANNEL_ESENSOR_TEMP1), is(true));
+        assertThat(ShellyComponents.updateTempChannel(sensor, handler, CHANNEL_ESENSOR_TEMP1), is(true));
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_ESENSOR_TEMP1),
                 argThat(s -> s instanceof QuantityType<?>));
     }
@@ -167,7 +167,7 @@ public class ShellyVirtualComponentsTest {
         ShellyShortTemp sensor = new ShellyShortTemp();
         sensor.tC = null;
 
-        assertThat(ShellyVirtualComponents.updateTempChannel(sensor, handler, CHANNEL_ESENSOR_TEMP1), is(false));
+        assertThat(ShellyComponents.updateTempChannel(sensor, handler, CHANNEL_ESENSOR_TEMP1), is(false));
         verify(handler, never()).updateChannel(anyString(), anyString(), any());
     }
 
@@ -176,7 +176,7 @@ public class ShellyVirtualComponentsTest {
         // Regression test: a profile refresh racing a NotifyStatus event can leave ison null for a
         // cycle. updateRelay() must not flatten that to OFF via getOnOff(null).
         ShellyBaseHandler handler = relayUpdateHandler();
-        ShellyVirtualComponents.updateRelay(handler, statusWithRelayIson(null), 0);
+        ShellyComponents.updateRelay(handler, statusWithRelayIson(null), 0);
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_OUTPUT), any());
     }
 
@@ -185,7 +185,7 @@ public class ShellyVirtualComponentsTest {
         // Companion case: a known state must still be pushed, guarding against the null-check above
         // being accidentally inverted.
         ShellyBaseHandler handler = relayUpdateHandler();
-        ShellyVirtualComponents.updateRelay(handler, statusWithRelayIson(true), 0);
+        ShellyComponents.updateRelay(handler, statusWithRelayIson(true), 0);
         verify(handler).updateChannel(anyString(), eq(CHANNEL_OUTPUT), eq(OnOffType.ON));
     }
 
@@ -197,7 +197,7 @@ public class ShellyVirtualComponentsTest {
         // On Gen1 "open"/"close" mean the roller is currently moving in that direction, so
         // currentPos must stay untrusted until the device reports "stop" (#21479).
         ShellyBaseHandler handler = gen1RollerUpdateHandler();
-        ShellyVirtualComponents.updateRoller(handler, rollerStatus(SHELLY_ALWD_ROLLER_TURN_OPEN, 40), 0);
+        ShellyComponents.updateRoller(handler, rollerStatus(SHELLY_ALWD_ROLLER_TURN_OPEN, 40), 0);
 
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_ROL_CONTROL_POS), any());
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_ROL_CONTROL_CONTROL), any());
@@ -206,7 +206,7 @@ public class ShellyVirtualComponentsTest {
     @Test
     void updateRollerSkipsPositionWhileClosingOnGen1() throws Exception {
         ShellyBaseHandler handler = gen1RollerUpdateHandler();
-        ShellyVirtualComponents.updateRoller(handler, rollerStatus(SHELLY_ALWD_ROLLER_TURN_CLOSE, 60), 0);
+        ShellyComponents.updateRoller(handler, rollerStatus(SHELLY_ALWD_ROLLER_TURN_CLOSE, 60), 0);
 
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_ROL_CONTROL_POS), any());
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_ROL_CONTROL_CONTROL), any());
@@ -218,7 +218,7 @@ public class ShellyVirtualComponentsTest {
         // position (its moving states are the distinct "opening"/"closing"), so currentPos is
         // reliable there too - unlike Gen1, where the same strings mean "currently moving".
         ShellyBaseHandler handler = gen2RollerUpdateHandler();
-        ShellyVirtualComponents.updateRoller(handler, rollerStatus(SHELLY_RSTATE_OPEN, 100), 0);
+        ShellyComponents.updateRoller(handler, rollerStatus(SHELLY_RSTATE_OPEN, 100), 0);
 
         assertEquals(100.0, lastQuantity(handler, CHANNEL_GROUP_STATUS, CHANNEL_ROL_CONTROL_POS).doubleValue());
         assertEquals(0.0, lastQuantity(handler, CHANNEL_GROUP_STATUS, CHANNEL_ROL_CONTROL_CONTROL).doubleValue());
@@ -227,7 +227,7 @@ public class ShellyVirtualComponentsTest {
     @Test
     void updateRollerTrustsPositionAtCloseEndOnGen2() throws Exception {
         ShellyBaseHandler handler = gen2RollerUpdateHandler();
-        ShellyVirtualComponents.updateRoller(handler, rollerStatus(SHELLY_RSTATE_CLOSE, 0), 0);
+        ShellyComponents.updateRoller(handler, rollerStatus(SHELLY_RSTATE_CLOSE, 0), 0);
 
         assertEquals(0.0, lastQuantity(handler, CHANNEL_GROUP_STATUS, CHANNEL_ROL_CONTROL_POS).doubleValue());
         assertEquals(100.0, lastQuantity(handler, CHANNEL_GROUP_STATUS, CHANNEL_ROL_CONTROL_CONTROL).doubleValue());
@@ -238,8 +238,8 @@ public class ShellyVirtualComponentsTest {
         // Gen2's genuine moving states are "opening"/"closing" - distinct from the Gen1-colliding
         // "open"/"close" literals - and must still skip position updates like Gen1 does (#14189).
         ShellyBaseHandler handler = gen2RollerUpdateHandler();
-        ShellyVirtualComponents.updateRoller(handler, rollerStatus("opening", 40), 0);
-        ShellyVirtualComponents.updateRoller(handler, rollerStatus("closing", 60), 0);
+        ShellyComponents.updateRoller(handler, rollerStatus("opening", 40), 0);
+        ShellyComponents.updateRoller(handler, rollerStatus("closing", 60), 0);
 
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_ROL_CONTROL_POS), any());
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_ROL_CONTROL_CONTROL), any());
@@ -292,7 +292,7 @@ public class ShellyVirtualComponentsTest {
         try {
             Field field = ShellyBaseHandler.class.getDeclaredField("logger");
             field.setAccessible(true);
-            field.set(handler, LoggerFactory.getLogger(ShellyVirtualComponentsTest.class));
+            field.set(handler, LoggerFactory.getLogger(ShellyComponentsTest.class));
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
         }
@@ -321,7 +321,7 @@ public class ShellyVirtualComponentsTest {
         status.dimmers = new ArrayList<>(List.of(dimmerStatus));
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateDimmers(handler, status);
+        ShellyComponents.updateDimmers(handler, status);
 
         verify(handler).updateChannel(anyString(), eq(CHANNEL_TIMER_ACTIVE), eq(OnOffType.ON));
     }
@@ -334,7 +334,7 @@ public class ShellyVirtualComponentsTest {
         ext1.sensor1 = sensorAt(20.0);
         status.extTemperature = ext1;
 
-        ShellyVirtualComponents.updateSensors(handler, status);
+        ShellyComponents.updateSensors(handler, status);
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_LAST_UPDATE), any());
     }
@@ -347,7 +347,7 @@ public class ShellyVirtualComponentsTest {
         ext2.sensor1 = sensorAt(SHELLY_API_INVTEMP);
         status.extTemperature = ext2;
 
-        ShellyVirtualComponents.updateSensors(handler, status);
+        ShellyComponents.updateSensors(handler, status);
 
         verify(handler).updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_ESENSOR_TEMP1, UnDefType.UNDEF);
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_LAST_UPDATE), any());
@@ -357,7 +357,7 @@ public class ShellyVirtualComponentsTest {
     void updateSensorsPureRelayNoAddonLastUpdateNeverWritten() throws Exception {
         ShellyThingInterface handler = relayHandlerWith(new ShellySettingsStatus());
 
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_LAST_UPDATE), any());
     }
@@ -372,7 +372,7 @@ public class ShellyVirtualComponentsTest {
         ext3.sensor1 = sensorAt(22.5);
         status.extTemperature = ext3;
 
-        boolean result = ShellyVirtualComponents.updateSensors(handler, status);
+        boolean result = ShellyComponents.updateSensors(handler, status);
 
         assertThat("updated must be true even when temp is deduplicated", result, is(true));
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_LAST_UPDATE), any());
@@ -387,7 +387,7 @@ public class ShellyVirtualComponentsTest {
         ext4.sensor2 = null;
         status.extTemperature = ext4;
 
-        ShellyVirtualComponents.updateSensors(handler, status);
+        ShellyComponents.updateSensors(handler, status);
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_ESENSOR_TEMP1), any());
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_ESENSOR_TEMP2), any());
@@ -399,7 +399,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = new ShellySettingsStatus();
         status.extHumidity = new ShellyExtHumidity(55.0);
 
-        ShellyVirtualComponents.updateSensors(handler, status);
+        ShellyComponents.updateSensors(handler, status);
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_LAST_UPDATE), any());
     }
@@ -410,7 +410,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = new ShellySettingsStatus();
         status.extVoltage = new ShellyExtVoltage(3.3);
 
-        ShellyVirtualComponents.updateSensors(handler, status);
+        ShellyComponents.updateSensors(handler, status);
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_ESENSOR_VOLTAGE),
                 argThat(s -> s instanceof QuantityType<?> && ((QuantityType<?>) s).doubleValue() == 3.3));
@@ -422,7 +422,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = new ShellySettingsStatus();
         status.extDigitalInput = new ShellyExtDigitalInput(true);
 
-        ShellyVirtualComponents.updateSensors(handler, status);
+        ShellyComponents.updateSensors(handler, status);
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_ESENSOR_DIGITALINPUT), eq(OnOffType.ON));
     }
@@ -433,7 +433,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = new ShellySettingsStatus();
         status.extAnalogInput = new ShellyExtAnalogInput(75.0);
 
-        ShellyVirtualComponents.updateSensors(handler, status);
+        ShellyComponents.updateSensors(handler, status);
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_ESENSOR_ANALOGINPUT),
                 argThat(s -> s instanceof QuantityType<?> && ((QuantityType<?>) s).doubleValue() == 75.0));
@@ -448,7 +448,7 @@ public class ShellyVirtualComponentsTest {
         ext.sensor2 = sensorAt(21.0);
         status.extTemperature = ext;
 
-        ShellyVirtualComponents.updateSensors(handler, status);
+        ShellyComponents.updateSensors(handler, status);
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_ESENSOR_TEMP1), any());
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_ESENSOR_TEMP2), any());
@@ -466,7 +466,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithEMeters(emeter);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_EMETER_FREQUENCY), any(State.class));
     }
@@ -482,7 +482,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithEMeters(emeter);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, atLeastOnce()).updateChannel(anyString(), eq(CHANNEL_EMETER_FREQUENCY), any(State.class));
     }
@@ -498,7 +498,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithEMeters(emeter);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_EMETER_FREQUENCY), any(State.class));
     }
@@ -509,7 +509,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithEMeters(emeter(100.0), emeter(200.0), emeter(300.0));
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, atLeastOnce()).updateChannel(eq(CHANNEL_GROUP_METER + "1"), eq(CHANNEL_METER_CURRENTWATTS),
                 any(State.class));
@@ -532,7 +532,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithMeters(m0, m1);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, atLeastOnce()).updateChannel(eq(CHANNEL_GROUP_METER + "1"), eq(CHANNEL_METER_CURRENTWATTS),
                 any(State.class));
@@ -553,7 +553,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithMeters(m0, m1);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, atLeastOnce()).updateChannel(eq(CHANNEL_GROUP_METER), eq(CHANNEL_METER_CURRENTWATTS),
                 any(State.class));
@@ -591,7 +591,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithMeters(m0);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler)
                 .removeChannels(argThat(ids -> ids.contains(CHANNEL_GROUP_METER + "#" + CHANNEL_METER_CURRENTWATTS)
@@ -612,7 +612,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithMeters(m0);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, never()).removeChannels(any());
     }
@@ -624,7 +624,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithEMeters(emeter(100.0));
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, never()).removeChannels(any());
     }
@@ -636,7 +636,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithEMeters(emeter(100.0));
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, never()).removeChannels(any());
     }
@@ -656,7 +656,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithMeters(m0, m1);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, atLeastOnce()).updateChannel(eq(CHANNEL_GROUP_METER), eq(CHANNEL_METER_CURRENTWATTS),
                 any(State.class));
@@ -673,7 +673,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithMeters(m0);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_EMETER_FREQUENCY), any(State.class));
     }
@@ -689,7 +689,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithMeters(m0);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_METER_LASTMIN1), any(State.class));
     }
@@ -703,7 +703,7 @@ public class ShellyVirtualComponentsTest {
 
         ShellyThingInterface handler = mockHandler(profile);
 
-        boolean result = ShellyVirtualComponents.updateMeters(handler, status);
+        boolean result = ShellyComponents.updateMeters(handler, status);
 
         assertFalse(result);
         verify(handler, never()).updateChannel(anyString(), anyString(), any(State.class));
@@ -722,7 +722,7 @@ public class ShellyVirtualComponentsTest {
 
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, atLeastOnce()).updateChannel(eq(CHANNEL_GROUP_NMETER), eq(CHANNEL_NMETER_CURRENT),
                 any(State.class));
@@ -734,7 +734,7 @@ public class ShellyVirtualComponentsTest {
         sdata.rain = true;
         ShellyThingInterface handler = ws90HandlerWith(sdata);
 
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_RAINST, OnOffType.ON);
     }
@@ -745,7 +745,7 @@ public class ShellyVirtualComponentsTest {
         sdata.rain = false;
         ShellyThingInterface handler = ws90HandlerWith(sdata);
 
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_RAINST, OnOffType.OFF);
     }
@@ -758,7 +758,7 @@ public class ShellyVirtualComponentsTest {
         sdata.seaLevelPressure = 1013.25;
         ShellyThingInterface handler = ws90HandlerWith(sdata);
 
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_WINDDIR_STR, new StringType("SE"));
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_APPARENT_TEMP),
@@ -771,7 +771,7 @@ public class ShellyVirtualComponentsTest {
     void updateSensorsWs90WithoutDerivedValuesSkipsDerivedChannels() throws Exception {
         ShellyThingInterface handler = ws90HandlerWith(new ShellyStatusSensor());
 
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_WINDDIR_STR), any());
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_APPARENT_TEMP), any());
@@ -784,7 +784,7 @@ public class ShellyVirtualComponentsTest {
         sdata.windSpeed = 3.5;
         ShellyThingInterface handler = ws90HandlerWith(sdata);
 
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_WINDSP),
                 argThat(s -> closeTo(s, 3.5)));
@@ -796,7 +796,7 @@ public class ShellyVirtualComponentsTest {
         sdata.uvIndex = 5.3;
         ShellyThingInterface handler = ws90HandlerWith(sdata);
 
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_UV),
                 argThat(s -> s instanceof DecimalType && ((DecimalType) s).doubleValue() == 5.0));
@@ -811,7 +811,7 @@ public class ShellyVirtualComponentsTest {
         sdata.lux.illumination = "dark";
         ShellyThingInterface handler = ws90HandlerWith(sdata);
 
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_LUX),
                 argThat(s -> closeTo(s, 12345.0)));
@@ -824,7 +824,7 @@ public class ShellyVirtualComponentsTest {
         // all WS90 fields null — simulates atmospheric-only packet arriving before wind packet
         ShellyThingInterface handler = ws90HandlerWith(sdata);
 
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_WINDSP), any());
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_WINDDIR), any());
@@ -838,7 +838,7 @@ public class ShellyVirtualComponentsTest {
         sdata.pressure = 1013.25;
         ShellyThingInterface handler = ws90HandlerWith(sdata);
 
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_PRESSURE),
                 argThat(s -> s instanceof QuantityType<?> qt && "hPa".equals(qt.getUnit().toString())
@@ -854,7 +854,7 @@ public class ShellyVirtualComponentsTest {
         sdata.precipitation = 2.1;
         ShellyThingInterface handler = ws90HandlerWith(sdata);
 
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_WINDDIR),
                 argThat(s -> closeTo(s, 270.0)));
@@ -969,7 +969,7 @@ public class ShellyVirtualComponentsTest {
         sdata.mute = Boolean.TRUE;
 
         ShellyThingInterface handler = sensorHandlerFor(THING_TYPE_SHELLYPLUSFLOOD, sdata);
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).postEvent(eq(ALARM_TYPE_MUTED), eq(false));
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_MUTE), any());
@@ -981,7 +981,7 @@ public class ShellyVirtualComponentsTest {
         sdata.mute = Boolean.FALSE;
 
         ShellyThingInterface handler = sensorHandlerFor(THING_TYPE_SHELLYPLUSFLOOD, sdata);
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).postEvent(eq(ALARM_TYPE_NONE), eq(false));
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_MUTE), any());
@@ -994,7 +994,7 @@ public class ShellyVirtualComponentsTest {
         sdata.smoke = Boolean.FALSE;
 
         ShellyThingInterface handler = sensorHandlerFor(THING_TYPE_SHELLYPLUSSMOKE, sdata);
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_MUTE), eq(OnOffType.ON));
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_CONTROL), eq(CHANNEL_SENSOR_MUTE), any());
@@ -1009,7 +1009,7 @@ public class ShellyVirtualComponentsTest {
         sdata.sensorEnable = Boolean.TRUE;
 
         ShellyThingInterface handler = sensorHandlerFor(THING_TYPE_SHELLYPLUSPRESENCE, sdata);
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_PRESENCE), eq(OnOffType.ON));
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_OBJECT_COUNT),
@@ -1025,7 +1025,7 @@ public class ShellyVirtualComponentsTest {
         sdata.sensorEnable = Boolean.FALSE;
 
         ShellyThingInterface handler = sensorHandlerFor(THING_TYPE_SHELLYPLUSPRESENCE, sdata);
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_PRESENCE), eq(OnOffType.OFF));
         verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_OBJECT_COUNT),
@@ -1038,7 +1038,7 @@ public class ShellyVirtualComponentsTest {
         ShellyStatusSensor sdata = new ShellyStatusSensor();
 
         ShellyThingInterface handler = sensorHandlerFor(THING_TYPE_SHELLYPLUSPRESENCE, sdata);
-        ShellyVirtualComponents.updateSensors(handler, new ShellySettingsStatus());
+        ShellyComponents.updateSensors(handler, new ShellySettingsStatus());
 
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_PRESENCE), any());
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_OBJECT_COUNT), any());
@@ -1058,7 +1058,7 @@ public class ShellyVirtualComponentsTest {
         cctLight.temp = 4000;
         status.lights = new ArrayList<>(List.of(colorLight, cctLight));
 
-        boolean updated = ShellyVirtualComponents.updateLightMode(handler, status);
+        boolean updated = ShellyComponents.updateLightMode(handler, status);
 
         assertThat(updated, is(true));
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_LIGHT_CONTROL), anyString(), any());
@@ -1083,7 +1083,7 @@ public class ShellyVirtualComponentsTest {
         cctLight.temp = 4500;
         status.lights = new ArrayList<>(List.of(colorLight, cctLight));
 
-        ShellyVirtualComponents.updateLightMode(handler, status);
+        ShellyComponents.updateLightMode(handler, status);
 
         assertEquals(new PercentType(50), lastState(handler, CHANNEL_GROUP_LIGHT_INDEX + "1", CHANNEL_COLOR_TEMP));
     }
@@ -1101,7 +1101,7 @@ public class ShellyVirtualComponentsTest {
         light.blue = 30;
         status.lights = new ArrayList<>(List.of(light));
 
-        boolean updated = ShellyVirtualComponents.updateRGBW(handler, status);
+        boolean updated = ShellyComponents.updateRGBW(handler, status);
 
         assertThat(updated, is(true));
         verify(handler).updateChannel(eq(CHANNEL_GROUP_COLOR_CONTROL), eq(CHANNEL_COLOR_PICKER), any());
@@ -1118,7 +1118,7 @@ public class ShellyVirtualComponentsTest {
         light.brightness = 42;
         status.lights = new ArrayList<>(List.of(light));
 
-        boolean updated = ShellyVirtualComponents.updateRGBW(handler, status);
+        boolean updated = ShellyComponents.updateRGBW(handler, status);
 
         assertThat(updated, is(false));
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_COLOR_CONTROL), anyString(), any());
@@ -1133,7 +1133,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = new ShellySettingsStatus();
         status.lights = new ArrayList<>(List.of(new ShellySettingsLight()));
 
-        boolean updated = ShellyVirtualComponents.updateRGBW(handler, status);
+        boolean updated = ShellyComponents.updateRGBW(handler, status);
 
         assertThat(updated, is(false));
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_COLOR_CONTROL), anyString(), any());
@@ -1152,7 +1152,7 @@ public class ShellyVirtualComponentsTest {
         light.temp = 3200;
         status.lights = new ArrayList<>(List.of(light));
 
-        boolean updated = ShellyVirtualComponents.updateLightMode(handler, status);
+        boolean updated = ShellyComponents.updateLightMode(handler, status);
 
         assertThat(updated, is(true));
         verify(handler).updateChannel(eq(CHANNEL_GROUP_WHITE_CONTROL), eq(CHANNEL_BRIGHTNESS + "$Value"),
@@ -1172,7 +1172,7 @@ public class ShellyVirtualComponentsTest {
         light.temp = 3200;
         status.lights = new ArrayList<>(List.of(light));
 
-        boolean updated = ShellyVirtualComponents.updateLightMode(handler, status);
+        boolean updated = ShellyComponents.updateLightMode(handler, status);
 
         assertThat(updated, is(false));
         verify(handler, never()).updateChannel(anyString(), anyString(), any());
@@ -1190,7 +1190,7 @@ public class ShellyVirtualComponentsTest {
         light.brightness = 55;
         status.lights = new ArrayList<>(List.of(light));
 
-        ShellyVirtualComponents.updateLightMode(handler, status);
+        ShellyComponents.updateLightMode(handler, status);
 
         verify(handler).updateChannel(eq(CHANNEL_GROUP_WHITE_CONTROL), eq(CHANNEL_COLOR_TEMP), eq(UnDefType.UNDEF));
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_WHITE_CONTROL), eq(CHANNEL_BRIGHTNESS), any());
@@ -1314,7 +1314,7 @@ public class ShellyVirtualComponentsTest {
         status.totalKWH = 8100.0;
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         assertEquals(8.1, lastQuantity(handler, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ACCUTOTAL).doubleValue(),
                 0.001);
@@ -1327,7 +1327,7 @@ public class ShellyVirtualComponentsTest {
         status.totalKWH = null;
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         assertEquals(8.0, lastQuantity(handler, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ACCUTOTAL).doubleValue(),
                 0.001);
@@ -1341,7 +1341,7 @@ public class ShellyVirtualComponentsTest {
         status.totalKWH = null;
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_DEV_STATUS), eq(CHANNEL_DEVST_ACCUTOTAL),
                 any(org.openhab.core.types.State.class));
@@ -1355,7 +1355,7 @@ public class ShellyVirtualComponentsTest {
         status.totalKWH = null;
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         assertEquals(60.0, lastQuantity(handler, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ACCUTOTAL).doubleValue(),
                 0.001);
@@ -1380,7 +1380,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithEMeters(em0, em1, em2);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, atLeastOnce()).updateChannel(eq("meter1"), eq(CHANNEL_EMETER_TOTALRET), any(State.class));
         verify(handler, atLeastOnce()).updateChannel(eq("meter2"), eq(CHANNEL_EMETER_TOTALRET), any(State.class));
@@ -1402,7 +1402,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithEMeters(em0, em1);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         assertEquals(5.0, lastQuantity(handler, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ACCURETURNED).doubleValue(),
                 0.001);
@@ -1420,7 +1420,7 @@ public class ShellyVirtualComponentsTest {
 
         ShellySettingsStatus status = statusWithEMeters(em0);
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_EMETER_TOTALRET), any(State.class));
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_DEV_STATUS), eq(CHANNEL_DEVST_ACCURETURNED),
@@ -1449,7 +1449,7 @@ public class ShellyVirtualComponentsTest {
         status.totalReturned = 7000.0; // device hardware counter: 7000 Wh = 7 kWh
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         assertEquals(7.0, lastQuantity(handler, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ACCURETURNED).doubleValue(),
                 0.001);
@@ -1474,7 +1474,7 @@ public class ShellyVirtualComponentsTest {
         ShellySettingsStatus status = statusWithEMeters(em0, em1, em2);
         ShellyThingInterface handler = mockHandler(profile);
 
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, atLeastOnce()).updateChannel(eq("meter1"), eq(CHANNEL_EMETER_APPARENT), any(State.class));
         verify(handler, atLeastOnce()).updateChannel(eq("meter2"), eq(CHANNEL_EMETER_APPARENT), any(State.class));
@@ -1491,7 +1491,7 @@ public class ShellyVirtualComponentsTest {
         status.totalPower = null;
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         assertEquals(1000.0, lastQuantity(handler, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ACCUWATTS).doubleValue(),
                 0.1);
@@ -1504,7 +1504,7 @@ public class ShellyVirtualComponentsTest {
         status.totalPower = 1050.0; // device-reported total differs slightly from sum
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         assertEquals(1050.0, lastQuantity(handler, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ACCUWATTS).doubleValue(),
                 0.1);
@@ -1524,7 +1524,7 @@ public class ShellyVirtualComponentsTest {
 
         ShellySettingsStatus status = statusWithEMeters(emeter(1000.0, 10000.0), emeter(2000.0, 20000.0), em2);
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, atLeastOnce()).updateChannel(eq("meter1"), eq(CHANNEL_METER_CURRENTWATTS), any(State.class));
         verify(handler, atLeastOnce()).updateChannel(eq("meter2"), eq(CHANNEL_METER_CURRENTWATTS), any(State.class));
@@ -1550,7 +1550,7 @@ public class ShellyVirtualComponentsTest {
 
         ShellySettingsStatus status = statusWithEMeters(em0, em1);
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_DEV_STATUS), eq(CHANNEL_DEVST_ACCURETURNED),
                 any(State.class));
@@ -1582,7 +1582,7 @@ public class ShellyVirtualComponentsTest {
         // energyByMinute[0]=3.0 Wh → lastPower1 (LASTMIN1)=180.0 W (Wh×60), energyHistMin1=3.0 Wh
         ShellyDeviceProfile profile = emeterProfile(false, 1);
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, statusWithEMeters(emeterWithByMinute(50.0, 3.0)));
+        ShellyComponents.updateMeters(handler, statusWithEMeters(emeterWithByMinute(50.0, 3.0)));
 
         assertEquals(180.0, lastQuantity(handler, CHANNEL_GROUP_METER, CHANNEL_METER_LASTMIN1).doubleValue(), 0.1);
         assertEquals(3.0, lastQuantity(handler, CHANNEL_GROUP_METER, CHANNEL_METER_ENERGYHISTMIN1).doubleValue(),
@@ -1593,7 +1593,7 @@ public class ShellyVirtualComponentsTest {
     void gen2EMetersNullByMinuteSkipsLastMinuteChannels() {
         ShellyDeviceProfile profile = emeterProfile(false, 1);
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, statusWithEMeters(emeter(50.0)));
+        ShellyComponents.updateMeters(handler, statusWithEMeters(emeter(50.0)));
 
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_METER_LASTMIN1), any(State.class));
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_METER_ENERGYHISTMIN1), any(State.class));
@@ -1605,7 +1605,7 @@ public class ShellyVirtualComponentsTest {
         // converted to 7.148092 Wh by Shelly2ApiClient before reaching the DTO.
         ShellyDeviceProfile profile = emeterProfile(false, 1);
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler,
+        ShellyComponents.updateMeters(handler,
                 statusWithEMeters(emeterWithByMinute(428.5, 7.148092, 7.160587, 6.429836)));
 
         assertEquals(428.9, lastQuantity(handler, CHANNEL_GROUP_METER, CHANNEL_METER_LASTMIN1).doubleValue(), 0.1);
@@ -1623,7 +1623,7 @@ public class ShellyVirtualComponentsTest {
         m0.counters = new Double[] { 60.0, 120.0, 180.0 };
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, statusWithMeters(m0));
+        ShellyComponents.updateMeters(handler, statusWithMeters(m0));
 
         assertEquals(60.0, lastQuantity(handler, CHANNEL_GROUP_METER, CHANNEL_METER_LASTMIN1).doubleValue(), 0.1);
         assertEquals(1.0, lastQuantity(handler, CHANNEL_GROUP_METER, CHANNEL_METER_ENERGYHISTMIN1).doubleValue(),
@@ -1641,7 +1641,7 @@ public class ShellyVirtualComponentsTest {
         m0.counters = new Double[] { 60.0, 120.0, 180.0 };
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, statusWithMeters(m0));
+        ShellyComponents.updateMeters(handler, statusWithMeters(m0));
 
         assertEquals(2.0, lastQuantity(handler, CHANNEL_GROUP_METER, CHANNEL_METER_ENERGYHISTMIN2).doubleValue(),
                 0.001);
@@ -1657,7 +1657,7 @@ public class ShellyVirtualComponentsTest {
         // energyAvgLast3Min = mean(3.0, 4.5, 6.0) = 4.5
         ShellyDeviceProfile profile = emeterProfile(false, 1);
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, statusWithEMeters(emeterWithByMinute(50.0, 3.0, 4.5, 6.0)));
+        ShellyComponents.updateMeters(handler, statusWithEMeters(emeterWithByMinute(50.0, 3.0, 4.5, 6.0)));
 
         assertEquals(4.5, lastQuantity(handler, CHANNEL_GROUP_METER, CHANNEL_METER_ENERGYHISTMIN2).doubleValue(),
                 0.001);
@@ -1673,7 +1673,7 @@ public class ShellyVirtualComponentsTest {
         // slot 0 (present) still updates energyHistMin1 as usual
         ShellyDeviceProfile profile = emeterProfile(false, 1);
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, statusWithEMeters(emeterWithByMinute(50.0, 3.0)));
+        ShellyComponents.updateMeters(handler, statusWithEMeters(emeterWithByMinute(50.0, 3.0)));
 
         verify(handler, atLeastOnce()).updateChannel(anyString(), eq(CHANNEL_METER_ENERGYHISTMIN1), any(State.class));
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_METER_ENERGYHISTMIN2), any(State.class));
@@ -1695,7 +1695,7 @@ public class ShellyVirtualComponentsTest {
         m1.counters = new Double[] { 30.0, 60.0, 90.0 };
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, statusWithMeters(m0, m1));
+        ShellyComponents.updateMeters(handler, statusWithMeters(m0, m1));
 
         assertEquals(60.0, lastQuantity(handler, CHANNEL_GROUP_METER, CHANNEL_METER_LASTMIN1).doubleValue(), 0.1);
         assertEquals(1.0, lastQuantity(handler, CHANNEL_GROUP_METER, CHANNEL_METER_ENERGYHISTMIN1).doubleValue(),
@@ -1718,7 +1718,7 @@ public class ShellyVirtualComponentsTest {
         m0.counters = new Double[] { 30.0 };
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, statusWithMeters(m0));
+        ShellyComponents.updateMeters(handler, statusWithMeters(m0));
 
         verify(handler, atLeastOnce()).updateChannel(anyString(), eq(CHANNEL_METER_ENERGYHISTMIN1), any(State.class));
         verify(handler, never()).updateChannel(anyString(), eq(CHANNEL_METER_ENERGYHISTMIN2), any(State.class));
@@ -1736,7 +1736,7 @@ public class ShellyVirtualComponentsTest {
         status.totalKWH = 8100.0;
 
         ShellyThingInterface handler = mockHandler(profile);
-        ShellyVirtualComponents.updateMeters(handler, status);
+        ShellyComponents.updateMeters(handler, status);
 
         assertEquals(8.1, lastQuantity(handler, CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ACCUTOTAL).doubleValue(),
                 0.001);

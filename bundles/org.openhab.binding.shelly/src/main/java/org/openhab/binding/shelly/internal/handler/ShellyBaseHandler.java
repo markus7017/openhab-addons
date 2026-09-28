@@ -15,7 +15,7 @@ package org.openhab.binding.shelly.internal.handler;
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.ShellyDevices.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
-import static org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents.*;
+import static org.openhab.binding.shelly.internal.handler.ShellyComponents.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 import static org.openhab.core.thing.Thing.*;
 
@@ -613,14 +613,14 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                     break;
                 case CHANNEL_LORA_TXDATA:
                 case CHANNEL_LORA_TXDATARAW:
-                    ShellyVirtualComponents.handleLoraCommand(this, channelUID.getIdWithoutGroup(), command);
+                    ShellyComponents.handleLoraCommand(this, channelUID.getIdWithoutGroup(), command);
                     break;
                 default:
                     // Virtual Component channel names are device-assigned (e.g. "boolean200") and can't be matched
                     // as a literal case label like the fixed LoRa channels above, so they're dispatched by group.
                     // A member of a virtual Group lives under "vgroup<cid>" instead of "vcomponents".
                     if (CHANNEL_GROUP_VCOMPONENTS.equals(group) || group.startsWith(CHANNEL_GROUP_VGROUP_PREFIX)) {
-                        ShellyVirtualComponents.handleVirtualComponentCommand(this, channel, command);
+                        ShellyComponents.handleVirtualComponentCommand(this, channel, command);
                     } else {
                         update = handleDeviceCommand(channelUID, command);
                     }
@@ -754,7 +754,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
     private boolean updateAllChannels(ShellySettingsStatus status) throws ShellyApiException {
         updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_NAME, getStringType(profile.settings.name));
         boolean updated = this.updateDeviceStatus(status);
-        updated |= ShellyVirtualComponents.updateDeviceStatus(this, status);
+        updated |= ShellyComponents.updateDeviceStatus(this, status);
         fillDeviceStatus(status, updated);
         updated |= updateInputs(status);
         updated |= updateMeters(this, status);
@@ -836,7 +836,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 fid++;
             }
         }
-        ShellyVirtualComponents.addVirtualComponentStateOptions(this, prf);
+        ShellyComponents.addVirtualComponentStateOptions(this, prf);
     }
 
     @Override
@@ -939,7 +939,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         String alarm = "";
 
         // Update uptime and WiFi, internal temp
-        ShellyVirtualComponents.updateDeviceStatus(this, status);
+        ShellyComponents.updateDeviceStatus(this, status);
         stats.wifiRssi.set(status.wifiSta != null && status.wifiSta.rssi != null ? status.wifiSta.rssi : 0);
 
         if (api.isInitialized()) {
