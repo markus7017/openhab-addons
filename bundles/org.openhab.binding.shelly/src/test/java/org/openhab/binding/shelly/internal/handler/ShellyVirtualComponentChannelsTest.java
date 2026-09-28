@@ -324,10 +324,10 @@ public class ShellyVirtualComponentChannelsTest {
         ShellyThingInterface handler = commandHandler(vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200),
                 vcomp(CHANNEL_VCOMP_NUMBER, 201), vcomp(CHANNEL_VCOMP_TEXT, 202), vcomp(CHANNEL_VCOMP_ENUM, 203)));
 
-        ShellyComponents.handleVirtualComponentCommand(handler, "boolean200", OnOffType.ON);
-        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(12.5));
-        ShellyComponents.handleVirtualComponentCommand(handler, "text202", new StringType("hi"));
-        ShellyComponents.handleVirtualComponentCommand(handler, "enum203", new StringType("high"));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "boolean200", OnOffType.ON);
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(12.5));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "text202", new StringType("hi"));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "enum203", new StringType("high"));
 
         verify(handler.getApi()).setVirtualBoolean(200, true);
         verify(handler.getApi()).setVirtualNumber(201, 12.5);
@@ -342,8 +342,8 @@ public class ShellyVirtualComponentChannelsTest {
         ranged.max = 100.0;
         ShellyThingInterface handler = commandHandler(vComponentsProfile(ranged));
 
-        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(100.5));
-        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(-0.5));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(100.5));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(-0.5));
 
         verify(handler.getApi(), never()).setVirtualNumber(anyInt(), anyDouble());
     }
@@ -355,8 +355,8 @@ public class ShellyVirtualComponentChannelsTest {
         ranged.max = 100.0;
         ShellyThingInterface handler = commandHandler(vComponentsProfile(ranged));
 
-        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(0));
-        ShellyComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(100));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(0));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(100));
 
         verify(handler.getApi()).setVirtualNumber(201, 0.0);
         verify(handler.getApi()).setVirtualNumber(201, 100.0);
@@ -368,8 +368,8 @@ public class ShellyVirtualComponentChannelsTest {
         limited.maxLen = 5;
         ShellyThingInterface handler = commandHandler(vComponentsProfile(limited));
 
-        ShellyComponents.handleVirtualComponentCommand(handler, "text202", new StringType("123456"));
-        ShellyComponents.handleVirtualComponentCommand(handler, "text202", new StringType("12345"));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "text202", new StringType("123456"));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "text202", new StringType("12345"));
 
         verify(handler.getApi(), never()).setVirtualText(202, "123456");
         verify(handler.getApi()).setVirtualText(202, "12345");
@@ -379,7 +379,7 @@ public class ShellyVirtualComponentChannelsTest {
     void handleVirtualComponentCommandIgnoresUnknownChannel() throws ShellyApiException {
         ShellyThingInterface handler = commandHandler(vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200)));
 
-        ShellyComponents.handleVirtualComponentCommand(handler, "boolean299", OnOffType.ON);
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "boolean299", OnOffType.ON);
 
         verify(handler.getApi(), never()).setVirtualBoolean(anyInt(), anyBoolean());
     }

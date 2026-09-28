@@ -620,7 +620,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                     // as a literal case label like the fixed LoRa channels above, so they're dispatched by group.
                     // A member of a virtual Group lives under "vgroup<cid>" instead of "vcomponents".
                     if (CHANNEL_GROUP_VCOMPONENTS.equals(group) || group.startsWith(CHANNEL_GROUP_VGROUP_PREFIX)) {
-                        ShellyComponents.handleVirtualComponentCommand(this, channel, command);
+                        ShellyVirtualComponents.handleVirtualComponentCommand(this, channel, command);
                     } else {
                         update = handleDeviceCommand(channelUID, command);
                     }
@@ -836,7 +836,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 fid++;
             }
         }
-        ShellyComponents.addVirtualComponentStateOptions(this, prf);
+        ShellyVirtualComponents.addVirtualComponentStateOptions(this, prf);
     }
 
     @Override

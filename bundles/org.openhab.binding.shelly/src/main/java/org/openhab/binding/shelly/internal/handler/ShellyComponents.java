@@ -14,7 +14,6 @@ package org.openhab.binding.shelly.internal.handler;
 
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
-import static org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.nio.charset.StandardCharsets;
@@ -31,7 +30,6 @@ import javax.measure.quantity.Pressure;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
-import org.openhab.binding.shelly.internal.api.ShellyApiInterface;
 import org.openhab.binding.shelly.internal.api.ShellyApiLightUtil;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO;
@@ -57,16 +55,13 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSe
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyExtVoltage.ShellyShortVoltage;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyThermnostat;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatusLora;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
-import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.ImperialUnits;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
 import org.openhab.core.thing.Channel;
-import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.State;
 import org.openhab.core.types.UnDefType;
@@ -74,7 +69,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 
 /***
  * The{@link ShellyComponents} implements updates for supplemental components
@@ -114,9 +108,9 @@ public class ShellyComponents {
                         .createVirtualComponentChannels(thingHandler.getThing(), profile);
                 thingHandler.updateThingChannels(ShellyChannelDefinitions
                         .getRelabeledVirtualComponentChannels(thingHandler.getThing(), vChannels), vChannels);
-                reconcileVirtualComponentChannels(thingHandler, profile);
-                updateVirtualComponentStatus(thingHandler, profile);
-                checkVGroupThingType(thingHandler, profile);
+                ShellyVirtualComponents.reconcileVirtualComponentChannels(thingHandler, profile);
+                ShellyVirtualComponents.updateVirtualComponentStatus(thingHandler, profile);
+                ShellyVirtualComponents.checkVGroupThingType(thingHandler, profile);
             }
         }
 
@@ -1091,115 +1085,6 @@ public class ShellyComponents {
         }
     }
 
-    private static void reconcileVirtualComponentChannels(ShellyThingInterface thingHandler,
-            ShellyDeviceProfile profile) {
-        Set<String> obsolete = ShellyChannelDefinitions.getObsoleteVirtualComponentChannelIds(thingHandler.getThing(),
-                profile);
-        if (!obsolete.isEmpty()) {
-            thingHandler.removeChannels(obsolete);
-        }
-    }
-
-    /**
-     * Once the device has at least one Virtual Components Group with members, swap the Thing to a synthetic
-     * per-Thing {@link ThingTypeUID} (handled by {@code ShellyVGroupThingTypeProvider}) so Main UI can render each
-     * "vgroup<cid>" as its own labeled section. The synthetic UID encodes only the Thing's identity, not the group
-     * content, so this fires at most once per Thing; renames/membership changes afterward are picked up live by
-     * the provider on every lookup.
-     */
-    private static void checkVGroupThingType(ShellyThingInterface thingHandler, ShellyDeviceProfile profile) {
-        ThingTypeUID currentType = thingHandler.getThing().getThingTypeUID();
-        if (currentType.getId().contains(VGROUP_TYPE_MARKER)) {
-            return; // already swapped
-        }
-        boolean hasNamedGroups = profile.vComponents.stream().anyMatch(c -> {
-            List<String> members = c.groupMembers;
-            return SHELLY2_VCOMP_GROUP.equals(c.type) && members != null && !members.isEmpty();
-        });
-        if (hasNamedGroups) {
-            ThingTypeUID vgType = new ThingTypeUID(BINDING_ID,
-                    currentType.getId() + VGROUP_TYPE_MARKER + thingHandler.getThing().getUID().getId());
-            thingHandler.changeThingType(vgType);
-        }
-    }
-
-    /**
-     * Builds the Enum option list / Number min-max-step-unit for every discovered Virtual Enum/Number component.
-     */
-    public static void addVirtualComponentStateOptions(ShellyThingInterface thingHandler, ShellyDeviceProfile profile) {
-        for (ShellyVCComponent vc : profile.vComponents) {
-            String[] vcOptions = vc.options;
-            if (CHANNEL_VCOMP_ENUM.equals(vc.type) && vcOptions != null) {
-                for (String group : ShellyChannelDefinitions.getVirtualComponentChannelGroups(profile, vc)) {
-                    String channelId = mkChannelId(group, vc.type + vc.id);
-                    LOGGER.debug("{}: Adding {} option(s) to Virtual Enum channel {}", thingHandler.getThingName(),
-                            vcOptions.length, channelId);
-                    thingHandler.clearStateOptions(channelId);
-                    Map<String, String> titles = vc.optionTitles;
-                    for (String option : vcOptions) {
-                        String title = titles != null ? titles.get(option) : null;
-                        thingHandler.addStateOption(channelId, option,
-                                title != null && !title.isBlank() ? title : option);
-                    }
-                }
-            }
-            if (CHANNEL_VCOMP_NUMBER.equals(vc.type)) {
-                Double min = vc.min != null && vc.min != SHELLY2_VCOMP_NUMBER_MIN_SENTINEL ? vc.min : null;
-                Double max = vc.max != null && vc.max != SHELLY2_VCOMP_NUMBER_MAX_SENTINEL ? vc.max : null;
-                for (String group : ShellyChannelDefinitions.getVirtualComponentChannelGroups(profile, vc)) {
-                    String channelId = mkChannelId(group, vc.type + vc.id);
-                    LOGGER.debug("{}: Setting Virtual Number range for channel {}: min={}, max={}, step={}, unit={}",
-                            thingHandler.getThingName(), channelId, min, max, vc.step, vc.unit);
-                    thingHandler.setNumberRange(channelId, min, max, vc.step, vc.unit);
-                }
-            }
-        }
-    }
-
-    /**
-     * Pushes the current value of every discovered Boolean/Number/Text/Enum virtual component into its channel.
-     * Group and Button don't reach here: Group has no state of its own, Button is stateless and only ever fires
-     * as a trigger event.
-     */
-    private static void updateVirtualComponentStatus(ShellyThingInterface thingHandler, ShellyDeviceProfile profile) {
-        for (ShellyVCComponent vc : profile.vComponents) {
-            JsonElement jvalue = vc.value;
-            if (jvalue == null) {
-                continue; // not yet reported, e.g. right after discovery; also always null for button
-            }
-            updateVirtualComponentChannel(thingHandler, profile, vc);
-        }
-    }
-
-    public static void updateVirtualComponentChannel(ShellyThingInterface thingHandler, ShellyDeviceProfile profile,
-            ShellyVCComponent vc) {
-        JsonElement jvalue = vc.value;
-        State state = jvalue != null ? toVirtualComponentState(vc.type, jvalue) : null;
-        if (state != null) {
-            for (String group : ShellyChannelDefinitions.getVirtualComponentChannelGroups(profile, vc)) {
-                thingHandler.updateChannel(group, vc.type + vc.id, state);
-            }
-        }
-    }
-
-    /**
-     * @return the channel state for a Boolean/Number/Text/Enum component's reported value, or null for a type that
-     *         has no state channel (Group carries a member array, Button is stateless)
-     */
-    private static @Nullable State toVirtualComponentState(String type, JsonElement value) {
-        // A component can report a JSON null instead of a value - an Enum with no default_value does so after a
-        // reboot. getAsBoolean()/getAsDouble()/getAsString() throw on anything but a primitive, and an invented
-        // OFF/0/"" would read like a genuine device value, so publish UNDEF in that case.
-        boolean reported = value.isJsonPrimitive();
-        return switch (type) {
-            case CHANNEL_VCOMP_BOOLEAN -> reported ? OnOffType.from(value.getAsBoolean()) : UnDefType.UNDEF;
-            case CHANNEL_VCOMP_NUMBER -> reported ? new DecimalType(value.getAsDouble()) : UnDefType.UNDEF;
-            case CHANNEL_VCOMP_TEXT, CHANNEL_VCOMP_ENUM ->
-                reported ? getStringType(value.getAsString()) : UnDefType.UNDEF;
-            default -> null;
-        };
-    }
-
     public static void handleLoraCommand(ShellyThingInterface thingHandler, String channelId, Command command)
             throws ShellyApiException {
         String thingName = thingHandler.getThingName();
@@ -1231,57 +1116,6 @@ public class ShellyComponents {
                                 e.getMessage());
                     }
                 }
-                break;
-        }
-    }
-
-    /**
-     * Dispatches a command sent to a Boolean/Number/Text/Enum virtual component channel to the matching
-     * {@code <Type>.Set} RPC call. Group and Button have no command path: Group is a pure grouping container and
-     * Button is stateless/event-only, neither ever gets a channel (see {@link #updateVirtualComponentStatus}).
-     */
-    public static void handleVirtualComponentCommand(ShellyThingInterface thingHandler, String channel, Command command)
-            throws ShellyApiException {
-        String thingName = thingHandler.getThingName();
-        ShellyVCComponent vc = thingHandler.getProfile().vComponents.stream()
-                .filter(c -> (c.type + c.id).equals(channel)).findFirst().orElse(null);
-        if (vc == null) {
-            LOGGER.debug("{}: Unknown Virtual Component channel {}, command ignored", thingName, channel);
-            return;
-        }
-
-        ShellyApiInterface api = thingHandler.getApi();
-        switch (vc.type) {
-            case CHANNEL_VCOMP_BOOLEAN:
-                api.setVirtualBoolean(vc.id, command == OnOffType.ON);
-                break;
-            case CHANNEL_VCOMP_NUMBER:
-                // The device rejects a value outside the configured range / longer than max_len anyway, but only
-                // as an RPC error after the fact - checking here turns that into a log line naming the limit.
-                double number = getNumber(command);
-                Double min = vc.min, max = vc.max;
-                if ((min != null && number < min) || (max != null && number > max)) {
-                    LOGGER.warn("{}: Value {} is outside the range {}..{} configured for Virtual Number {}, ignoring",
-                            thingName, number, min, max, vc.id);
-                    return;
-                }
-                api.setVirtualNumber(vc.id, number);
-                break;
-            case CHANNEL_VCOMP_TEXT:
-                String text = getString(command);
-                Integer maxLen = vc.maxLen;
-                if (maxLen != null && text.length() > maxLen) {
-                    LOGGER.warn("{}: Text is {} characters, more than the {} configured for Virtual Text {}, ignoring",
-                            thingName, text.length(), maxLen, vc.id);
-                    return;
-                }
-                api.setVirtualText(vc.id, text);
-                break;
-            case CHANNEL_VCOMP_ENUM:
-                api.setVirtualEnum(vc.id, getString(command));
-                break;
-            default:
-                LOGGER.debug("{}: Command not supported for Virtual Component type {}", thingName, vc.type);
                 break;
         }
     }
