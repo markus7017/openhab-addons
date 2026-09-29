@@ -142,7 +142,7 @@ public class ShellyDeviceProfile {
 
     // Virtual Components (Gen3/Gen4/Gen2 Pro): discovered dynamically via Shelly.GetComponents, no static
     // per-model/generation flag is available to gate on
-    public List<ShellyVCComponent> vComponents = new ArrayList<>();
+    public volatile List<ShellyVCComponent> vComponents = new ArrayList<>();
     public boolean vComponentsProbed; // true once Shelly.GetComponents has been tried for this profile
 
     public ShellyDeviceProfile(ThingTypeUID thingTypeUID) {

@@ -79,7 +79,7 @@ public class ShellyVGroupThingTypeProvider implements ThingTypeProvider {
         Thing thing = thingRegistry.getAll().stream()
                 .filter(t -> BINDING_ID.equals(t.getUID().getBindingId()) && thingId.equals(t.getUID().getId()))
                 .findFirst().orElse(null);
-        if (thing == null || !(thing.getHandler() instanceof ShellyThingInterface handler)) {
+        if (thing == null) {
             return null;
         }
 
@@ -88,7 +88,12 @@ public class ShellyVGroupThingTypeProvider implements ThingTypeProvider {
             return null;
         }
 
-        return cloneWithGroups(uid, base, buildVGroupDefinitions(handler));
+        // core resolves the type before creating the handler (startup, disabled Thing): serve the base groups,
+        // the vgroup sections appear on the next lookup once the handler has probed the device
+        List<ChannelGroupDefinition> vgroups = thing.getHandler() instanceof ShellyThingInterface handler
+                ? buildVGroupDefinitions(handler)
+                : List.of();
+        return cloneWithGroups(uid, base, vgroups);
     }
 
     @Override

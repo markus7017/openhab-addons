@@ -90,7 +90,8 @@ public class ShellyVirtualComponentsJsonDTO {
         public static class ShellyVCUi {
             // Documented as an option-value -> display-text object, but some firmware sends a plain array of
             // display texts (ordered against `options`) instead - kept raw and reconciled by the caller (see
-            // Shelly2ApiRpc#parseOptionTitles) rather than letting Gson crash the whole probe on the mismatch.
+            // ShellyVirtualComponentsParser#parseOptionTitles) rather than letting Gson crash the whole probe on the
+            // mismatch.
             public @Nullable JsonElement titles;
             public @Nullable Double step; // number
             public @Nullable String unit; // number

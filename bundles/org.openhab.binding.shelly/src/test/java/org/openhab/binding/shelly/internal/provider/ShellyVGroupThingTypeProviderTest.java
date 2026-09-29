@@ -111,11 +111,27 @@ public class ShellyVGroupThingTypeProviderTest {
     }
 
     @Test
-    void getThingTypeReturnsNullWhenHandlerIsNotAShellyThingInterface() {
+    void getThingTypeReturnsBaseGroupsWhenHandlerIsNotAShellyThingInterface() {
         Thing thing = thingWithHandler(THING_UID, THING_TYPE_SHELLYPLUS1, mock(ThingHandler.class));
         when(thingRegistry.getAll()).thenReturn(List.of(thing));
+        when(thingTypeRegistry.getThingType(THING_TYPE_SHELLYPLUS1, null)).thenReturn(baseType());
 
-        assertThat(provider.getThingType(VGROUP_UID, null), is(nullValue()));
+        ThingType resultType = Objects.requireNonNull(provider.getThingType(VGROUP_UID, null));
+
+        assertThat(resultType.getUID(), is(VGROUP_UID));
+        assertThat(resultType.getChannelGroupDefinitions(), hasSize(1));
+    }
+
+    @Test
+    void getThingTypeReturnsBaseGroupsBeforeTheHandlerIsCreated() {
+        Thing thing = thingWithHandler(THING_UID, VGROUP_UID, null);
+        when(thingRegistry.getAll()).thenReturn(List.of(thing));
+        when(thingTypeRegistry.getThingType(THING_TYPE_SHELLYPLUS1, null)).thenReturn(baseType());
+
+        ThingType resultType = Objects.requireNonNull(provider.getThingType(VGROUP_UID, null));
+
+        assertThat(resultType.getUID(), is(VGROUP_UID));
+        assertThat(resultType.getChannelGroupDefinitions(), hasSize(1));
     }
 
     @Test

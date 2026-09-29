@@ -583,7 +583,7 @@ public class ShellyChannelDefinitions {
 
     // Group never gets a channel here: it's a grouping container only, see getVirtualComponentChannelGroup().
     // Button gets a trigger channel (created just like the others) but no state - it's never touched by
-    // updateVirtualComponentStatus(), instead it fires from a Button.Trigger NotifyEvent, see Shelly2ApiRpc.
+    // updateVirtualComponentStatus(), instead it fires from a Button.Trigger NotifyEvent, see ShellyVirtualComponents.
     private static final Set<String> VCOMP_CHANNEL_TYPES = Set.of(CHANNEL_VCOMP_BOOLEAN, CHANNEL_VCOMP_NUMBER,
             CHANNEL_VCOMP_TEXT, CHANNEL_VCOMP_ENUM, CHANNEL_VCOMP_BUTTON);
 
@@ -1248,10 +1248,6 @@ public class ShellyChannelDefinitions {
     public void setNumberRange(String channelId, @Nullable Double min, @Nullable Double max, @Nullable Double step,
             @Nullable String unit) {
         numberRanges.put(channelId, new NumberRange(min, max, step, unit));
-    }
-
-    public void clearNumberRange(String channelId) {
-        numberRanges.remove(channelId);
     }
 
     private class ShellyChannel {

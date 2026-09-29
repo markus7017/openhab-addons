@@ -13,7 +13,6 @@
 package org.openhab.binding.shelly.internal.provider;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,8 +33,8 @@ import org.openhab.core.types.StateOption;
  * and {@link ShellyChannelDefinitions#clearStateOptions}: options are kept per-instance channel id (e.g.
  * {@code ChannelUID.getId()}), not per channel type, so several channels that share one channel type (TRV profile,
  * roller favorites, several Virtual Enum components on the same Thing) each keep their own independent list.
- * Also tests {@link ShellyChannelDefinitions#getNumberRange(String)}, {@link ShellyChannelDefinitions#setNumberRange}
- * and {@link ShellyChannelDefinitions#clearNumberRange}, which mirror the same per-instance keying.
+ * Also tests {@link ShellyChannelDefinitions#getNumberRange(String)} and
+ * {@link ShellyChannelDefinitions#setNumberRange}, which mirror the same per-instance keying.
  *
  * @author Markus Michels - Initial contribution
  */
@@ -131,17 +130,5 @@ public class ShellyChannelDefinitionsStateOptionsTest {
         channelDefinitions.setNumberRange("vcomponents#number201", 0.0, 100.0, null, null);
 
         assertThat(channelDefinitions.getNumberRange("vcomponents#number299"), is(nullValue()));
-    }
-
-    @Test
-    void clearNumberRangeOnlyRemovesTheGivenChannelId() {
-        ShellyChannelDefinitions channelDefinitions = newInstance();
-        channelDefinitions.setNumberRange("vcomponents#number201", 0.0, 100.0, null, null);
-        channelDefinitions.setNumberRange("vcomponents#number202", -10.0, 10.0, null, null);
-
-        channelDefinitions.clearNumberRange("vcomponents#number201");
-
-        assertThat(channelDefinitions.getNumberRange("vcomponents#number201"), is(nullValue()));
-        assertThat(channelDefinitions.getNumberRange("vcomponents#number202"), is(notNullValue()));
     }
 }
