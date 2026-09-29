@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -112,10 +113,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 
 /**
  * {@link Shelly2ApiRpc} implements Gen2 RPC interface
@@ -347,6 +350,11 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             // doesn't support the method simply stays unprobed, which skips vcomponent handling for it entirely.
             logger.debug("{}: Unable to read virtual components (device may not support Shelly.GetComponents)",
                     thingName, e);
+        } catch (JsonSyntaxException e) {
+            // A single component with a config/status shape the DTO doesn't expect must not abort the whole
+            // Thing (re-)init - this call runs from getDeviceProfile(), an uncaught exception here would bubble
+            // out of initializeThing() and leave the Thing stuck instead of just skipping vcomponent handling.
+            logger.warn("{}: Unable to parse virtual components, unexpected JSON shape", thingName, e);
         }
     }
 
@@ -393,7 +401,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                     vc.maxLen = vconfig.maxLen;
                     vc.options = vconfig.options;
                     ShellyVCConfig.ShellyVCUi ui = vconfig.meta != null ? vconfig.meta.ui : null;
-                    vc.optionTitles = ui != null ? ui.titles : null;
+                    vc.optionTitles = ui != null ? parseOptionTitles(ui.titles, vconfig.options) : null;
                     vc.step = ui != null ? ui.step : null;
                     vc.unit = ui != null ? ui.unit : null;
                 }
@@ -411,6 +419,39 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             list.add(vc);
         }
         return list;
+    }
+
+    /**
+     * {@code meta.ui.titles} is documented as an option-value -> display-text object, but some firmware sends a
+     * plain array of display texts ordered against {@code options} instead; a bare {@code Map<String, String>}
+     * field would let Gson throw a JsonSyntaxException on that shape and abort the whole probe. Accept both.
+     */
+    private static @Nullable Map<String, String> parseOptionTitles(@Nullable JsonElement titles,
+            @Nullable String[] options) {
+        if (titles == null || titles.isJsonNull()) {
+            return null;
+        }
+        Map<String, String> result = new LinkedHashMap<>();
+        if (titles.isJsonObject()) {
+            for (Map.Entry<String, JsonElement> entry : titles.getAsJsonObject().entrySet()) {
+                JsonElement title = entry.getValue();
+                if (!title.isJsonNull()) {
+                    result.put(entry.getKey(), title.getAsString());
+                }
+            }
+        } else if (titles.isJsonArray() && options != null) {
+            JsonArray array = titles.getAsJsonArray();
+            for (int i = 0; i < array.size() && i < options.length; i++) {
+                JsonElement title = array.get(i);
+                String option = options[i];
+                if (!title.isJsonNull() && option != null) {
+                    result.put(option, title.getAsString());
+                }
+            }
+        } else {
+            return null;
+        }
+        return result;
     }
 
     /**
