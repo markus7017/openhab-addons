@@ -33,8 +33,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -94,15 +92,12 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptRe
 import org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.Shelly2StatusPresence;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponentEntry;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCConfig;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCGetComponentsParams;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCGetComponentsResult;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCStatus;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
 import org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents;
-import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
@@ -112,12 +107,6 @@ import org.openhab.core.thing.ThingTypeUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 /**
@@ -338,7 +327,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                 if (returned == 0) {
                     break; // device announced more than it delivers, don't keep asking for the same page
                 }
-                components.addAll(parseVirtualComponents(gson, result));
+                components.addAll(ShellyVirtualComponentsParser.parseVirtualComponents(gson, result));
                 offset += returned;
                 total = getInteger(result.total);
             } while (offset < total);
@@ -350,169 +339,12 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             // doesn't support the method simply stays unprobed, which skips vcomponent handling for it entirely.
             logger.debug("{}: Unable to read virtual components (device may not support Shelly.GetComponents)",
                     thingName, e);
-        } catch (JsonSyntaxException e) {
+        } catch (JsonSyntaxException | NumberFormatException e) {
             // A single component with a config/status shape the DTO doesn't expect must not abort the whole
             // Thing (re-)init - this call runs from getDeviceProfile(), an uncaught exception here would bubble
             // out of initializeThing() and leave the Thing stuck instead of just skipping vcomponent handling.
             logger.warn("{}: Unable to parse virtual components, unexpected JSON shape", thingName, e);
         }
-    }
-
-    static List<ShellyVCComponent> parseVirtualComponents(Gson gson, @Nullable ShellyVCGetComponentsResult result) {
-        List<ShellyVCComponent> list = new ArrayList<>();
-        List<ShellyVCComponentEntry> entries = result != null ? result.components : null;
-        if (entries == null) {
-            return list;
-        }
-        for (ShellyVCComponentEntry entry : entries) {
-            String key = getString(entry.key);
-            int sep = key.indexOf(':');
-            if (sep < 0) {
-                continue;
-            }
-            String type = key.substring(0, sep);
-            switch (type) {
-                case SHELLY2_VCOMP_BOOLEAN:
-                case SHELLY2_VCOMP_NUMBER:
-                case SHELLY2_VCOMP_TEXT:
-                case SHELLY2_VCOMP_ENUM:
-                case SHELLY2_VCOMP_GROUP:
-                case SHELLY2_VCOMP_BUTTON:
-                    break;
-                default:
-                    continue; // presencezone/bthomesensor/lnm share the same id range, not ours
-            }
-            int id;
-            try {
-                id = Integer.parseInt(key.substring(sep + 1));
-            } catch (NumberFormatException e) {
-                continue;
-            }
-
-            ShellyVCComponent vc = new ShellyVCComponent();
-            vc.type = type;
-            vc.id = id;
-            if (entry.config != null) {
-                ShellyVCConfig vconfig = gson.fromJson(entry.config, ShellyVCConfig.class);
-                if (vconfig != null) {
-                    vc.name = vconfig.name;
-                    vc.min = vconfig.min;
-                    vc.max = vconfig.max;
-                    vc.maxLen = vconfig.maxLen;
-                    vc.options = vconfig.options;
-                    ShellyVCConfig.ShellyVCUi ui = vconfig.meta != null ? vconfig.meta.ui : null;
-                    vc.optionTitles = ui != null ? parseOptionTitles(ui.titles, vconfig.options) : null;
-                    vc.step = ui != null ? ui.step : null;
-                    vc.unit = ui != null ? ui.unit : null;
-                }
-            }
-            if (entry.status != null) {
-                ShellyVCStatus vstatus = gson.fromJson(entry.status, ShellyVCStatus.class);
-                vc.value = vstatus != null ? vstatus.value : null;
-            }
-            JsonElement value = vc.value;
-            if (SHELLY2_VCOMP_GROUP.equals(type) && value != null && value.isJsonArray()) {
-                List<String> members = new ArrayList<>();
-                value.getAsJsonArray().forEach(el -> members.add(el.getAsString()));
-                vc.groupMembers = members;
-            }
-            list.add(vc);
-        }
-        return list;
-    }
-
-    /**
-     * {@code meta.ui.titles} is documented as an option-value -> display-text object, but some firmware sends a
-     * plain array of display texts ordered against {@code options} instead; a bare {@code Map<String, String>}
-     * field would let Gson throw a JsonSyntaxException on that shape and abort the whole probe. Accept both.
-     */
-    private static @Nullable Map<String, String> parseOptionTitles(@Nullable JsonElement titles,
-            @Nullable String[] options) {
-        if (titles == null || titles.isJsonNull()) {
-            return null;
-        }
-        Map<String, String> result = new LinkedHashMap<>();
-        if (titles.isJsonObject()) {
-            for (Map.Entry<String, JsonElement> entry : titles.getAsJsonObject().entrySet()) {
-                JsonElement title = entry.getValue();
-                if (!title.isJsonNull()) {
-                    result.put(entry.getKey(), title.getAsString());
-                }
-            }
-        } else if (titles.isJsonArray() && options != null) {
-            JsonArray array = titles.getAsJsonArray();
-            for (int i = 0; i < array.size() && i < options.length; i++) {
-                JsonElement title = array.get(i);
-                String option = options[i];
-                if (!title.isJsonNull() && option != null) {
-                    result.put(option, title.getAsString());
-                }
-            }
-        } else {
-            return null;
-        }
-        return result;
-    }
-
-    /**
-     * Extracts the status objects of virtual components from a NotifyStatus/NotifyFullStatus message.
-     * The device sends them under dynamic keys ("boolean:200") that the typed status DTO can't hold.
-     */
-    static Map<String, JsonObject> parseVirtualComponentStatus(String json) {
-        Map<String, JsonObject> result = new HashMap<>();
-        try {
-            JsonElement root = JsonParser.parseString(json);
-            if (!root.isJsonObject()) {
-                return result;
-            }
-            JsonObject message = root.getAsJsonObject();
-            JsonElement params = message.has("params") ? message.get("params") : message.get("result");
-            if (params == null || !params.isJsonObject()) {
-                return result;
-            }
-            for (Map.Entry<String, JsonElement> entry : params.getAsJsonObject().entrySet()) {
-                String type = entry.getKey().substring(0, Math.max(0, entry.getKey().indexOf(':')));
-                if (isVirtualValueType(type) && entry.getValue().isJsonObject()) {
-                    result.put(entry.getKey(), entry.getValue().getAsJsonObject());
-                }
-            }
-        } catch (JsonParseException e) {
-            // not a status message we can inspect, the typed parsing reports real problems
-        }
-        return result;
-    }
-
-    private static boolean isVirtualValueType(String type) {
-        return SHELLY2_VCOMP_BOOLEAN.equals(type) || SHELLY2_VCOMP_NUMBER.equals(type)
-                || SHELLY2_VCOMP_TEXT.equals(type) || SHELLY2_VCOMP_ENUM.equals(type);
-    }
-
-    private boolean updateVirtualComponentValues(ShellyDeviceProfile profile, Map<String, JsonObject> changes)
-            throws ShellyApiException {
-        boolean updated = false;
-        for (Map.Entry<String, JsonObject> change : changes.entrySet()) {
-            JsonElement value = change.getValue().get("value");
-            if (value == null) {
-                continue; // only other attributes changed
-            }
-            String key = change.getKey();
-            String type = key.substring(0, key.indexOf(':'));
-            int id;
-            try {
-                id = Integer.parseInt(key.substring(key.indexOf(':') + 1));
-            } catch (NumberFormatException e) {
-                continue;
-            }
-            for (ShellyVCComponent vc : profile.vComponents) {
-                if (vc.type.equals(type) && vc.id == id) {
-                    vc.value = value;
-                    ShellyVirtualComponents.updateVirtualComponentChannel(getThing(), profile, vc);
-                    updated = true;
-                    break;
-                }
-            }
-        }
-        return updated;
     }
 
     protected void installScript(String script, boolean install) throws ShellyApiException {
@@ -798,7 +630,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             }
             status.temperature = SHELLY_API_INVTEMP; // mark invalid
             updated |= fillDeviceStatus(status, message.params, true);
-            updated |= updateVirtualComponentValues(profile, message.vcomponents);
+            updated |= ShellyVirtualComponents.updateVirtualComponentValues(getThing(), profile, message.vcomponents);
             if (getDouble(status.temperature) == SHELLY_API_INVTEMP) {
                 // no device temp available
                 status.temperature = null;
@@ -839,7 +671,12 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                 // Virtual Button: stateless (Button.GetStatus always returns {}), reuses the physical-input push
                 // event names, but id is a vcomponent id (200-299), not an input index - handle it separately
                 // rather than falling into the id<numInputs-guarded cases below meant for physical inputs.
-                handleVirtualButtonEvent(profile, id, event);
+                String trigger = mapButtonEvent(mapValue(MAP_INPUT_EVENT_ID, event));
+                if (trigger.isEmpty()) {
+                    logger.debug("{}: Unmapped Virtual Button event {}, ignoring", thingName, event);
+                } else {
+                    ShellyVirtualComponents.triggerVirtualButton(getThing(), profile, id, trigger);
+                }
                 continue;
             }
             switch (event) {
@@ -983,29 +820,6 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     /** Zones other than the configured main zone must not overwrite the channels of the main zone. */
     private static boolean isMainZoneEvent(ShellyDeviceProfile profile, Shelly2NotifyEvent e) {
         return profile.presenceMainZoneKey.equals(e.component);
-    }
-
-    /**
-     * Dispatch a Button.Trigger event for a Virtual Button component. Unlike a physical input's push event this
-     * can't reuse {@link ShellyThingInterface#triggerButton}, which assumes a fixed input-channel naming convention
-     * and also updates {@code CHANNEL_LAST_UPDATE} on the group - neither applies to a vcomponent's trigger channel.
-     */
-    private void handleVirtualButtonEvent(ShellyDeviceProfile profile, int id, String event) throws ShellyApiException {
-        String trigger = mapButtonEvent(mapValue(MAP_INPUT_EVENT_ID, event));
-        if (trigger.isEmpty()) {
-            logger.debug("{}: Unmapped Virtual Button event {}, ignoring", thingName, event);
-            return;
-        }
-        for (ShellyVCComponent vc : profile.vComponents) {
-            if (SHELLY2_VCOMP_BUTTON.equals(vc.type) && vc.id == id) {
-                logger.debug("{}: Virtual Button {} triggered: {}", thingName, id, trigger);
-                for (String group : ShellyChannelDefinitions.getVirtualComponentChannelGroups(profile, vc)) {
-                    getThing().triggerChannel(group, CHANNEL_VCOMP_BUTTON + id, trigger);
-                }
-                return;
-            }
-        }
-        logger.debug("{}: Virtual Button {} not found in profile, ignoring event", thingName, id);
     }
 
     @Override

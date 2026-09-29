@@ -13,8 +13,8 @@
 package org.openhab.binding.shelly.internal;
 
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.DEFAULT_LOCAL_PORT;
-import static org.openhab.binding.shelly.internal.ShellyBindingConstants.resolveVGroupBaseType;
 import static org.openhab.binding.shelly.internal.ShellyDevices.*;
+import static org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents.resolveVGroupBaseType;
 
 import java.util.HashMap;
 import java.util.Map;

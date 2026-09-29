@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link ShellyVirtualComponents} implements status updates and command handling for Shelly Virtual Components
@@ -48,6 +49,23 @@ import com.google.gson.JsonElement;
 @NonNullByDefault
 public class ShellyVirtualComponents {
     private static final Logger LOGGER = LoggerFactory.getLogger(ShellyVirtualComponents.class);
+
+    /**
+     * Every device-model classification (handler dispatch, {@code ShellyDeviceProfile.initFromThingType},
+     * generation/BLU detection, ...) is keyed off exact matches against the device's real, static
+     * {@link ThingTypeUID}. Once a Thing has been swapped to its per-Thing synthetic vgroup type (see
+     * {@link #checkVGroupThingType}), {@code thing.getThingTypeUID()} no longer matches any of those lookups, so
+     * every call site that uses the Thing's type for classification (not just for display) must resolve back to
+     * the real type first via this method.
+     *
+     * @param thingTypeUID the Thing's current type, real or synthetic
+     * @return the real device ThingTypeUID (unchanged if it wasn't a synthetic vgroup type)
+     */
+    public static ThingTypeUID resolveVGroupBaseType(ThingTypeUID thingTypeUID) {
+        String id = thingTypeUID.getId();
+        int idx = id.indexOf(VGROUP_TYPE_MARKER);
+        return idx < 0 ? thingTypeUID : new ThingTypeUID(thingTypeUID.getBindingId(), id.substring(0, idx));
+    }
 
     static void reconcileVirtualComponentChannels(ShellyThingInterface thingHandler, ShellyDeviceProfile profile) {
         Set<String> obsolete = ShellyChannelDefinitions.getObsoleteVirtualComponentChannelIds(thingHandler.getThing(),
@@ -128,7 +146,61 @@ public class ShellyVirtualComponents {
         }
     }
 
-    public static void updateVirtualComponentChannel(ShellyThingInterface thingHandler, ShellyDeviceProfile profile,
+    /**
+     * Applies the value changes of a NotifyStatus message (keyed like "boolean:200") to the discovered components
+     * and their channels.
+     *
+     * @return true if at least one channel was updated
+     */
+    public static boolean updateVirtualComponentValues(ShellyThingInterface thingHandler, ShellyDeviceProfile profile,
+            Map<String, JsonObject> changes) {
+        boolean updated = false;
+        for (Map.Entry<String, JsonObject> change : changes.entrySet()) {
+            JsonElement value = change.getValue().get("value");
+            if (value == null) {
+                continue; // only other attributes changed
+            }
+            String key = change.getKey();
+            String type = key.substring(0, key.indexOf(':'));
+            int id;
+            try {
+                id = Integer.parseInt(key.substring(key.indexOf(':') + 1));
+            } catch (NumberFormatException e) {
+                continue;
+            }
+            for (ShellyVCComponent vc : profile.vComponents) {
+                if (vc.type.equals(type) && vc.id == id) {
+                    vc.value = value;
+                    updateVirtualComponentChannel(thingHandler, profile, vc);
+                    updated = true;
+                    break;
+                }
+            }
+        }
+        return updated;
+    }
+
+    /**
+     * Fires a Virtual Button's trigger channel. Unlike a physical input's push event this can't reuse
+     * {@link ShellyThingInterface#triggerButton}, which assumes a fixed input-channel naming convention and also
+     * updates {@code CHANNEL_LAST_UPDATE} on the group - neither applies to a vcomponent's trigger channel.
+     */
+    public static void triggerVirtualButton(ShellyThingInterface thingHandler, ShellyDeviceProfile profile, int id,
+            String trigger) {
+        String thingName = thingHandler.getThingName();
+        for (ShellyVCComponent vc : profile.vComponents) {
+            if (SHELLY2_VCOMP_BUTTON.equals(vc.type) && vc.id == id) {
+                LOGGER.debug("{}: Virtual Button {} triggered: {}", thingName, id, trigger);
+                for (String group : ShellyChannelDefinitions.getVirtualComponentChannelGroups(profile, vc)) {
+                    thingHandler.triggerChannel(group, CHANNEL_VCOMP_BUTTON + id, trigger);
+                }
+                return;
+            }
+        }
+        LOGGER.debug("{}: Virtual Button {} not found in profile, ignoring event", thingName, id);
+    }
+
+    private static void updateVirtualComponentChannel(ShellyThingInterface thingHandler, ShellyDeviceProfile profile,
             ShellyVCComponent vc) {
         JsonElement jvalue = vc.value;
         State state = jvalue != null ? toVirtualComponentState(vc.type, jvalue) : null;

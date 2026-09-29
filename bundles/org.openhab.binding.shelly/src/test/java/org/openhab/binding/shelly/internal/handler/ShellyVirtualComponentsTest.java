@@ -10,30 +10,24 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.shelly.internal;
+package org.openhab.binding.shelly.internal.handler;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.BINDING_ID;
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.VGROUP_TYPE_MARKER;
-import static org.openhab.binding.shelly.internal.ShellyBindingConstants.resolveVGroupBaseType;
 import static org.openhab.binding.shelly.internal.ShellyDevices.THING_TYPE_SHELLYPLUS1;
+import static org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents.resolveVGroupBaseType;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.jupiter.api.Test;
 import org.openhab.core.thing.ThingTypeUID;
 
 /**
- * Tests for {@link ShellyBindingConstants#resolveVGroupBaseType}: every device-model classification (handler
- * dispatch, {@code ShellyDeviceProfile.initFromThingType}, generation/BLU detection, ...) is keyed off exact matches
- * against the device's real, static {@link ThingTypeUID}, so a Thing already swapped to its per-Thing synthetic
- * vgroup type must resolve back to its real type before any such lookup, or the classification silently falls back
- * to all-default/unsupported.
- *
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public class ShellyBindingConstantsTest {
+public class ShellyVirtualComponentsTest {
 
     @Test
     void returnsTheSameUidWhenItDoesNotCarryTheVGroupMarker() {

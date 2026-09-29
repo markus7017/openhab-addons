@@ -16,6 +16,7 @@ import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.ShellyDevices.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.handler.ShellyComponents.*;
+import static org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents.resolveVGroupBaseType;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 import static org.openhab.core.thing.Thing.*;
 
@@ -167,7 +168,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         this.httpClient = httpClient;
 
         // Create thing handler depending on device generation; resolve a per-Thing synthetic vgroup type (see
-        // ShellyBindingConstants.resolveVGroupBaseType) back to the real device type first, since every
+        // ShellyVirtualComponents.resolveVGroupBaseType) back to the real device type first, since every
         // classification below is keyed off exact matches against the real, static ThingTypeUID
         ThingTypeUID thingTypeUID = resolveVGroupBaseType(thing.getThingTypeUID());
         profile = new ShellyDeviceProfile(thingTypeUID);

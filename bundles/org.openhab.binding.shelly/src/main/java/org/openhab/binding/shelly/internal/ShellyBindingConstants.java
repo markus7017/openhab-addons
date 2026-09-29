@@ -13,7 +13,6 @@
 package org.openhab.binding.shelly.internal;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.type.ChannelGroupTypeUID;
 
 /**
@@ -308,23 +307,6 @@ public class ShellyBindingConstants {
     // marker segment of the synthetic ThingTypeUID used to trigger/identify the per-Thing dynamic ThingType that
     // adds "vgroup<cid>" ChannelGroupDefinitions once a device has at least one named Virtual Components Group
     public static final String VGROUP_TYPE_MARKER = "_vg_";
-
-    /**
-     * Every device-model classification (handler dispatch, {@code ShellyDeviceProfile.initFromThingType},
-     * generation/BLU detection, ...) is keyed off exact matches against the device's real, static
-     * {@link ThingTypeUID}. Once a Thing has been swapped to its per-Thing synthetic vgroup type (see
-     * {@link #VGROUP_TYPE_MARKER}), {@code thing.getThingTypeUID()} no longer matches any of those lookups, so
-     * every call site that uses the Thing's type for classification (not just for display) must resolve back to
-     * the real type first via this method.
-     *
-     * @param thingTypeUID the Thing's current type, real or synthetic
-     * @return the real device ThingTypeUID (unchanged if it wasn't a synthetic vgroup type)
-     */
-    public static ThingTypeUID resolveVGroupBaseType(ThingTypeUID thingTypeUID) {
-        String id = thingTypeUID.getId();
-        int idx = id.indexOf(VGROUP_TYPE_MARKER);
-        return idx < 0 ? thingTypeUID : new ThingTypeUID(thingTypeUID.getBindingId(), id.substring(0, idx));
-    }
 
     // General
     public static final String CHANNEL_LAST_UPDATE = "lastUpdate";
