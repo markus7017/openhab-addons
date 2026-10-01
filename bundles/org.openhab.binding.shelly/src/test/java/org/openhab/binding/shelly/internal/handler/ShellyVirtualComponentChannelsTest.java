@@ -284,23 +284,21 @@ public class ShellyVirtualComponentChannelsTest {
     }
 
     @Test
-    void updateDeviceStatusTriggersThingTypeSwapOnceWhenNamedGroupAppears() {
+    void checkVGroupThingTypeSwapsOnceWhenNamedGroupAppears() {
         Thing thing = thing();
         when(thing.getThingTypeUID()).thenReturn(THING_TYPE_SHELLYPLUS1);
         ShellyThingInterface handler = mockHandler(vComponentsProfile(vgroup(200, "boolean:201")), thing);
 
-        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyVirtualComponents.checkVGroupThingType(handler, handler.getProfile());
 
         verify(handler).changeThingType(
                 new ThingTypeUID(BINDING_ID, THING_TYPE_SHELLYPLUS1.getId() + VGROUP_TYPE_MARKER + THING_UID.getId()));
     }
 
     @Test
-    void updateDeviceStatusDoesNotSwapThingTypeAgainOnceAlreadySwapped() {
-        ThingTypeUID vgType = new ThingTypeUID(BINDING_ID,
-                THING_TYPE_SHELLYPLUS1.getId() + VGROUP_TYPE_MARKER + THING_UID.getId());
+    void updateDeviceStatusNeverSwapsThingTypeMidCycle() {
         Thing thing = thing();
-        when(thing.getThingTypeUID()).thenReturn(vgType);
+        when(thing.getThingTypeUID()).thenReturn(THING_TYPE_SHELLYPLUS1);
         ShellyThingInterface handler = mockHandler(vComponentsProfile(vgroup(200, "boolean:201")), thing);
 
         ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
@@ -309,12 +307,25 @@ public class ShellyVirtualComponentChannelsTest {
     }
 
     @Test
-    void updateDeviceStatusDoesNotSwapThingTypeWithoutANamedGroup() {
+    void checkVGroupThingTypeDoesNotSwapAgainOnceAlreadySwapped() {
+        ThingTypeUID vgType = new ThingTypeUID(BINDING_ID,
+                THING_TYPE_SHELLYPLUS1.getId() + VGROUP_TYPE_MARKER + THING_UID.getId());
+        Thing thing = thing();
+        when(thing.getThingTypeUID()).thenReturn(vgType);
+        ShellyThingInterface handler = mockHandler(vComponentsProfile(vgroup(200, "boolean:201")), thing);
+
+        ShellyVirtualComponents.checkVGroupThingType(handler, handler.getProfile());
+
+        verify(handler, never()).changeThingType(any());
+    }
+
+    @Test
+    void checkVGroupThingTypeDoesNotSwapWithoutANamedGroup() {
         Thing thing = thing();
         when(thing.getThingTypeUID()).thenReturn(THING_TYPE_SHELLYPLUS1);
         ShellyThingInterface handler = mockHandler(vComponentsProfile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200)), thing);
 
-        ShellyComponents.updateDeviceStatus(handler, new ShellySettingsStatus());
+        ShellyVirtualComponents.checkVGroupThingType(handler, handler.getProfile());
 
         verify(handler, never()).changeThingType(any());
     }

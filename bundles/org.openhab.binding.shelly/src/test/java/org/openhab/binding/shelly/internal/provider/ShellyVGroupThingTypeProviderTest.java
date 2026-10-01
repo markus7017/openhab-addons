@@ -135,6 +135,17 @@ public class ShellyVGroupThingTypeProviderTest {
     }
 
     @Test
+    void getThingTypeIsNeverListedForManualAdd() {
+        Thing thing = thingWithHandler(THING_UID, VGROUP_UID, null);
+        when(thingRegistry.getAll()).thenReturn(List.of(thing));
+        when(thingTypeRegistry.getThingType(THING_TYPE_SHELLYPLUS1, null)).thenReturn(baseType());
+
+        ThingType resultType = Objects.requireNonNull(provider.getThingType(VGROUP_UID, null));
+
+        assertThat(resultType.isListed(), is(false));
+    }
+
+    @Test
     void getThingTypeReturnsNullWhenBaseThingTypeIsUnknown() {
         Thing thing = thingWithHandler(THING_UID, THING_TYPE_SHELLYPLUS1, shellyHandler(vComponentsProfile()));
         when(thingRegistry.getAll()).thenReturn(List.of(thing));

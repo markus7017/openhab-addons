@@ -129,7 +129,7 @@ public class ShellyVGroupThingTypeProvider implements ThingTypeProvider {
         groups.addAll(extraGroups);
 
         ThingTypeBuilder builder = ThingTypeBuilder.instance(uid, base.getLabel()) //
-                .isListed(base.isListed()) //
+                .isListed(false) // per-Thing type, must not show up under "Add Manually"
                 .withChannelDefinitions(base.getChannelDefinitions()) //
                 .withChannelGroupDefinitions(groups) //
                 .withProperties(base.getProperties()) //

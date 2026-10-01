@@ -458,6 +458,8 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         // channels were already pushed synchronously above; an extra warm-up poll here
         // would race with that fresh read and can transiently show a stale/wrong value
         setThingOnline(false);
+        // the type swap recreates the Thing's channels, so it must be the very last step of a cycle
+        ShellyVirtualComponents.checkVGroupThingType(this, profile);
         return true; // success
     }
 
@@ -717,6 +719,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 // map status to channels
                 updateAllChannels(status);
                 ShellyChannelMigration.migrateChannels(this);
+                ShellyVirtualComponents.checkVGroupThingType(this, profile);
             }
         } catch (ShellyApiException e) {
             if (stopping) {
