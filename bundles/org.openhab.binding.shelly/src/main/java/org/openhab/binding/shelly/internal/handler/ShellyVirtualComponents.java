@@ -16,6 +16,7 @@ import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -26,6 +27,8 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent.ShellyVCMeta;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent.ShellyVCUi;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
 import org.openhab.core.library.types.DecimalType;
@@ -33,6 +36,9 @@ import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.State;
+import org.openhab.core.types.StateDescription;
+import org.openhab.core.types.StateDescriptionFragmentBuilder;
+import org.openhab.core.types.StateOption;
 import org.openhab.core.types.UnDefType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +80,50 @@ public class ShellyVirtualComponents {
         thingHandler.updateThingChannels(relabeled, channels);
         thingHandler.removeChannels(obsolete);
         profile.vComponents.forEach(vc -> updateVirtualComponentChannel(thingHandler, vc));
+    }
+
+    /**
+     * @return Enum options with their titles or the Number range, unit and step as configured on the device
+     */
+    public static @Nullable StateDescription getStateDescription(ShellyDeviceProfile profile, String channelName) {
+        ShellyVCComponent vc = findComponent(profile, channelName);
+        if (vc == null) {
+            return null;
+        }
+        ShellyVCMeta meta = vc.meta;
+        ShellyVCUi ui = meta != null ? meta.ui : null;
+        String[] options = vc.options;
+        StateDescriptionFragmentBuilder builder = StateDescriptionFragmentBuilder.create();
+        if (CHANNEL_VCOMP_ENUM.equals(vc.type) && options != null) {
+            JsonElement titles = ui != null ? ui.titles : null;
+            for (int i = 0; i < options.length; i++) {
+                JsonElement title = titles == null ? null
+                        : titles.isJsonObject() ? titles.getAsJsonObject().get(options[i])
+                                : titles.isJsonArray() && i < titles.getAsJsonArray().size()
+                                        ? titles.getAsJsonArray().get(i)
+                                        : null;
+                String label = title != null && title.isJsonPrimitive() ? title.getAsString() : "";
+                builder.withOption(new StateOption(options[i], label.isBlank() ? options[i] : label));
+            }
+        } else if (CHANNEL_VCOMP_NUMBER.equals(vc.type)) {
+            Double min = vc.min, max = vc.max, step = ui != null ? ui.step : null;
+            String unit = ui != null ? ui.unit : null;
+            if (min != null && min != SHELLY2_VCOMP_NUMBER_MIN_SENTINEL) {
+                builder.withMinimum(BigDecimal.valueOf(min));
+            }
+            if (max != null && max != SHELLY2_VCOMP_NUMBER_MAX_SENTINEL) {
+                builder.withMaximum(BigDecimal.valueOf(max));
+            }
+            if (step != null) {
+                builder.withStep(BigDecimal.valueOf(step));
+            }
+            if (unit != null && !unit.isBlank()) {
+                builder.withPattern("%.2f " + unit.replace("%", "%%"));
+            }
+        } else {
+            return null;
+        }
+        return builder.build().toStateDescription();
     }
 
     public static void handleVirtualComponentCommand(ShellyThingInterface thingHandler, String channel, Command command)

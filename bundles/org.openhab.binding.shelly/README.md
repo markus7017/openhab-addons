@@ -690,6 +690,7 @@ Keep in mind when you change virtual components on the device:
 
 - Value changes as well as new, renamed, deleted or reconfigured components are picked up after ten update cycles (thing configuration `updateInterval`, 60 seconds by default) at the latest.
 Commands sent from openHAB take effect immediately.
+- The selection list of an Enum channel shows the titles configured for the options in the Shelly App, the raw option value is what gets sent to the device.
 
 ### Shelly 1 (thing-type: shelly1)
 

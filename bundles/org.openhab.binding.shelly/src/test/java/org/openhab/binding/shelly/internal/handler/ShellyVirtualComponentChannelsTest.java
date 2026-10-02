@@ -19,6 +19,7 @@ import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.ShellyDevices.THING_TYPE_SHELLYPLUS1;
 import static org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,15 +37,24 @@ import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
+import org.openhab.binding.shelly.internal.provider.ShellyStateDescriptionProvider;
 import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
+import org.openhab.core.events.EventPublisher;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
+import org.openhab.core.thing.ThingRegistry;
 import org.openhab.core.thing.ThingUID;
+import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.thing.binding.builder.ChannelBuilder;
+import org.openhab.core.thing.i18n.ChannelTypeI18nLocalizationService;
+import org.openhab.core.thing.link.ItemChannelLinkRegistry;
+import org.openhab.core.thing.type.ChannelTypeUID;
+import org.openhab.core.types.StateDescription;
+import org.openhab.core.types.StateOption;
 import org.openhab.core.types.UnDefType;
 
 import com.google.gson.Gson;
@@ -143,6 +153,44 @@ public class ShellyVirtualComponentChannelsTest {
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "text202", UnDefType.UNDEF);
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "enum203", new StringType("high"));
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_VCOMPONENTS), eq("boolean204"), any());
+    }
+
+    @Test
+    void getStateDescriptionProvidesEnumTitlesAndNumberRange() {
+        ShellyDeviceProfile profile = profile(
+                vcomp(CHANNEL_VCOMP_ENUM, 200,
+                        "{\"options\":[\"low\",\"high\"],\"meta\":{\"ui\":{\"titles\":{\"low\":\"Low power\"}}}}", ""),
+                vcomp(CHANNEL_VCOMP_ENUM, 201, "{\"options\":[\"a\",\"b\"],\"meta\":{\"ui\":{\"titles\":[\"A\"]}}}",
+                        ""),
+                vcomp(CHANNEL_VCOMP_NUMBER, 202,
+                        "{\"min\":0,\"max\":999999999999999,\"meta\":{\"ui\":{\"step\":0.5,\"unit\":\"%\"}}}", ""),
+                vcomp(CHANNEL_VCOMP_BOOLEAN, 203));
+
+        Thing thing = thing();
+        ShellyThingInterface handler = mock(ShellyThingInterface.class,
+                withSettings().extraInterfaces(ThingHandler.class));
+        when(handler.getProfile()).thenReturn(profile);
+        when(thing.getHandler()).thenReturn((ThingHandler) handler);
+        ThingRegistry thingRegistry = mock(ThingRegistry.class);
+        when(thingRegistry.get(THING_UID)).thenReturn(thing);
+        ShellyStateDescriptionProvider provider = new ShellyStateDescriptionProvider(mock(EventPublisher.class),
+                mock(ItemChannelLinkRegistry.class), mock(ChannelTypeI18nLocalizationService.class), thingRegistry);
+        Channel enumChannel = ChannelBuilder
+                .create(new ChannelUID(THING_UID, CHANNEL_GROUP_VCOMPONENTS, "enum200"), "String")
+                .withType(new ChannelTypeUID(BINDING_ID, "vcompEnum")).build();
+
+        assertEquals(List.of(new StateOption("low", "Low power"), new StateOption("high", "high")),
+                Objects.requireNonNull(provider.getStateDescription(enumChannel, null, null)).getOptions());
+        assertEquals(List.of(new StateOption("a", "A"), new StateOption("b", "b")),
+                Objects.requireNonNull(ShellyVirtualComponents.getStateDescription(profile, "enum201")).getOptions());
+        StateDescription number = Objects
+                .requireNonNull(ShellyVirtualComponents.getStateDescription(profile, "number202"));
+        assertEquals(0, BigDecimal.ZERO.compareTo(Objects.requireNonNull(number.getMinimum())));
+        assertNull(number.getMaximum());
+        assertEquals(new BigDecimal("0.5"), number.getStep());
+        assertEquals("%.2f %%", number.getPattern());
+        assertNull(ShellyVirtualComponents.getStateDescription(profile, "boolean203"));
+        assertNull(ShellyVirtualComponents.getStateDescription(profile, "boolean299"));
     }
 
     @Test

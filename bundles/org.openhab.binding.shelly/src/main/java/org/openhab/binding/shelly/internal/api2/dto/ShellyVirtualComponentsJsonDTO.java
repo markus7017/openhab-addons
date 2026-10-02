@@ -30,6 +30,10 @@ public class ShellyVirtualComponentsJsonDTO {
     public static final String SHELLYRPC_METHOD_GETCOMPONENTS = "Shelly.GetComponents";
     public static final String SHELLY2_VCOMP_GROUP = "group";
 
+    // reported by Number.GetConfig when min/max were never customized
+    public static final double SHELLY2_VCOMP_NUMBER_MIN_SENTINEL = -999999999999999d;
+    public static final double SHELLY2_VCOMP_NUMBER_MAX_SENTINEL = 999999999999999d;
+
     public static class ShellyVCGetComponentsParams {
         @SerializedName("dynamic_only")
         public Boolean dynamicOnly = true;
@@ -66,5 +70,16 @@ public class ShellyVirtualComponentsJsonDTO {
         @SerializedName("max_len")
         public @Nullable Integer maxLen; // text
         public @Nullable String[] options; // enum
+        public @Nullable ShellyVCMeta meta;
+
+        public static class ShellyVCMeta {
+            public @Nullable ShellyVCUi ui;
+        }
+
+        public static class ShellyVCUi {
+            public @Nullable JsonElement titles; // enum: object option -> title, some firmware sends an array
+            public @Nullable Double step; // number
+            public @Nullable String unit; // number
+        }
     }
 }

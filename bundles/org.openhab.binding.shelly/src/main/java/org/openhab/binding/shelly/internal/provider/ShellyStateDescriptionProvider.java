@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.shelly.internal.provider;
 
-import static org.openhab.binding.shelly.internal.ShellyBindingConstants.BINDING_ID;
+import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 
 import java.util.List;
 import java.util.Locale;
@@ -20,6 +20,7 @@ import java.util.Locale;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
+import org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents;
 import org.openhab.core.events.EventPublisher;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.Thing;
@@ -62,7 +63,7 @@ public class ShellyStateDescriptionProvider extends BaseDynamicStateDescriptionP
     public @Nullable StateDescription getStateDescription(Channel channel,
             @Nullable StateDescription originalStateDescription, @Nullable Locale locale) {
         ChannelTypeUID uid = channel.getChannelTypeUID();
-        if (uid == null || !BINDING_ID.equals(uid.getBindingId()) || originalStateDescription == null) {
+        if (uid == null || !BINDING_ID.equals(uid.getBindingId())) {
             return null;
         }
 
@@ -75,8 +76,12 @@ public class ShellyStateDescriptionProvider extends BaseDynamicStateDescriptionP
             return null;
         }
 
+        if (CHANNEL_GROUP_VCOMPONENTS.equals(channel.getUID().getGroupId())) {
+            return ShellyVirtualComponents.getStateDescription(handler.getProfile(),
+                    channel.getUID().getIdWithoutGroup());
+        }
         List<StateOption> stateOptions = handler.getStateOptions(uid);
-        return stateOptions == null ? null
+        return stateOptions == null || originalStateDescription == null ? null
                 : StateDescriptionFragmentBuilder.create(originalStateDescription).withOptions(stateOptions).build()
                         .toStateDescription();
     }
