@@ -58,6 +58,7 @@ import org.openhab.core.types.StateOption;
 import org.openhab.core.types.UnDefType;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 /**
@@ -117,6 +118,10 @@ public class ShellyVirtualComponentChannelsTest {
         when(handler.areChannelsCreated()).thenReturn(true);
         when(handler.getApi()).thenReturn(mock(ShellyApiInterface.class));
         return handler;
+    }
+
+    private static Map<String, JsonObject> pushed(String key, String value) {
+        return Map.of(key, JsonParser.parseString("{\"value\":" + value + "}").getAsJsonObject());
     }
 
     @Test
@@ -215,6 +220,36 @@ public class ShellyVirtualComponentChannelsTest {
         verify(api).setVirtualValue(CHANNEL_VCOMP_TEXT, 202, "hi");
         verify(api).setVirtualValue(CHANNEL_VCOMP_ENUM, 203, "high");
         verifyNoMoreInteractions(api);
+    }
+
+    @Test
+    void pushedValueUpdatesChannelAndUnchangedGroupKeepsProfileClean() {
+        ShellyDeviceProfile profile = profile(vcomp(CHANNEL_VCOMP_NUMBER, 200, "{}", "1"),
+                vcomp(SHELLY2_VCOMP_GROUP, 201, "{}", "[\"number:200\"]"));
+        ShellyThingInterface handler = handler(profile, thing());
+
+        assertTrue(
+                ShellyVirtualComponents.updateVirtualComponentValues(handler, profile, pushed("number:200", "21.5")));
+        assertFalse(ShellyVirtualComponents.updateVirtualComponentValues(handler, profile,
+                pushed("group:201", "[\"number:200\"]")));
+
+        verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "number200", new DecimalType(21.5));
+        assertFalse(profile.vComponentsDirty);
+    }
+
+    @Test
+    void pushedUnknownComponentOrChangedGroupRequestsReread() {
+        for (Map<String, JsonObject> push : List.of(pushed("boolean:202", "true"),
+                pushed("group:201", "[\"number:200\",\"boolean:202\"]"))) {
+            ShellyDeviceProfile profile = profile(vcomp(SHELLY2_VCOMP_GROUP, 201, "{}", "[\"number:200\"]"));
+            ShellyThingInterface handler = handler(profile, thing());
+
+            assertFalse(ShellyVirtualComponents.updateVirtualComponentValues(handler, profile, push));
+
+            assertTrue(profile.vComponentsDirty);
+            verify(handler).requestUpdates(1, false);
+            verify(handler, never()).updateChannel(anyString(), anyString(), any());
+        }
     }
 
     @ParameterizedTest

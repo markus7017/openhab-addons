@@ -1377,6 +1377,9 @@ public class Shelly2ApiJsonDTO {
         public Shelly2NotifyStatus params;
         public Shelly2NotifyStatus result;
         public Shelly2RpcMessageError error;
+
+        // filled by the socket, Virtual Components have dynamic keys like "boolean:200"
+        public transient String json = "";
     }
 
     public static final String SHELLY2_AUTHDEF_USER = "admin";

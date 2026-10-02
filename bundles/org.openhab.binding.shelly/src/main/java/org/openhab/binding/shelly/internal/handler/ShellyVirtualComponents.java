@@ -19,6 +19,7 @@ import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,6 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link ShellyVirtualComponents} implements channel, status and command handling for Shelly Virtual Components
@@ -58,6 +60,32 @@ public class ShellyVirtualComponents {
     public static boolean isSupported(ShellyDeviceProfile profile) {
         return profile.isGen2 && profile.alwaysOn
                 && new ShellyVersionComparator().compare(profile.fwVersion, SHELLY2_API_FW_VCOMPONENTS) >= 0;
+    }
+
+    public static long getPushedUpdates(ShellyDeviceProfile profile) {
+        synchronized (profile.vComponentsLock) {
+            return profile.vComponentsUpdates;
+        }
+    }
+
+    /**
+     * Replaces the component list, keeping values pushed after {@link #getPushedUpdates} was taken, because the
+     * device may have sent them while Shelly.GetComponents was in flight.
+     */
+    public static void replaceVirtualComponents(ShellyDeviceProfile profile, List<ShellyVCComponent> components,
+            long pushedUpdates) {
+        synchronized (profile.vComponentsLock) {
+            for (ShellyVCComponent pushed : profile.vComponents) {
+                if (pushed.update > pushedUpdates) {
+                    components.stream().filter(vc -> vc.type.equals(pushed.type) && vc.id == pushed.id).forEach(vc -> {
+                        vc.value = pushed.value;
+                        vc.update = pushed.update;
+                    });
+                }
+            }
+            profile.vComponents = components;
+            profile.vComponentsProbed = true;
+        }
     }
 
     /**
@@ -80,6 +108,40 @@ public class ShellyVirtualComponents {
         thingHandler.updateThingChannels(relabeled, channels);
         thingHandler.removeChannels(obsolete);
         profile.vComponents.forEach(vc -> updateVirtualComponentChannel(thingHandler, vc));
+    }
+
+    /**
+     * Applies the values of a NotifyStatus message (keyed like "boolean:200"). An unknown component or a changed
+     * group membership triggers a re-read of the component list.
+     *
+     * @return true if at least one channel was updated
+     */
+    public static boolean updateVirtualComponentValues(ShellyThingInterface thingHandler, ShellyDeviceProfile profile,
+            Map<String, JsonObject> changes) {
+        boolean updated = false, changed = false;
+        for (Map.Entry<String, JsonObject> change : changes.entrySet()) {
+            JsonElement value = change.getValue().get("value");
+            if (value == null) {
+                continue;
+            }
+            ShellyVCComponent vc;
+            synchronized (profile.vComponentsLock) {
+                vc = findComponent(profile, change.getKey().replace(":", ""));
+                if (vc == null || SHELLY2_VCOMP_GROUP.equals(vc.type)) {
+                    changed |= vc == null || !value.equals(vc.value);
+                    continue;
+                }
+                vc.value = value;
+                vc.update = ++profile.vComponentsUpdates;
+            }
+            updateVirtualComponentChannel(thingHandler, vc);
+            updated = true;
+        }
+        if (changed && !profile.vComponentsDirty) {
+            profile.vComponentsDirty = true;
+            thingHandler.requestUpdates(1, false);
+        }
+        return updated;
     }
 
     public static void triggerVirtualButton(ShellyThingInterface thingHandler, int id, String trigger) {

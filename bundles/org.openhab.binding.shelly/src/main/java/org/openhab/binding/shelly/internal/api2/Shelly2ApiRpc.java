@@ -311,6 +311,8 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         if (!forceProbe && profile.vComponentsProbed && profile.vComponents.isEmpty()) {
             return;
         }
+        profile.vComponentsDirty = false;
+        long pushedUpdates = ShellyVirtualComponents.getPushedUpdates(profile);
         try {
             // paged result, other dynamic components (BTHome, presence zones, LNM) share the list
             List<ShellyVCComponent> components = new ArrayList<>();
@@ -329,8 +331,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                 offset += returned;
                 total = getInteger(result.total);
             } while (offset < total);
-            profile.vComponents = components;
-            profile.vComponentsProbed = true;
+            ShellyVirtualComponents.replaceVirtualComponents(profile, components, pushedUpdates);
         } catch (ShellyApiException e) {
             // keep the previous components, a transient error must not remove their channels
             logger.debug("{}: Unable to read virtual components (device may not support Shelly.GetComponents)",
@@ -623,6 +624,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             }
             status.temperature = SHELLY_API_INVTEMP; // mark invalid
             updated |= fillDeviceStatus(status, message.params, true);
+            if (profile.vComponentsSupported) {
+                updated |= ShellyVirtualComponents.updateVirtualComponentValues(getThing(), profile,
+                        ShellyVirtualComponentsParser.parseVirtualComponentStatus(message.json));
+            }
             if (getDouble(status.temperature) == SHELLY_API_INVTEMP) {
                 // no device temp available
                 status.temperature = null;
@@ -925,8 +930,9 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         if (profile.isPresence) {
             updatePresenceZoneStatus(profile);
         }
-        if (profile.vComponentsSupported && ++vComponentsPollCycles % VCOMP_REFRESH_CYCLES == 0) {
-            refreshVirtualComponents(profile, false);
+        if (profile.vComponentsSupported
+                && (profile.vComponentsDirty || ++vComponentsPollCycles % VCOMP_REFRESH_CYCLES == 0)) {
+            refreshVirtualComponents(profile, profile.vComponentsDirty);
         }
         if (getBool(profile.settings.rangeExtender)) {
             try {

@@ -689,8 +689,11 @@ A Group has no channel of its own; the label of each member channel is prefixed 
 
 Keep in mind when you change virtual components on the device:
 
-- Value changes as well as new, renamed, deleted or reconfigured components are picked up after ten update cycles (thing configuration `updateInterval`, 60 seconds by default) at the latest.
+- Value changes are pushed by the device and show up in openHAB immediately when the device is connected via WebSocket.
+Otherwise they are refreshed every ten update cycles (thing configuration `updateInterval`, 60 seconds by default).
 Commands sent from openHAB and Button events take effect immediately.
+- A new component or a changed Group membership is picked up as soon as the device reports a value for it.
+Renaming, deleting or reconfiguring a component is picked up after ten update cycles at the latest.
 - The selection list of an Enum channel shows the titles configured for the options in the Shelly App, the raw option value is what gets sent to the device.
 
 ### Shelly 1 (thing-type: shelly1)

@@ -16,6 +16,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.openhab.binding.shelly.internal.api2.ShellyVirtualComponentsParser.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.jupiter.api.Test;
@@ -24,6 +26,7 @@ import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonD
 
 import com.google.gson.Gson;
 import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 /**
@@ -55,5 +58,26 @@ public class ShellyVirtualComponentsParserTest {
         assertArrayEquals(new String[] { "low", "high" }, list.get(3).options);
         assertEquals(JsonNull.INSTANCE, list.get(3).value);
         assertEquals(JsonParser.parseString("[\"boolean:200\"]"), list.get(4).value);
+    }
+
+    @Test
+    void parseVirtualComponentStatusExtractsValueAndGroupComponents() {
+        String json = "{\"src\":\"shellyplus1-aabbcc\",\"method\":\"NotifyStatus\",\"params\":{\"ts\":1.0,"
+                + "\"boolean:200\":{\"value\":true},\"number:201\":{\"value\":21.5},\"enum:202\":{\"value\":\"a\"},"
+                + "\"button:203\":{},\"group:204\":{\"value\":[\"boolean:200\"]},\"switch:0\":{\"output\":true}}}";
+
+        Map<String, JsonObject> result = parseVirtualComponentStatus(json);
+
+        assertEquals(
+                Map.of("boolean:200", "true", "number:201", "21.5", "enum:202", "\"a\"", "group:204",
+                        "[\"boolean:200\"]"),
+                result.entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue().get("value")))));
+    }
+
+    @Test
+    void parseVirtualComponentStatusIgnoresMessagesWithoutVirtualComponentValues() {
+        assertEquals(Map.of(), parseVirtualComponentStatus(
+                "{\"method\":\"NotifyStatus\",\"params\":" + "{\"switch:0\":{\"output\":true},\"button:203\":{}}}"));
     }
 }

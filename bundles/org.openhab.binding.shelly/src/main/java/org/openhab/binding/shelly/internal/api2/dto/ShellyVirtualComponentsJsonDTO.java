@@ -64,6 +64,7 @@ public class ShellyVirtualComponentsJsonDTO {
         public transient String type = "";
         public int id;
         public transient volatile @Nullable JsonElement value; // type-dependent, group: array of member keys
+        public transient long update; // profile.vComponentsUpdates when value was pushed
         public @Nullable String name;
         public @Nullable Double min; // number
         public @Nullable Double max; // number

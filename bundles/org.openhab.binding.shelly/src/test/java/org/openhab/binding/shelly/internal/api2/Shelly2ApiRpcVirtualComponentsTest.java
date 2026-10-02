@@ -39,10 +39,13 @@ import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyBindingRuntimeConfig;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
+import org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents;
 import org.openhab.core.net.NetworkAddressChangeListener;
 import org.openhab.core.net.NetworkAddressService;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 
 /**
  * @author Markus Michels - Initial contribution
@@ -178,6 +181,25 @@ public class Shelly2ApiRpcVirtualComponentsTest {
         api.refreshVirtualComponents(profile, false);
 
         verifyPagesRequested(api, 0);
+    }
+
+    @Test
+    void valuePushedWhileReadingTheComponentsIsKept() throws ShellyApiException {
+        ShellyDeviceProfile profile = new ShellyDeviceProfile(THING_TYPE_SHELLYPLUS1);
+        ShellyThingInterface thing = mock(ShellyThingInterface.class);
+        when(thing.getProfile()).thenReturn(profile);
+        Shelly2ApiRpc api = spy(rpc(thing));
+        JsonObject stale = JsonParser.parseString("{\"value\":true}").getAsJsonObject();
+        doAnswer(invocation -> result(entry("boolean:200", null, stale))).doAnswer(invocation -> {
+            ShellyVirtualComponents.updateVirtualComponentValues(thing, profile,
+                    Map.of("boolean:200", JsonParser.parseString("{\"value\":false}").getAsJsonObject()));
+            return result(entry("boolean:200", null, stale));
+        }).when(api).apiRequest(eq(SHELLYRPC_METHOD_GETCOMPONENTS), any(), eq(ShellyVCGetComponentsResult.class));
+
+        api.refreshVirtualComponents(profile, true);
+        api.refreshVirtualComponents(profile, true);
+
+        assertEquals(new JsonPrimitive(false), profile.vComponents.get(0).value);
     }
 
     @ParameterizedTest

@@ -143,6 +143,9 @@ public class ShellyDeviceProfile {
     public volatile boolean vComponentsSupported;
     public volatile List<ShellyVCComponent> vComponents = new ArrayList<>();
     public volatile boolean vComponentsProbed; // true once Shelly.GetComponents has succeeded for this profile
+    public volatile boolean vComponentsDirty; // push reported a component or group membership not in vComponents
+    public final Object vComponentsLock = new Object(); // pushed values vs. replacing vComponents
+    public long vComponentsUpdates; // guarded by vComponentsLock
 
     public ShellyDeviceProfile(ThingTypeUID thingTypeUID) {
         initFromThingType(thingTypeUID);
