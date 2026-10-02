@@ -126,9 +126,10 @@ public class ShellyVirtualComponentChannelsTest {
                         vcomp(CHANNEL_VCOMP_BOOLEAN, 201),
                         vcomp(SHELLY2_VCOMP_GROUP, 202, "{\"name\":\"Living Room\"}", "[\"number:200\"]"),
                         vcomp(SHELLY2_VCOMP_GROUP, 203, "{\"name\":\"Heating\"}", "[\"number:200\"]"),
-                        vcomp(SHELLY2_VCOMP_GROUP, 204, "{}", "[\"number:200\"]")));
+                        vcomp(SHELLY2_VCOMP_GROUP, 204, "{}", "[\"number:200\"]"), vcomp(CHANNEL_VCOMP_BUTTON, 205)));
 
-        assertEquals(Set.of("vcomponents#number200", "vcomponents#boolean201"), channels.keySet());
+        assertEquals(Set.of("vcomponents#number200", "vcomponents#boolean201", "vcomponents#button205"),
+                channels.keySet());
         assertEquals("Living Room, Heating: Set point",
                 Objects.requireNonNull(channels.get("vcomponents#number200")).getLabel());
         assertEquals("Virtual 201", Objects.requireNonNull(channels.get("vcomponents#boolean201")).getLabel());

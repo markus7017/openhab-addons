@@ -22,7 +22,7 @@ import com.google.gson.annotations.SerializedName;
 
 /**
  * {@link ShellyVirtualComponentsJsonDTO} includes constants and structures used for the Shelly Virtual Components
- * (Boolean/Number/Text/Enum/Group) JSON mapping.
+ * (Boolean/Number/Text/Enum/Group/Button) JSON mapping.
  *
  * @author Markus Michels - Initial contribution
  */

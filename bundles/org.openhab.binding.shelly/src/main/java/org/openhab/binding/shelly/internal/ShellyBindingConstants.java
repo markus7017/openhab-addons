@@ -294,6 +294,7 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_VCOMP_NUMBER = "number";
     public static final String CHANNEL_VCOMP_TEXT = "text";
     public static final String CHANNEL_VCOMP_ENUM = "enum";
+    public static final String CHANNEL_VCOMP_BUTTON = "button";
 
     // General
     public static final String CHANNEL_LAST_UPDATE = "lastUpdate";

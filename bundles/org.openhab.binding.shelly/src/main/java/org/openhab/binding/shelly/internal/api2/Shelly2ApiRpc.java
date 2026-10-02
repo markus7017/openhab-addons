@@ -658,6 +658,14 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         for (Shelly2NotifyEvent e : events) {
             String event = getString(e.event);
             int id = getInteger(e.id);
+            String component = getString(e.component);
+            if (component.startsWith(CHANNEL_VCOMP_BUTTON + ":")) { // id is a component id, not an input index
+                if (profile.vComponentsSupported) {
+                    ShellyVirtualComponents.triggerVirtualButton(getThing(), id,
+                            mapButtonEvent(mapValue(MAP_INPUT_EVENT_ID, event)));
+                }
+                continue;
+            }
             switch (event) {
                 case SHELLY2_EVENT_BTNUP:
                 case SHELLY2_EVENT_BTNDOWN:

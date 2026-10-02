@@ -15,6 +15,7 @@ package org.openhab.binding.shelly.internal.api2;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.openhab.binding.shelly.internal.ShellyBindingConstants.CHANNEL_GROUP_VCOMPONENTS;
 import static org.openhab.binding.shelly.internal.ShellyDevices.THING_TYPE_SHELLYPLUS1;
 import static org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.SHELLYRPC_METHOD_GETCOMPONENTS;
 
@@ -177,5 +178,20 @@ public class Shelly2ApiRpcVirtualComponentsTest {
         api.refreshVirtualComponents(profile, false);
 
         verifyPagesRequested(api, 0);
+    }
+
+    @ParameterizedTest
+    @CsvSource({ "true, 1", "false, 0" })
+    void virtualButtonEventFiresItsTriggerChannelOnlyWhenSupported(boolean supported, int triggers)
+            throws ShellyApiException {
+        ShellyDeviceProfile profile = new ShellyDeviceProfile(THING_TYPE_SHELLYPLUS1);
+        profile.vComponentsSupported = supported;
+        ShellyThingInterface thing = mock(ShellyThingInterface.class);
+        when(thing.getProfile()).thenReturn(profile);
+
+        rpc(thing).onNotifyEvent("{\"src\":\"shellyplus1-test\",\"params\":{\"events\":"
+                + "[{\"id\":205,\"event\":\"single_push\",\"component\":\"button:205\"}]}}");
+
+        verify(thing, times(triggers)).triggerChannel(CHANNEL_GROUP_VCOMPONENTS, "button205", "SHORT_PRESSED");
     }
 }

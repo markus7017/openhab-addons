@@ -411,7 +411,8 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_BOOLEAN, "vcompBoolean", ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_NUMBER, "vcompNumber", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_TEXT, "vcompText", ITEMT_STRING))
-                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_ENUM, "vcompEnum", ITEMT_STRING));
+                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_ENUM, "vcompEnum", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_BUTTON, "vcompButton", ITEMT_STRING));
 
         CHANNEL_TYPE_OVERRIDES.put(CHANNEL_TYPE_WHITE_TEMP_DUO, new ShellyChannel(m, CHANNEL_GROUP_WHITE_CONTROL,
                 CHANNEL_COLOR_TEMP, CHANNEL_TYPE_WHITE_TEMP_DUO, ITEMT_TEMP));
@@ -1096,7 +1097,7 @@ public class ShellyChannelDefinitions {
         ChannelTypeUID channelTypeUID = typeId.contains("system:") ? new ChannelTypeUID(typeId)
                 : new ChannelTypeUID(BINDING_ID, typeId);
         ChannelBuilder builder;
-        if ("system:button".equalsIgnoreCase(channelDef.typeId)) {
+        if ("system:button".equalsIgnoreCase(channelDef.typeId) || "vcompButton".equals(channelDef.typeId)) {
             builder = ChannelBuilder.create(channelUID, null).withKind(ChannelKind.TRIGGER);
         } else {
             builder = ChannelBuilder.create(channelUID, channelDef.itemType);

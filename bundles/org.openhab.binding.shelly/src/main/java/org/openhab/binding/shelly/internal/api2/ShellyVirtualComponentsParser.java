@@ -39,7 +39,7 @@ import com.google.gson.JsonObject;
 public final class ShellyVirtualComponentsParser {
     // presencezone/bthomesensor/lnm share the id range, but aren't Virtual Components
     private static final Set<String> TYPES = Set.of(CHANNEL_VCOMP_BOOLEAN, CHANNEL_VCOMP_NUMBER, CHANNEL_VCOMP_TEXT,
-            CHANNEL_VCOMP_ENUM, SHELLY2_VCOMP_GROUP);
+            CHANNEL_VCOMP_ENUM, SHELLY2_VCOMP_GROUP, CHANNEL_VCOMP_BUTTON);
 
     private ShellyVirtualComponentsParser() {
     }

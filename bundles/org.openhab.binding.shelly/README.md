@@ -670,7 +670,7 @@ The add-on firmware version is shown in the Thing property `addonFirmware`; the 
 
 ### Virtual Components (Channel Group: vcomponents)
 
-Gen3, Gen4 and Gen2 "Pro" devices (firmware 1.6.1 or later) let you define custom Boolean/Number/Text/Enum/Group elements under Settings > Virtual Components in the Shelly App or device UI — useful e.g. for a switch driven only by rules, or a status flag shown in the app.
+Gen3, Gen4 and Gen2 "Pro" devices (firmware 1.6.1 or later) let you define custom Boolean/Number/Text/Enum/Group/Button elements under Settings > Virtual Components in the Shelly App or device UI — useful e.g. for a switch driven only by rules, or a status flag shown in the app.
 The binding discovers configured virtual components automatically (no thing configuration required) and keeps the channel set in sync when components are added or removed on the device.
 Gen1 and battery-powered devices are not supported.
 
@@ -685,11 +685,12 @@ A Group has no channel of its own; the label of each member channel is prefixed 
 |             | numberNNN  | Number  | r/w       | Virtual Number component                                                                       |
 |             | textNNN    | String  | r/w       | Virtual Text component                                                                         |
 |             | enumNNN    | String  | r/w       | Virtual Enum component; allowed values are provided by the device                              |
+|             | buttonNNN  | Trigger | yes       | Virtual Button component; fires SHORT_PRESSED / DOUBLE_PRESSED / TRIPLE_PRESSED / LONG_PRESSED |
 
 Keep in mind when you change virtual components on the device:
 
 - Value changes as well as new, renamed, deleted or reconfigured components are picked up after ten update cycles (thing configuration `updateInterval`, 60 seconds by default) at the latest.
-Commands sent from openHAB take effect immediately.
+Commands sent from openHAB and Button events take effect immediately.
 - The selection list of an Enum channel shows the titles configured for the options in the Shelly App, the raw option value is what gets sent to the device.
 
 ### Shelly 1 (thing-type: shelly1)

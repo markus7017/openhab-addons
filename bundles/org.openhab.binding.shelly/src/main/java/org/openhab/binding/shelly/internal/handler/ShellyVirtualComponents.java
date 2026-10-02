@@ -47,7 +47,7 @@ import com.google.gson.JsonElement;
 
 /**
  * The {@link ShellyVirtualComponents} implements channel, status and command handling for Shelly Virtual Components
- * (Boolean/Number/Text/Enum/Group).
+ * (Boolean/Number/Text/Enum/Group/Button).
  *
  * @author Markus Michels - Initial contribution
  */
@@ -80,6 +80,12 @@ public class ShellyVirtualComponents {
         thingHandler.updateThingChannels(relabeled, channels);
         thingHandler.removeChannels(obsolete);
         profile.vComponents.forEach(vc -> updateVirtualComponentChannel(thingHandler, vc));
+    }
+
+    public static void triggerVirtualButton(ShellyThingInterface thingHandler, int id, String trigger) {
+        if (!trigger.isEmpty()) {
+            thingHandler.triggerChannel(CHANNEL_GROUP_VCOMPONENTS, CHANNEL_VCOMP_BUTTON + id, trigger);
+        }
     }
 
     /**
