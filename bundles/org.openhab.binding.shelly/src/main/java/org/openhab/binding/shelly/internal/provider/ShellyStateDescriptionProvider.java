@@ -64,7 +64,7 @@ public class ShellyStateDescriptionProvider extends BaseDynamicStateDescriptionP
     public @Nullable StateDescription getStateDescription(Channel channel,
             @Nullable StateDescription originalStateDescription, @Nullable Locale locale) {
         ChannelTypeUID uid = channel.getChannelTypeUID();
-        if (uid == null || !BINDING_ID.equals(uid.getBindingId()) || originalStateDescription == null) {
+        if (uid == null || !BINDING_ID.equals(uid.getBindingId())) {
             return null;
         }
 
@@ -84,7 +84,10 @@ public class ShellyStateDescriptionProvider extends BaseDynamicStateDescriptionP
             return null;
         }
 
-        StateDescriptionFragmentBuilder builder = StateDescriptionFragmentBuilder.create(originalStateDescription);
+        // Virtual Component channel types declare no <state>, so there is no original description to extend
+        StateDescriptionFragmentBuilder builder = originalStateDescription != null
+                ? StateDescriptionFragmentBuilder.create(originalStateDescription)
+                : StateDescriptionFragmentBuilder.create();
         if (stateOptions != null) {
             builder.withOptions(stateOptions);
         }

@@ -109,6 +109,7 @@ public class ShellyComponents {
                 thingHandler.updateThingChannels(ShellyChannelDefinitions
                         .getRelabeledVirtualComponentChannels(thingHandler.getThing(), vChannels), vChannels);
                 ShellyVirtualComponents.reconcileVirtualComponentChannels(thingHandler, profile);
+                ShellyVirtualComponents.addVirtualComponentStateOptions(thingHandler, profile);
                 ShellyVirtualComponents.updateVirtualComponentStatus(thingHandler, profile);
             }
         }
