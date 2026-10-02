@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.shelly.internal.api.ShellyApiException;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
@@ -30,19 +31,23 @@ import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.thing.Channel;
+import org.openhab.core.types.Command;
 import org.openhab.core.types.State;
 import org.openhab.core.types.UnDefType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonElement;
 
 /**
- * The {@link ShellyVirtualComponents} implements channel and status handling for Shelly Virtual Components
+ * The {@link ShellyVirtualComponents} implements channel, status and command handling for Shelly Virtual Components
  * (Boolean/Number/Text/Enum/Group).
  *
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
 public class ShellyVirtualComponents {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShellyVirtualComponents.class);
 
     public static boolean isSupported(ShellyDeviceProfile profile) {
         return profile.isGen2 && profile.alwaysOn
@@ -69,6 +74,47 @@ public class ShellyVirtualComponents {
         thingHandler.updateThingChannels(relabeled, channels);
         thingHandler.removeChannels(obsolete);
         profile.vComponents.forEach(vc -> updateVirtualComponentChannel(thingHandler, vc));
+    }
+
+    public static void handleVirtualComponentCommand(ShellyThingInterface thingHandler, String channel, Command command)
+            throws ShellyApiException {
+        String thingName = thingHandler.getThingName();
+        ShellyVCComponent vc = findComponent(thingHandler.getProfile(), channel);
+        if (vc == null) {
+            LOGGER.debug("{}: Unknown Virtual Component channel {}, command ignored", thingName, channel);
+            return;
+        }
+        // checked here to log the configured limit, the device would only return an RPC error
+        Object value;
+        switch (vc.type) {
+            case CHANNEL_VCOMP_BOOLEAN:
+                value = command == OnOffType.ON;
+                break;
+            case CHANNEL_VCOMP_NUMBER:
+                double number = getNumber(command);
+                Double min = vc.min, max = vc.max;
+                if ((min != null && number < min) || (max != null && number > max)) {
+                    LOGGER.warn("{}: Value {} is outside the range {}..{} of Virtual Number {}, ignoring", thingName,
+                            number, min, max, vc.id);
+                    return;
+                }
+                value = number;
+                break;
+            case CHANNEL_VCOMP_TEXT:
+            case CHANNEL_VCOMP_ENUM:
+                String text = getString(command);
+                Integer maxLen = vc.maxLen;
+                if (maxLen != null && text.length() > maxLen) {
+                    LOGGER.warn("{}: Text exceeds the {} characters of Virtual Text {}, ignoring", thingName, maxLen,
+                            vc.id);
+                    return;
+                }
+                value = text;
+                break;
+            default:
+                return;
+        }
+        thingHandler.getApi().setVirtualValue(vc.type, vc.id, value);
     }
 
     private static @Nullable ShellyVCComponent findComponent(ShellyDeviceProfile profile, String channelName) {

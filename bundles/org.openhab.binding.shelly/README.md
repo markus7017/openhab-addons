@@ -689,6 +689,7 @@ A Group has no channel of its own; the label of each member channel is prefixed 
 Keep in mind when you change virtual components on the device:
 
 - Value changes as well as new, renamed, deleted or reconfigured components are picked up after ten update cycles (thing configuration `updateInterval`, 60 seconds by default) at the latest.
+Commands sent from openHAB take effect immediately.
 
 ### Shelly 1 (thing-type: shelly1)
 

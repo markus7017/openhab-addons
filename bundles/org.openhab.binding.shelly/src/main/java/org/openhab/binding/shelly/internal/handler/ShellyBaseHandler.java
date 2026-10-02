@@ -614,7 +614,12 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                     ShellyComponents.handleLoraCommand(this, channelUID.getIdWithoutGroup(), command);
                     break;
                 default:
-                    update = handleDeviceCommand(channelUID, command);
+                    // Virtual Component channel names are device-assigned, e.g. "boolean200"
+                    if (CHANNEL_GROUP_VCOMPONENTS.equals(group)) {
+                        ShellyVirtualComponents.handleVirtualComponentCommand(this, channel, command);
+                    } else {
+                        update = handleDeviceCommand(channelUID, command);
+                    }
                     break;
             }
 

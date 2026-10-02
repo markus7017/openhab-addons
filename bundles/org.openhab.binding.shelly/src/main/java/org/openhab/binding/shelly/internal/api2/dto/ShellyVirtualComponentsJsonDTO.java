@@ -48,6 +48,11 @@ public class ShellyVirtualComponentsJsonDTO {
         public @Nullable JsonObject config;
     }
 
+    public static class ShellyVCSetParams {
+        public Integer id;
+        public @Nullable Object value;
+    }
+
     /**
      * Parsed from the component's config, type and value are filled from key and status.
      */

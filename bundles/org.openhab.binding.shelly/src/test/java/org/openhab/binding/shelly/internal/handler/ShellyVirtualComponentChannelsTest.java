@@ -30,6 +30,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.openhab.binding.shelly.internal.api.ShellyApiException;
+import org.openhab.binding.shelly.internal.api.ShellyApiInterface;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
@@ -103,6 +105,7 @@ public class ShellyVirtualComponentChannelsTest {
         when(handler.getProfile()).thenReturn(profile);
         when(handler.getThing()).thenReturn(thing);
         when(handler.areChannelsCreated()).thenReturn(true);
+        when(handler.getApi()).thenReturn(mock(ShellyApiInterface.class));
         return handler;
     }
 
@@ -140,6 +143,29 @@ public class ShellyVirtualComponentChannelsTest {
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "text202", UnDefType.UNDEF);
         verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "enum203", new StringType("high"));
         verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_VCOMPONENTS), eq("boolean204"), any());
+    }
+
+    @Test
+    void handleVirtualComponentCommandSendsValueWithinConfiguredLimits() throws ShellyApiException {
+        ShellyThingInterface handler = handler(
+                profile(vcomp(CHANNEL_VCOMP_BOOLEAN, 200),
+                        vcomp(CHANNEL_VCOMP_NUMBER, 201, "{\"min\":0,\"max\":100}", ""),
+                        vcomp(CHANNEL_VCOMP_TEXT, 202, "{\"max_len\":3}", ""), vcomp(CHANNEL_VCOMP_ENUM, 203)),
+                thing());
+
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "boolean200", OnOffType.ON);
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(12.5));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "number201", new DecimalType(100.5));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "text202", new StringType("hi"));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "text202", new StringType("hello"));
+        ShellyVirtualComponents.handleVirtualComponentCommand(handler, "enum203", new StringType("high"));
+
+        ShellyApiInterface api = handler.getApi();
+        verify(api).setVirtualValue(CHANNEL_VCOMP_BOOLEAN, 200, true);
+        verify(api).setVirtualValue(CHANNEL_VCOMP_NUMBER, 201, 12.5);
+        verify(api).setVirtualValue(CHANNEL_VCOMP_TEXT, 202, "hi");
+        verify(api).setVirtualValue(CHANNEL_VCOMP_ENUM, 203, "high");
+        verifyNoMoreInteractions(api);
     }
 
     @ParameterizedTest

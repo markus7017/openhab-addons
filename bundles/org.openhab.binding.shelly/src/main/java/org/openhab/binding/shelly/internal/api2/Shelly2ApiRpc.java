@@ -94,6 +94,7 @@ import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonD
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponentEntry;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCGetComponentsParams;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCGetComponentsResult;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCSetParams;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
@@ -1497,6 +1498,14 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         Shelly2RpcRequest req = new Shelly2RpcRequest().withMethod(SHELLYRPC_METHOD_LORA_SENDDATA)
                 .withId(componentId != null ? componentId.intValue() : 100).withData(data);
         apiRequest(req);
+    }
+
+    @Override
+    public void setVirtualValue(String type, int id, Object value) throws ShellyApiException {
+        ShellyVCSetParams params = new ShellyVCSetParams();
+        params.id = id;
+        params.value = value;
+        apiRequest(Character.toUpperCase(type.charAt(0)) + type.substring(1) + ".Set", params, String.class);
     }
 
     @Override
