@@ -126,6 +126,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     private final WebSocketClient client;
     private final ScheduledExecutorService scheduler;
 
+    // Push only reports values, a deleted component produces no notification at all - re-read the list now and then
+    private static final int VCOMP_REFRESH_CYCLES = 10;
+    private int vComponentsPollCycles;
+
     // Pro/Plus RGBW(W) PM: RPC method family per settings.lights[i].apiComponent tag - replaces per-call-site
     // profile-string checks (SHELLY2_PROFILE_CCTX2.equals(...)) with a single lookup, correct for hybrid profiles.
     private record LightRpcMethods(String getStatus, String set, String setConfig) {
@@ -303,7 +307,8 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
      * @param forceProbe true on a full profile (re-)init: always re-probe, even if none were found before, so
      *            components added on the device meanwhile get picked up. On a regular status cycle (false) the
      *            probe is skipped once it's established the device has none, to avoid an extra RPC call every
-     *            cycle for the vast majority of devices that don't use this feature.
+     *            cycle for the vast majority of devices that don't use this feature. A dirty profile is passed as
+     *            forced, so a first component reported by push is picked up even on a device that had none.
      */
     void refreshVirtualComponents(ShellyDeviceProfile profile, boolean forceProbe) {
         if (!forceProbe && (!profile.vComponentsProbed || profile.vComponents.isEmpty())) {
@@ -333,6 +338,7 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             } while (offset < total);
             profile.vComponents = components;
             profile.vComponentsProbed = true;
+            profile.vComponentsDirty = false;
         } catch (ShellyApiException e) {
             // Keep the previously discovered components: a transient RPC failure must not make the next
             // reconciliation drop the device's vcomponent channels (and the item links on them). A device that
@@ -630,7 +636,12 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             }
             status.temperature = SHELLY_API_INVTEMP; // mark invalid
             updated |= fillDeviceStatus(status, message.params, true);
+            boolean vComponentsWereDirty = profile.vComponentsDirty;
             updated |= ShellyVirtualComponents.updateVirtualComponentValues(getThing(), profile, message.vcomponents);
+            if (!vComponentsWereDirty && profile.vComponentsDirty) {
+                logger.debug("{}: Virtual Components changed on the device, re-read them", thingName);
+                getThing().requestUpdates(1, false);
+            }
             if (getDouble(status.temperature) == SHELLY_API_INVTEMP) {
                 // no device temp available
                 status.temperature = null;
@@ -938,7 +949,9 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         if (profile.isPresence) {
             updatePresenceZoneStatus(profile);
         }
-        refreshVirtualComponents(profile, false);
+        if (profile.vComponentsDirty || ++vComponentsPollCycles % VCOMP_REFRESH_CYCLES == 0) {
+            refreshVirtualComponents(profile, profile.vComponentsDirty);
+        }
         if (getBool(profile.settings.rangeExtender)) {
             try {
                 // Get List of AP clients

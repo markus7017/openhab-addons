@@ -238,14 +238,15 @@ public class ShellyVirtualComponentsParserTest {
     }
 
     @Test
-    void notifyStatusExtractsOnlyVirtualValueComponents() {
+    void notifyStatusExtractsVirtualValueAndGroupComponents() {
         String json = "{\"src\":\"shellyplus1-aabbcc\",\"method\":\"NotifyStatus\",\"params\":{\"ts\":1.0,"
                 + "\"boolean:200\":{\"value\":true},\"number:201\":{\"value\":21.5},\"enum:202\":{\"value\":\"a\"},"
-                + "\"button:203\":{},\"switch:0\":{\"output\":true}}}";
+                + "\"button:203\":{},\"group:204\":{\"value\":[\"boolean:200\"]},\"switch:0\":{\"output\":true}}}";
 
         Map<String, JsonObject> result = parseVirtualComponentStatus(json);
 
-        assertEquals(3, result.size());
+        assertEquals(4, result.size());
+        assertEquals("boolean:200", result.get("group:204").get("value").getAsJsonArray().get(0).getAsString());
         assertTrue(result.get("boolean:200").get("value").getAsBoolean());
         assertEquals(21.5, result.get("number:201").get("value").getAsDouble());
         assertEquals("a", result.get("enum:202").get("value").getAsString());

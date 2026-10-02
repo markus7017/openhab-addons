@@ -144,6 +144,7 @@ public class ShellyDeviceProfile {
     // per-model/generation flag is available to gate on
     public volatile List<ShellyVCComponent> vComponents = new ArrayList<>();
     public boolean vComponentsProbed; // true once Shelly.GetComponents has been tried for this profile
+    public volatile boolean vComponentsDirty; // push reported a component or group membership not in vComponents
 
     public ShellyDeviceProfile(ThingTypeUID thingTypeUID) {
         initFromThingType(thingTypeUID);

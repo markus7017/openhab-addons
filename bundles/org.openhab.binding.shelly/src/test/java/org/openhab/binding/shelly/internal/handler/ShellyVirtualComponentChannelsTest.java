@@ -50,6 +50,8 @@ import org.openhab.core.thing.type.ChannelKind;
 import org.openhab.core.types.UnDefType;
 
 import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 
 /**
@@ -125,6 +127,16 @@ public class ShellyVirtualComponentChannelsTest {
     private static ShellyVCComponent vgroup(int id, String... memberKeys) {
         ShellyVCComponent vc = vcomp(SHELLY2_VCOMP_GROUP, id);
         vc.groupMembers = List.of(memberKeys);
+        return vc;
+    }
+
+    private static Map<String, JsonObject> pushed(String key, String statusJson) {
+        return Map.of(key, JsonParser.parseString(statusJson).getAsJsonObject());
+    }
+
+    private static ShellyVCComponent vgroupWithValue(int id, String membersJson) {
+        ShellyVCComponent vc = vgroup(id);
+        vc.value = JsonParser.parseString(membersJson);
         return vc;
     }
 
@@ -470,5 +482,54 @@ public class ShellyVirtualComponentChannelsTest {
 
         verify(handler).updateChannel(CHANNEL_GROUP_VGROUP_PREFIX + "200", "enum200", new StringType("high"));
         verify(handler).updateChannel(CHANNEL_GROUP_VGROUP_PREFIX + "201", "enum200", new StringType("high"));
+    }
+
+    @Test
+    void pushedValueOfKnownComponentUpdatesChannelWithoutMarkingProfileDirty() {
+        ShellyDeviceProfile profile = vComponentsProfile(vcomp(CHANNEL_VCOMP_NUMBER, 200, 1.0));
+        ShellyThingInterface handler = mockHandler(profile, thing());
+
+        boolean updated = ShellyVirtualComponents.updateVirtualComponentValues(handler, profile,
+                pushed("number:200", "{\"value\":21.5}"));
+
+        assertThat(updated, is(true));
+        assertThat(profile.vComponentsDirty, is(false));
+        verify(handler).updateChannel(CHANNEL_GROUP_VCOMPONENTS, "number200", new DecimalType(21.5));
+    }
+
+    @Test
+    void pushedUnknownComponentMarksProfileDirty() {
+        ShellyDeviceProfile profile = vComponentsProfile(vcomp(CHANNEL_VCOMP_NUMBER, 200, 1.0));
+        ShellyThingInterface handler = mockHandler(profile, thing());
+
+        boolean updated = ShellyVirtualComponents.updateVirtualComponentValues(handler, profile,
+                pushed("boolean:201", "{\"value\":true}"));
+
+        assertThat(updated, is(false));
+        assertThat(profile.vComponentsDirty, is(true));
+        verify(handler, never()).updateChannel(anyString(), anyString(), any());
+    }
+
+    @Test
+    void pushedGroupWithChangedMembersMarksProfileDirty() {
+        ShellyDeviceProfile profile = vComponentsProfile(vgroupWithValue(200, "[\"number:201\"]"));
+        ShellyThingInterface handler = mockHandler(profile, thing());
+
+        ShellyVirtualComponents.updateVirtualComponentValues(handler, profile,
+                pushed("group:200", "{\"value\":[\"number:201\",\"boolean:202\"]}"));
+
+        assertThat(profile.vComponentsDirty, is(true));
+    }
+
+    @Test
+    void pushedGroupWithUnchangedMembersKeepsProfileClean() {
+        ShellyDeviceProfile profile = vComponentsProfile(vgroupWithValue(200, "[\"number:201\"]"));
+        ShellyThingInterface handler = mockHandler(profile, thing());
+
+        boolean updated = ShellyVirtualComponents.updateVirtualComponentValues(handler, profile,
+                pushed("group:200", "{\"value\":[\"number:201\"]}"));
+
+        assertThat(updated, is(false));
+        assertThat(profile.vComponentsDirty, is(false));
     }
 }

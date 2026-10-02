@@ -148,7 +148,8 @@ public class ShellyVirtualComponents {
 
     /**
      * Applies the value changes of a NotifyStatus message (keyed like "boolean:200") to the discovered components
-     * and their channels.
+     * and their channels. A component that isn't known yet or a changed group membership can't be applied this way,
+     * it marks the profile dirty so the next status cycle re-reads the component list.
      *
      * @return true if at least one channel was updated
      */
@@ -168,16 +169,29 @@ public class ShellyVirtualComponents {
             } catch (NumberFormatException e) {
                 continue;
             }
-            for (ShellyVCComponent vc : profile.vComponents) {
-                if (vc.type.equals(type) && vc.id == id) {
-                    vc.value = value;
-                    updateVirtualComponentChannel(thingHandler, profile, vc);
-                    updated = true;
-                    break;
+            ShellyVCComponent vc = findComponent(profile, type, id);
+            if (vc == null) {
+                profile.vComponentsDirty = true;
+            } else if (SHELLY2_VCOMP_GROUP.equals(type)) {
+                if (!value.equals(vc.value)) {
+                    profile.vComponentsDirty = true;
                 }
+            } else {
+                vc.value = value;
+                updateVirtualComponentChannel(thingHandler, profile, vc);
+                updated = true;
             }
         }
         return updated;
+    }
+
+    private static @Nullable ShellyVCComponent findComponent(ShellyDeviceProfile profile, String type, int id) {
+        for (ShellyVCComponent vc : profile.vComponents) {
+            if (vc.type.equals(type) && vc.id == id) {
+                return vc;
+            }
+        }
+        return null;
     }
 
     /**

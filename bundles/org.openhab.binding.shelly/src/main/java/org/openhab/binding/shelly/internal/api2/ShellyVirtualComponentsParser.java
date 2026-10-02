@@ -163,7 +163,7 @@ public final class ShellyVirtualComponentsParser {
             }
             for (Map.Entry<String, JsonElement> entry : params.getAsJsonObject().entrySet()) {
                 String type = entry.getKey().substring(0, Math.max(0, entry.getKey().indexOf(':')));
-                if (isVirtualValueType(type) && entry.getValue().isJsonObject()) {
+                if (isVirtualStatusType(type) && entry.getValue().isJsonObject()) {
                     result.put(entry.getKey(), entry.getValue().getAsJsonObject());
                 }
             }
@@ -173,8 +173,9 @@ public final class ShellyVirtualComponentsParser {
         return result;
     }
 
-    private static boolean isVirtualValueType(String type) {
-        return SHELLY2_VCOMP_BOOLEAN.equals(type) || SHELLY2_VCOMP_NUMBER.equals(type)
-                || SHELLY2_VCOMP_TEXT.equals(type) || SHELLY2_VCOMP_ENUM.equals(type);
+    private static boolean isVirtualStatusType(String type) {
+        return SHELLY2_VCOMP_GROUP.equals(type) || SHELLY2_VCOMP_BOOLEAN.equals(type)
+                || SHELLY2_VCOMP_NUMBER.equals(type) || SHELLY2_VCOMP_TEXT.equals(type)
+                || SHELLY2_VCOMP_ENUM.equals(type);
     }
 }
