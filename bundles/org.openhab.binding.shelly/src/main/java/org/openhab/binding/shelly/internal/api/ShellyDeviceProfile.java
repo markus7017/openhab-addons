@@ -39,6 +39,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettings
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRgbwLight;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyThermnostat;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
 import org.openhab.binding.shelly.internal.discovery.ShellyThingCreator;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
 import org.openhab.core.thing.ThingTypeUID;
@@ -138,6 +139,10 @@ public class ShellyDeviceProfile {
     public String coiotEndpoint = "";
 
     public Map<String, String> irCodes = new HashMap<>(); // Sense: list of stored IR codes
+
+    public volatile boolean vComponentsSupported;
+    public volatile List<ShellyVCComponent> vComponents = new ArrayList<>();
+    public volatile boolean vComponentsProbed; // true once Shelly.GetComponents has succeeded for this profile
 
     public ShellyDeviceProfile(ThingTypeUID thingTypeUID) {
         initFromThingType(thingTypeUID);

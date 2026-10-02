@@ -668,6 +668,28 @@ The add-on firmware version is shown in the Thing property `addonFirmware`; the 
 |         | snr          | Number:Dimensionless | yes    | SNR (signal-to-noise ratio in dB) of the last received packet.                    |
 |         | airtime      | Number:Time       | yes       | Transmission air time of the LoRa Add-On during the last 60 minutes.              |
 
+### Virtual Components (Channel Group: vcomponents)
+
+Gen3, Gen4 and Gen2 "Pro" devices (firmware 1.6.1 or later) let you define custom Boolean/Number/Text/Enum/Group elements under Settings > Virtual Components in the Shelly App or device UI — useful e.g. for a switch driven only by rules, or a status flag shown in the app.
+The binding discovers configured virtual components automatically (no thing configuration required) and keeps the channel set in sync when components are added or removed on the device.
+Gen1 and battery-powered devices are not supported.
+
+Each virtual component is identified by a device-assigned instance id (200-299) and gets a channel named after its type plus that id, e.g. `boolean200`, `enum205`.
+The channel label uses the component's configured name, falling back to a generic label like "Virtual Boolean" when unnamed.
+
+A Group has no channel of its own; the label of each member channel is prefixed with the Group's name, e.g. "Living Room: Set point".
+
+| Group       | Channel    | Type    | read-only | Description                                                                                    |
+| ----------- | ---------- | ------- | --------- | ---------------------------------------------------------------------------------------------- |
+| vcomponents | booleanNNN | Switch  | r/w       | Virtual Boolean component; NNN is the device-assigned instance id (200-299)                    |
+|             | numberNNN  | Number  | r/w       | Virtual Number component                                                                       |
+|             | textNNN    | String  | r/w       | Virtual Text component                                                                         |
+|             | enumNNN    | String  | r/w       | Virtual Enum component; allowed values are provided by the device                              |
+
+Keep in mind when you change virtual components on the device:
+
+- Value changes as well as new, renamed, deleted or reconfigured components are picked up after ten update cycles (thing configuration `updateInterval`, 60 seconds by default) at the latest.
+
 ### Shelly 1 (thing-type: shelly1)
 
 | Group   | Channel      | Type     | read-only | Description                                                                       |

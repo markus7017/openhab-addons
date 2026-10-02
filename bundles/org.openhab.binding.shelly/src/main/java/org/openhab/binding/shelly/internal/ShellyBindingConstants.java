@@ -288,6 +288,13 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_LORA_SNR = "snr";
     public static final String CHANNEL_LORA_AIRTIME = "airtime";
 
+    // Virtual Components, channel name = type + component id, e.g. "boolean200"
+    public static final String CHANNEL_GROUP_VCOMPONENTS = "vcomponents";
+    public static final String CHANNEL_VCOMP_BOOLEAN = "boolean";
+    public static final String CHANNEL_VCOMP_NUMBER = "number";
+    public static final String CHANNEL_VCOMP_TEXT = "text";
+    public static final String CHANNEL_VCOMP_ENUM = "enum";
+
     // General
     public static final String CHANNEL_LAST_UPDATE = "lastUpdate";
     public static final String CHANNEL_EVENT_TRIGGER = "event";
@@ -303,6 +310,7 @@ public class ShellyBindingConstants {
 
     // Unprefixed (unlike the "v"-prefixed Gen1 constants above) to match Gen2+ profile.fwVersion (e.g. "1.2.3")
     public static final String SHELLY2_API_FW_BLEAUTOSCAN = "2.0"; // FW 2.0+: BLE.SetConfig enable flag removed
+    public static final String SHELLY2_API_FW_VCOMPONENTS = "1.6.1";
 
     // Alarm types/messages
     public static final String ALARM_TYPE_NONE = "NONE";

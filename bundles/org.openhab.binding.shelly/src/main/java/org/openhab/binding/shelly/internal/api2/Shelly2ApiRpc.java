@@ -18,6 +18,7 @@ import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.ShellyBluJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.*;
+import static org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.io.BufferedReader;
@@ -89,9 +90,14 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptLi
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptPutCodeParams;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptResponse;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.Shelly2StatusPresence;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponentEntry;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCGetComponentsParams;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCGetComponentsResult;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
+import org.openhab.binding.shelly.internal.handler.ShellyVirtualComponents;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
@@ -100,6 +106,8 @@ import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.ThingTypeUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonSyntaxException;
 
 /**
  * {@link Shelly2ApiRpc} implements Gen2 RPC interface
@@ -117,6 +125,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     private @Nullable Shelly2AuthChallenge authInfo;
     private final WebSocketClient client;
     private final ScheduledExecutorService scheduler;
+
+    // a deleted Virtual Component isn't notified
+    private static final int VCOMP_REFRESH_CYCLES = 10;
+    private int vComponentsPollCycles;
 
     // Pro/Plus RGBW(W) PM: RPC method family per settings.lights[i].apiComponent tag - replaces per-call-site
     // profile-string checks (SHELLY2_PROFILE_CCTX2.equals(...)) with a single lookup, correct for hybrid profiles.
@@ -203,6 +215,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         if (profile.hasBattery) {
             checkSetWsCallback();
         }
+        profile.vComponentsSupported = ShellyVirtualComponents.isSupported(profile);
+        if (profile.vComponentsSupported) {
+            refreshVirtualComponents(profile, true);
+        }
 
         if (firstInit && alwaysOn) {
             getStatus(); // make sure profile.status is initialized (e.g. relay/meter status)
@@ -282,6 +298,44 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                 getThing().getApi().deviceReboot();
                 getThing().reinitializeThing();
             }
+        }
+    }
+
+    /**
+     * Reads the Virtual Components via {@code Shelly.GetComponents}.
+     *
+     * @param forceProbe false skips the call when an earlier read found none, true always reads them
+     */
+    void refreshVirtualComponents(ShellyDeviceProfile profile, boolean forceProbe) {
+        if (!forceProbe && profile.vComponentsProbed && profile.vComponents.isEmpty()) {
+            return;
+        }
+        try {
+            // paged result, other dynamic components (BTHome, presence zones, LNM) share the list
+            List<ShellyVCComponent> components = new ArrayList<>();
+            ShellyVCGetComponentsParams params = new ShellyVCGetComponentsParams();
+            int offset = 0, total = 0;
+            do {
+                params.offset = offset;
+                ShellyVCGetComponentsResult result = apiRequest(SHELLYRPC_METHOD_GETCOMPONENTS, params,
+                        ShellyVCGetComponentsResult.class);
+                List<ShellyVCComponentEntry> page = result.components;
+                int returned = page != null ? page.size() : 0;
+                if (returned == 0) {
+                    break;
+                }
+                components.addAll(ShellyVirtualComponentsParser.parseVirtualComponents(gson, result));
+                offset += returned;
+                total = getInteger(result.total);
+            } while (offset < total);
+            profile.vComponents = components;
+            profile.vComponentsProbed = true;
+        } catch (ShellyApiException e) {
+            // keep the previous components, a transient error must not remove their channels
+            logger.debug("{}: Unable to read virtual components (device may not support Shelly.GetComponents)",
+                    thingName, e);
+        } catch (JsonSyntaxException | NumberFormatException e) {
+            logger.warn("{}: Unable to parse virtual components, unexpected JSON shape", thingName, e);
         }
     }
 
@@ -861,6 +915,9 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         fillDeviceStatus(status, ds, false);
         if (profile.isPresence) {
             updatePresenceZoneStatus(profile);
+        }
+        if (profile.vComponentsSupported && ++vComponentsPollCycles % VCOMP_REFRESH_CYCLES == 0) {
+            refreshVirtualComponents(profile, false);
         }
         if (getBool(profile.settings.rangeExtender)) {
             try {

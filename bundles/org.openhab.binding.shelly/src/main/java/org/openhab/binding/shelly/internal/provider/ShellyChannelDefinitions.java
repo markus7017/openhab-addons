@@ -14,6 +14,7 @@ package org.openhab.binding.shelly.internal.provider;
 
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.SHELLY_API_INVTEMP;
+import static org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.SHELLY2_VCOMP_GROUP;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,6 +44,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettings
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortLightStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLightChannel;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyVirtualComponentsJsonDTO.ShellyVCComponent;
 import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.core.thing.Channel;
@@ -54,6 +57,9 @@ import org.openhab.core.types.StateOption;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 
 /**
  * The {@link #CHANNEL_DEFINITIONS} defines channel information for dynamically created channels. Those will be
@@ -104,6 +110,7 @@ public class ShellyChannelDefinitions {
     private static final String CHGR_CONTROL = CHANNEL_GROUP_CONTROL;
     private static final String CHGR_BAT = CHANNEL_GROUP_BATTERY;
     private static final String CHGR_LORA = CHANNEL_GROUP_LORA;
+    private static final String CHGR_VCOMPONENTS = CHANNEL_GROUP_VCOMPONENTS;
 
     public static final String PREFIX_GROUP = "group-type." + BINDING_ID + ".";
     public static final String PREFIX_CHANNEL = "channel-type." + BINDING_ID + ".";
@@ -398,7 +405,13 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_TXERRORS, "loraTxErrors", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_SNR, "loraSNR", ITEMT_DIMENSIONLESS))
                 .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_AIRTIME, "loraAirtime", ITEMT_TIME))
-                .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_RSSI, "loraSignal", ITEMT_POWER));
+                .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_RSSI, "loraSignal", ITEMT_POWER))
+
+                // Virtual Components
+                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_BOOLEAN, "vcompBoolean", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_NUMBER, "vcompNumber", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_TEXT, "vcompText", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_VCOMPONENTS, CHANNEL_VCOMP_ENUM, "vcompEnum", ITEMT_STRING));
 
         CHANNEL_TYPE_OVERRIDES.put(CHANNEL_TYPE_WHITE_TEMP_DUO, new ShellyChannel(m, CHANNEL_GROUP_WHITE_CONTROL,
                 CHANNEL_COLOR_TEMP, CHANNEL_TYPE_WHITE_TEMP_DUO, ITEMT_TEMP));
@@ -420,7 +433,9 @@ public class ShellyChannelDefinitions {
             group = CHANNEL_GROUP_STATUS; // map status1..n to meter
         }
 
-        if (!CHGR_SENSOR.equals(group) && channel.startsWith(CHANNEL_INPUT)) {
+        if (CHGR_VCOMPONENTS.equals(group)) {
+            channel = channel.replaceAll("\\d+$", ""); // boolean200 -> boolean
+        } else if (!CHGR_SENSOR.equals(group) && channel.startsWith(CHANNEL_INPUT)) {
             channel = CHANNEL_INPUT; // status#input0..n -> status#input; sensors#input1 (Addon) is a fixed name
         } else if (channel.startsWith(CHANNEL_BUTTON_TRIGGER)) {
             channel = CHANNEL_BUTTON_TRIGGER;
@@ -536,6 +551,41 @@ public class ShellyChannelDefinitions {
             return LORA_ALL_CHANNELS;
         }
         return profile.settings.loraRxEnabled ? Set.of() : LORA_RX_ONLY_CHANNELS;
+    }
+
+    /**
+     * @return a channel per Virtual Component except Group, labeled with the names of its Groups and its own name
+     */
+    public static Map<String, Channel> createVirtualComponentChannels(final Thing thing,
+            final ShellyDeviceProfile profile) {
+        Map<String, Channel> add = new LinkedHashMap<>();
+        for (ShellyVCComponent vc : profile.vComponents) {
+            if (SHELLY2_VCOMP_GROUP.equals(vc.type)) {
+                continue;
+            }
+            String channelId = mkChannelId(CHGR_VCOMPONENTS, vc.type + vc.id);
+            ShellyChannel channelDef = getDefinition(channelId);
+            Channel channel = createChannel(thing, channelId, CHGR_VCOMPONENTS, vc.type + vc.id);
+            if (channelDef != null && channel != null) {
+                String name = getString(vc.name);
+                String label = getGroupNames(profile, vc) + (name.isBlank() ? channelDef.label + " " + vc.id : name);
+                add.put(channelId, ChannelBuilder.create(channel).withLabel(label).build());
+            }
+        }
+        return add;
+    }
+
+    private static String getGroupNames(ShellyDeviceProfile profile, ShellyVCComponent vc) {
+        JsonPrimitive key = new JsonPrimitive(vc.type + ":" + vc.id);
+        StringJoiner names = new StringJoiner(", ", "", ": ").setEmptyValue("");
+        for (ShellyVCComponent group : profile.vComponents) {
+            JsonElement members = group.value;
+            if (members != null && members.isJsonArray() && members.getAsJsonArray().contains(key)
+                    && !getString(group.name).isBlank()) {
+                names.add(getString(group.name));
+            }
+        }
+        return names.toString();
     }
 
     /**

@@ -98,6 +98,10 @@ public class ShellyComponents {
             thingHandler.updateThingChannels(Map.of(),
                     ShellyChannelDefinitions.createLoraChannels(thingHandler.getThing(), profile));
             reconcileLoraChannels(thingHandler, profile);
+
+            if (profile.vComponentsProbed) {
+                ShellyVirtualComponents.updateVirtualComponents(thingHandler, profile);
+            }
         }
 
         thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_FIRMWARE, getStringType(profile.fwVersion));
