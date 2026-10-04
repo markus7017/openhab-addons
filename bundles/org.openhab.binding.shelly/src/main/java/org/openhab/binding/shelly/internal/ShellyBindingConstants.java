@@ -202,6 +202,9 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_ESENSOR_VOLTAGE = CHANNEL_SENSOR_VOLTAGE;
     public static final String CHANNEL_ESENSOR_DIGITALINPUT = "digitalInput";
     public static final String CHANNEL_ESENSOR_ANALOGINPUT = "analogInput";
+    public static final String CHANNEL_SENSOR_PULSE_COUNT = "pulseCount";
+    public static final String CHANNEL_SENSOR_PULSE_COUNT_LASTMIN = "pulseCountLastMin";
+    public static final String CHANNEL_SENSOR_PULSE_FREQUENCY = "pulseFrequency";
     public static final String CHANNEL_ESENSOR_INPUT = "input";
     public static final String CHANNEL_ESENSOR_INPUT1 = CHANNEL_ESENSOR_INPUT + "1";
 

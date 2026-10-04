@@ -572,6 +572,30 @@
 		</state>
 	</channel-type>
 
+	<channel-type id="sensorPulseCount">
+		<item-type>Number</item-type>
+		<label>Pulse Count</label>
+		<description>Total number of pulses counted by the input in count mode</description>
+		<category>Status</category>
+		<state readOnly="true" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="sensorPulseCountLastMin">
+		<item-type>Number</item-type>
+		<label>Pulse Count Last Minute</label>
+		<description>Number of pulses counted during the last complete minute (requires the device time to be synchronized)</description>
+		<category>Status</category>
+		<state readOnly="true" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="sensorPulseFrequency">
+		<item-type>Number:Frequency</item-type>
+		<label>Pulse Frequency</label>
+		<description>Pulse frequency measured by the input in count mode</description>
+		<category>Status</category>
+		<state readOnly="true" pattern="%.2f %unit%"/>
+	</channel-type>
+
 	<channel-type id="sensorError">
 		<item-type>String</item-type>
 		<label>Last Error</label>

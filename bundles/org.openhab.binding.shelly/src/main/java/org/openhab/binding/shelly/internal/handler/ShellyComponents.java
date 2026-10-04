@@ -52,6 +52,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSe
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyExtTemperature.ShellyShortTemp;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyExtVoltage;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyExtVoltage.ShellyShortVoltage;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyPulseCounter;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyThermnostat;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusLight;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2RGBCCTStatus;
@@ -895,6 +896,10 @@ public class ShellyComponents {
                         toQuantityType(getDouble(anaSensor.percent), DIGITS_PERCENT, Units.PERCENT));
             }
         }
+        ShellyPulseCounter pulseCounter = status.pulseCounter;
+        if (pulseCounter != null) {
+            updated |= updatePulseCounter(thingHandler, pulseCounter);
+        }
         if (hasAddon && !(profile.isSensor || profile.hasBattery)) {
             // Relay devices with addon sensors: always refresh lastUpdate so the channel shows
             // when sensor data was last received, even when temperature values are unchanged
@@ -1146,6 +1151,23 @@ public class ShellyComponents {
         }
         if (status.daliScanActive != null) {
             updated |= thingHandler.updateChannel(groupName, CHANNEL_DALI_SCAN_ACTIVE, getOnOff(status.daliScanActive));
+        }
+        return updated;
+    }
+
+    private static boolean updatePulseCounter(ShellyThingInterface thingHandler, ShellyPulseCounter counter) {
+        boolean updated = false;
+        if (counter.total != null) {
+            updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_PULSE_COUNT,
+                    getDecimal(counter.total));
+        }
+        if (counter.lastMinute != null) {
+            updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_PULSE_COUNT_LASTMIN,
+                    getDecimal(counter.lastMinute));
+        }
+        if (counter.frequency != null) {
+            updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_PULSE_FREQUENCY,
+                    toQuantityType(counter.frequency, DIGITS_FREQUENCY, Units.HERTZ));
         }
         return updated;
     }

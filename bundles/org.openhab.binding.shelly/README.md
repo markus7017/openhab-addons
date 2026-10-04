@@ -1086,21 +1086,28 @@ Channels lastEvent and eventCount are only available if input type is set to mom
 
 ### Shelly UNI, Shelly Plus UNI (thing-type: shellyuni)
 
-| Group   | Channel      | Type     | read-only | Description                                                              |
-| ------- | ------------ | -------- | --------- | ------------------------------------------------------------------------ |
-| relay1  |              |          |           | See group relay1 for Shelly 2, no autoOn/autoOff/timerActive channels    |
-| relay2  |              |          |           | See group relay1 for Shelly 2, no autoOn/autoOff/timerActive channels    |
-| sensors | temperature1 | Number   | yes       | Temperature value of external sensor #1 (if connected to temp/hum addon) |
-|         | temperature2 | Number   | yes       | Temperature value of external sensor #2 (if connected to temp/hum addon) |
-|         | temperature3 | Number   | yes       | Temperature value of external sensor #3 (if connected to temp/hum addon) |
-|         | humidity     | Number   | yes       | Humidity in percent (if connected to temp/hum addon)                     |
-|         | lastUpdate   | DateTime | yes       | Timestamp of the last sensor update (heartbeat)                          |
-|         | voltage      | Number   | yes       | ADCS voltage                                                             |
-| status  | input1       | Switch   | yes       | State of Input 1                                                         |
-|         | input2       | Switch   | yes       | State of Input 2                                                         |
-|         | button       | Trigger  | yes       | Event trigger, see section Button Events                                 |
-|         | lastEvent    | String   | yes       | S/SS/SSS for 1/2/3x Shortpush or L for Longpush                          |
-|         | eventCount   | Number   | yes       | Counter gets incremented every time the device issues a button event.    |
+| Group   | Channel           | Type             | read-only | Description                                                              |
+| ------- | ----------------- | ---------------- | --------- | ------------------------------------------------------------------------ |
+| relay1  |                   |                  |           | See group relay1 for Shelly 2, no autoOn/autoOff/timerActive channels    |
+| relay2  |                   |                  |           | See group relay1 for Shelly 2, no autoOn/autoOff/timerActive channels    |
+| sensors | temperature1      | Number           | yes       | Temperature value of external sensor #1 (if connected to temp/hum addon) |
+|         | temperature2      | Number           | yes       | Temperature value of external sensor #2 (if connected to temp/hum addon) |
+|         | temperature3      | Number           | yes       | Temperature value of external sensor #3 (if connected to temp/hum addon) |
+|         | humidity          | Number           | yes       | Humidity in percent (if connected to temp/hum addon)                     |
+|         | lastUpdate        | DateTime         | yes       | Timestamp of the last sensor update (heartbeat)                          |
+|         | voltage           | Number           | yes       | ADCS voltage                                                             |
+|         | pulseCount        | Number           | yes       | Plus UNI: total number of pulses counted by input 3 in count mode        |
+|         | pulseCountLastMin | Number           | yes       | Plus UNI: pulses counted during the last complete minute                 |
+|         | pulseFrequency    | Number:Frequency | yes       | Plus UNI: pulse frequency measured by input 3 in count mode              |
+| status  | input1            | Switch           | yes       | State of Input 1                                                         |
+|         | input2            | Switch           | yes       | State of Input 2                                                         |
+|         | button            | Trigger          | yes       | Event trigger, see section Button Events                                 |
+|         | lastEvent         | String           | yes       | S/SS/SSS for 1/2/3x Shortpush or L for Longpush                          |
+|         | eventCount        | Number           | yes       | Counter gets incremented every time the device issues a button event.    |
+
+The pulse counter channels are created when input 3 of the Shelly Plus UNI is configured in count mode.
+Re-initialize the thing after changing the input mode.
+`pulseCountLastMin` is only updated when the device time is synchronized.
 
 ### Shelly Bulb (thing-type: shellybulb)
 

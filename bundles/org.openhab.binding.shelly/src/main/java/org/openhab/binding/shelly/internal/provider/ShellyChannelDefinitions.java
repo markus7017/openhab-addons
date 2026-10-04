@@ -395,6 +395,11 @@ public class ShellyChannelDefinitions {
                         ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_ESENSOR_ANALOGINPUT, "sensorExtAnalogInput",
                         ITEMT_PERCENT))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_PULSE_COUNT, "sensorPulseCount", ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_PULSE_COUNT_LASTMIN, "sensorPulseCountLastMin",
+                        ITEMT_NUMBER))
+                .add(new ShellyChannel(m, CHGR_SENSOR, CHANNEL_SENSOR_PULSE_FREQUENCY, "sensorPulseFrequency",
+                        ITEMT_FREQ))
 
                 // Battery
                 .add(new ShellyChannel(m, CHGR_BAT, CHANNEL_SENSOR_BAT_LEVEL, "system:battery-level", ITEMT_PERCENT))
@@ -617,8 +622,17 @@ public class ShellyChannelDefinitions {
         addChannel(thing, add, profile.status.extVoltage != null, CHGR_SENSOR, CHANNEL_ESENSOR_VOLTAGE);
         addChannel(thing, add, profile.status.extDigitalInput != null, CHGR_SENSOR, CHANNEL_ESENSOR_DIGITALINPUT);
         addChannel(thing, add, profile.status.extAnalogInput != null, CHGR_SENSOR, CHANNEL_ESENSOR_ANALOGINPUT);
+        addPulseCounterChannels(thing, profile.status.pulseCounter, add);
 
         addChannel(thing, add, ShellyComponents.hasAddon(profile.status), CHGR_SENSOR, CHANNEL_LAST_UPDATE);
+    }
+
+    private static void addPulseCounterChannels(final Thing thing,
+            ShellyStatusSensor.@Nullable ShellyPulseCounter counter, Map<String, Channel> add) {
+        boolean hasCounter = counter != null;
+        addChannel(thing, add, hasCounter, CHGR_SENSOR, CHANNEL_SENSOR_PULSE_COUNT);
+        addChannel(thing, add, hasCounter, CHGR_SENSOR, CHANNEL_SENSOR_PULSE_COUNT_LASTMIN);
+        addChannel(thing, add, hasCounter, CHGR_SENSOR, CHANNEL_SENSOR_PULSE_FREQUENCY);
     }
 
     public static Map<String, Channel> createDimmerChannels(final Thing thing, final ShellyDeviceProfile profile,

@@ -62,6 +62,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSe
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyExtTemperature;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyExtTemperature.ShellyShortTemp;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyExtVoltage;
+import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyPulseCounter;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorBat;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorHum;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellySensorLux;
@@ -90,6 +91,7 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceS
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2DeviceStatusVoltage;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2RGBCCTStatus;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult.Shelly2RGBWStatus;
+import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2InputCounts;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2InputStatus;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatusLora;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatusTemp;
@@ -1912,11 +1914,38 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         if (is.percent != null) { // analogous input
             status.extAnalogInput = new ShellyExtAnalogInput(getDouble(is.percent));
         }
+        if (is.counts != null || is.freq != null) {
+            updatePulseCounter(status, is);
+        }
         relayStatus.inputs.set(is.id, input);
         if (updateChannels) {
             updated |= updateChannel(group, CHANNEL_INPUT + profile.getInputSuffix(is.id), getOnOff(getBool(is.state)));
         }
         return updated;
+    }
+
+    /**
+     * NotifyStatus reports only changed values, so fields missing in the update keep their previous value.
+     */
+    static void updatePulseCounter(ShellySettingsStatus status, Shelly2InputStatus is) {
+        ShellyPulseCounter counter = status.pulseCounter;
+        if (counter == null) {
+            counter = new ShellyPulseCounter();
+            status.pulseCounter = counter;
+        }
+        Shelly2InputCounts counts = is.counts;
+        if (counts != null) {
+            if (counts.total != null) {
+                counter.total = counts.total;
+            }
+            Double[] byMinute = counts.byMinute;
+            if (byMinute != null && byMinute.length > 0) {
+                counter.lastMinute = byMinute[0];
+            }
+        }
+        if (is.freq != null) {
+            counter.frequency = is.freq;
+        }
     }
 
     protected Shelly2RpcBaseMessage buildRequest(String method, @Nullable Object params) throws ShellyApiException {

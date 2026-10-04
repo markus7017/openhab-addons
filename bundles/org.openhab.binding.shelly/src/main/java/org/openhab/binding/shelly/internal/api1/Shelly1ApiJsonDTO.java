@@ -826,6 +826,7 @@ public class Shelly1ApiJsonDTO {
         public ShellyStatusSensor.@Nullable ShellyExtHumidity extHumidity; // Shelly 1/1PM: sensor values
         public ShellyStatusSensor.@Nullable ShellyExtVoltage extVoltage; // Shelly ´Plus 1/1PM: sensor values
         public ShellyStatusSensor.@Nullable ShellyExtAnalogInput extAnalogInput; // Shelly ´Plus 1/1PM: sensor values
+        public ShellyStatusSensor.@Nullable ShellyPulseCounter pulseCounter; // Shelly Plus UNI: input in count mode
         public ShellyStatusSensor.@Nullable ShellyExtDigitalInput extDigitalInput; // Shelly ´Plus 1/1PM: sensor values
         @SerializedName("ext_switch")
         public ShellyStatusSensor.ShellyExtSwitchStatus extSwitch;
@@ -1165,6 +1166,12 @@ public class Shelly1ApiJsonDTO {
 
             @SerializedName("0")
             public @Nullable ShellyShortAnalogInput sensor1;
+        }
+
+        public static class ShellyPulseCounter {
+            public @Nullable Integer total;
+            public @Nullable Double lastMinute;
+            public @Nullable Double frequency;
         }
 
         public static class ShellyADC {
