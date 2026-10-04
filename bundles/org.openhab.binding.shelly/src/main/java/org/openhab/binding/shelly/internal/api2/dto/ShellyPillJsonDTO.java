@@ -30,7 +30,13 @@ public class ShellyPillJsonDTO {
     public static final String SHELLYRPC_METHOD_GETCOMPONENTS = "Shelly.GetComponents";
     public static final String SHELLY2_GETCOMPONENTS_STATUS = "status";
     public static final String SHELLY2_GETCOMPONENTS_CONFIG = "config";
-    public static final int SHELLY2_PILL_COMPONENT_BASE_ID = 200;
+
+    public static final int SHELLY2_PILL_ID = 200;
+    public static final String SHELLY2_PILL_KEY_SWITCH = "switch:";
+    public static final String SHELLY2_PILL_KEY_INPUT = "input:";
+    public static final String SHELLY2_PILL_KEY_TEMPERATURE = "temperature:";
+    public static final String SHELLY2_PILL_KEY_HUMIDITY = "humidity:";
+    public static final String SHELLY2_PILL_KEY_VOLTMETER = "voltmeter:";
 
     public static class Shelly2GetComponentsParams {
         public @Nullable Integer offset;
@@ -41,7 +47,6 @@ public class ShellyPillJsonDTO {
 
     public static class Shelly2GetComponentsResult {
         public @Nullable ArrayList<Shelly2Component> components;
-        public @Nullable Integer offset;
         public @Nullable Integer total;
     }
 

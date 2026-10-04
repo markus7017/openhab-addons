@@ -1837,31 +1837,32 @@ Channels lastEvent and eventCount are only available if input type is set to mom
 
 The channels depend on the peripheral mode configured on the device (Shelly app or web UI).
 The binding adds and removes the channels when the mode changes.
+Sensor channels follow the configured sensors, so they stay in place when a sensor reading fails.
 
-| Peripheral mode     | Channels                                                                         |
-| ------------------- | -------------------------------------------------------------------------------- |
-| SSR                 | relay1, relay2: relay channels (see Shelly Plus 1)                               |
-| Digital I/O         | relay/relayN: output channels for each output, input channels for each input     |
-| DHT22               | sensors: temperature1, humidity                                                  |
-| Analog input        | sensors: voltage                                                                 |
-| 1-Wire (DS18B20)    | sensors: temperature1..temperature5                                              |
+| Peripheral mode  | Channels                                                                     |
+| ---------------- | ---------------------------------------------------------------------------- |
+| SSR              | relay1, relay2: relay channels (see Shelly Plus 1)                           |
+| Digital I/O      | relay/relayN: output channels for each output, input channels for each input |
+| DHT22            | sensors: temperature1, humidity                                              |
+| Analog input     | sensors: voltage                                                             |
+| 1-Wire (DS18B20) | sensors: temperature1..temperature5                                          |
 
 | Group   | Channel      | Type     | read-only | Description                                                           |
 | ------- | ------------ | -------- | --------- | --------------------------------------------------------------------- |
 | relay   | output       | Switch   | r/w       | Controls the output (relayN if more than one output is configured)    |
-|         | autoOn       | Number   | r/w       | Relay #1: Sets a timer to turn the device ON after every OFF command  |
-|         | autoOff      | Number   | r/w       | Relay #1: Sets a timer to turn the device OFF after every ON command  |
-|         | timerActive  | Switch   | yes       | Relay #1: ON: An auto-on/off timer is active                          |
+|         | autoOn       | Number   | r/w       | Sets a timer to turn the output ON after every OFF command            |
+|         | autoOff      | Number   | r/w       | Sets a timer to turn the output OFF after every ON command            |
+|         | timerActive  | Switch   | yes       | ON: An auto-on/off timer is active                                    |
 |         | input        | Switch   | yes       | State of the input (input1..3 if more than one input is configured)   |
 |         | button       | Trigger  | yes       | Event trigger, see section Button Events                              |
 |         | lastEvent    | String   | yes       | S/SS/SSS for 1/2/3x Shortpush or L for Longpush                       |
 |         | eventCount   | Number   | yes       | Counter gets incremented every time the device issues a button event. |
-| sensors | temperature1 | Number   | yes       | Temperature value of external sensor #1                               |
+| sensors | temperature1 | Number   | yes       | Temperature of sensor #1 (temperature2..5 for more DS18B20 sensors)   |
 |         | humidity     | Number   | yes       | Humidity in percent (DHT22)                                           |
 |         | voltage      | Number   | yes       | Voltage of the analog input                                           |
 |         | lastUpdate   | DateTime | yes       | Timestamp of the last sensor update (heartbeat)                       |
 
-Channels lastEvent and eventCount are only available if input type is set to momentary button
+Channels lastEvent and eventCount are only available if input type is set to momentary button.
 
 ### Shelly Plus HT (thing-type: shellyplusht)
 

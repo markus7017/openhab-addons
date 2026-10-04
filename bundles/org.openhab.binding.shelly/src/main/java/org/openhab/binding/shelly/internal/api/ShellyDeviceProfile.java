@@ -131,6 +131,7 @@ public class ShellyDeviceProfile {
     public boolean isEM1; // true for em1-clamp meter devices (Plus EM, Mini EM, Pro EM50); Pro EM50 also has a relay
     public boolean isWS90; // true for Ecowitt WS90
     public boolean isPill; // true for The Pill (peripherals are dynamic components with id 200+n)
+    public volatile List<String> pillComponents = List.of(); // The Pill: sorted keys of the configured peripherals
 
     public int minTemp = 0; // Bulb/Duo: Min Light Temp
     public int maxTemp = 0; // Bulb/Duo: Max Light Temp

@@ -134,8 +134,6 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
     protected final ShellyStatusSensor sensorData = new ShellyStatusSensor();
     protected final ArrayList<ShellyRollerStatus> rollerStatus = new ArrayList<>();
     protected @Nullable ShellyThingInterface thing;
-    protected volatile List<Integer> pillSwitchIds = List.of();
-    protected volatile List<Integer> pillInputIds = List.of();
 
     private static final String RPC_SRC_PREFIX = "ohshelly-";
     private static final AtomicInteger REQUEST_ID = new AtomicInteger(1);
@@ -265,10 +263,9 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
 
         Shelly2GetConfigResult dc = apiRequest(SHELLYRPC_METHOD_GETCONFIG, null, Shelly2GetConfigResult.class);
         if (profile.isPill) {
-            Shelly2GetConfigResult pill = getPillComponents().config();
-            Shelly2PillMapper.mapConfig(pill, dc);
-            pillSwitchIds = Shelly2PillMapper.getSwitchIds(pill);
-            pillInputIds = Shelly2PillMapper.getInputIds(pill);
+            PillComponents pill = getPillComponents();
+            Shelly2PillMapper.mapConfig(pill.config(), dc);
+            profile.pillComponents = pill.keys();
         }
         profile.settingsJson = gson.toJson(dc);
         profile.thingName = thingName;
@@ -360,6 +357,10 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
                     relayStatus.relays.add(new ShellyShortStatusRelay());
                 }
             }
+        }
+
+        if (profile.isPill) {
+            resetPillStatus(profile);
         }
 
         if (profile.numInputs > 0) {
@@ -510,13 +511,33 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         return dc;
     }
 
-    protected record PillComponents(Shelly2DeviceStatusResult status, Shelly2GetConfigResult config) {
+    /**
+     * A peripheral mode change can drop all relays, inputs or sensors, which the regular profile initialization
+     * would keep from the previous mode.
+     */
+    private void resetPillStatus(ShellyDeviceProfile profile) {
+        if (!profile.hasRelays) {
+            profile.status.relays = null;
+            relayStatus.relays = null;
+        }
+        if (profile.numInputs == 0) {
+            profile.status.inputs = null;
+            relayStatus.inputs = null;
+        }
+        profile.status.extTemperature = null;
+        profile.status.extHumidity = null;
+        profile.status.extVoltage = null;
+    }
+
+    protected record PillComponents(Shelly2DeviceStatusResult status, Shelly2GetConfigResult config,
+            List<String> keys) {
     }
 
     /**
      * The Pill's peripherals are dynamic components, which Shelly.GetStatus and Shelly.GetConfig don't include.
      *
-     * @return status and config of the dynamic components, keyed like the Shelly.GetStatus/GetConfig result
+     * @return status and config of the dynamic components, keyed like the Shelly.GetStatus/GetConfig result, and the
+     *         sorted component keys
      */
     protected PillComponents getPillComponents() throws ShellyApiException {
         JsonObject status = new JsonObject();
@@ -547,7 +568,8 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
             total = result.total;
         } while (total != null && count < total);
         return new PillComponents(fromJson(gson, gson.toJson(status), Shelly2DeviceStatusResult.class),
-                fromJson(gson, gson.toJson(config), Shelly2GetConfigResult.class));
+                fromJson(gson, gson.toJson(config), Shelly2GetConfigResult.class),
+                config.keySet().stream().sorted().toList());
     }
 
     public <T> T apiRequest(String method, @Nullable Object params, Class<T> classOfT) throws ShellyApiException {

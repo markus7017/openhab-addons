@@ -16,6 +16,8 @@ import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.ShellyDevices.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.*;
+import static org.openhab.binding.shelly.internal.api2.Shelly2PillMapper.getComponentKey;
+import static org.openhab.binding.shelly.internal.api2.dto.ShellyPillJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
 import java.util.ArrayList;
@@ -608,8 +610,27 @@ public class ShellyChannelDefinitions {
             }
         }
         add.putAll(createInputChannels(thing, profile, status));
-        addAddonChannels(thing, profile, 0, add);
+        addPillSensorChannels(thing, profile.pillComponents, add);
         return add;
+    }
+
+    /**
+     * Sensor channels are derived from the configured components rather than the sensor values, so a failed sensor
+     * reading doesn't remove them.
+     */
+    private static void addPillSensorChannels(final Thing thing, List<String> components, Map<String, Channel> add) {
+        String[] temperatures = { CHANNEL_ESENSOR_TEMP1, CHANNEL_ESENSOR_TEMP2, CHANNEL_ESENSOR_TEMP3,
+                CHANNEL_ESENSOR_TEMP4, CHANNEL_ESENSOR_TEMP5 };
+        for (int i = 0; i < temperatures.length; i++) {
+            addChannel(thing, add, components.contains(getComponentKey(SHELLY2_PILL_KEY_TEMPERATURE, i)), CHGR_SENSOR,
+                    temperatures[i]);
+        }
+        addChannel(thing, add, components.contains(getComponentKey(SHELLY2_PILL_KEY_HUMIDITY, 0)), CHGR_SENSOR,
+                CHANNEL_ESENSOR_HUMIDITY);
+        addChannel(thing, add, components.contains(getComponentKey(SHELLY2_PILL_KEY_VOLTMETER, 0)), CHGR_SENSOR,
+                CHANNEL_ESENSOR_VOLTAGE);
+        boolean hasSensors = add.keySet().stream().anyMatch(id -> id.startsWith(CHGR_SENSOR));
+        addChannel(thing, add, hasSensors, CHGR_SENSOR, CHANNEL_LAST_UPDATE);
     }
 
     /**
