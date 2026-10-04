@@ -1908,29 +1908,43 @@ Mains-powered (USB-C) indoor Wi-Fi camera with motion detection, night vision, m
 `armed`, `privacy` and `motion` are pushed in real time when the device reports a change and are also refreshed on every poll cycle.
 Channels are only created for settings the device reports.
 
-| Group   | Channel           | Type     | read-only | Description                                                                     |
-| ------- | ----------------- | -------- | --------- | ------------------------------------------------------------------------------- |
-| control | armed             | Switch   | r/w       | ON: Camera is armed, motion events and recordings are active                    |
-|         | privacy           | Switch   | r/w       | ON: Privacy mode, video and audio capture are disabled                          |
-| sensors | motion            | Switch   | yes       | ON: Motion is currently detected                                                |
-|         | motionTimestamp   | DateTime | yes       | Time when the last motion was detected                                          |
-|         | event             | Trigger  | yes       | `MOTION`, `MOTION_END`, `ARMED`, `DISARMED`, `PRIVACY_ON`, `PRIVACY_OFF`        |
-| media   | volume            | Dimmer   | r/w       | Speaker volume in %                                                             |
-|         | mute              | Switch   | r/w       | ON: Microphone is muted                                                         |
-|         | sounds            | Switch   | r/w       | ON: Device plays its built-in notification sounds                               |
-|         | playSound         | String   | no        | Play a built-in sound: `alert`, `ding-dong` or `notification`                   |
-| camera  | streamerState     | String   | yes       | State of the video streamer (stopped / starting / running / stopping / unknown) |
-|         | nightVisionMode   | String   | r/w       | Night vision mode: `auto`, `day` or `night`                                     |
-|         | irLeds            | Switch   | r/w       | ON: Infrared LEDs are used in night mode                                        |
-|         | motionSensitivity | String   | r/w       | Motion detection sensitivity: `low`, `medium` or `high`                         |
-|         | recordOnMotion    | Switch   | r/w       | ON: A recording is started when motion is detected                              |
-|         | rtspEnabled       | Switch   | r/w       | ON: RTSP video streams are enabled                                              |
-| device  | statusLed         | Switch   | r/w       | ON: Status LED disabled                                                         |
+| Group   | Channel            | Type     | read-only | Description                                                                     |
+| ------- | ------------------ | -------- | --------- | ------------------------------------------------------------------------------- |
+| control | armed              | Switch   | r/w       | ON: Camera is armed, motion events and recordings are active                    |
+|         | privacy            | Switch   | r/w       | ON: Privacy mode, video and audio capture are disabled                          |
+| sensors | motion             | Switch   | yes       | ON: Motion is currently detected                                                |
+|         | motionTimestamp    | DateTime | yes       | Time when the last motion was detected                                          |
+|         | event              | Trigger  | yes       | `MOTION`, `MOTION_END`, `ARMED`, `DISARMED`, `PRIVACY_ON`, `PRIVACY_OFF`        |
+| media   | volume             | Dimmer   | r/w       | Speaker volume in %                                                             |
+|         | mute               | Switch   | r/w       | ON: Microphone is muted                                                         |
+|         | sounds             | Switch   | r/w       | ON: Device plays its built-in notification sounds                               |
+|         | playSound          | String   | no        | Play a built-in sound: `alert`, `ding-dong` or `notification`                   |
+| camera  | streamerState      | String   | yes       | State of the video streamer (stopped / starting / running / stopping / unknown) |
+|         | nightVisionMode    | String   | r/w       | Night vision mode: `auto`, `day` or `night`                                     |
+|         | irLeds             | Switch   | r/w       | ON: Infrared LEDs are used in night mode                                        |
+|         | motionSensitivity  | String   | r/w       | Motion detection sensitivity: `low`, `medium` or `high`                         |
+|         | recordOnMotion     | Switch   | r/w       | ON: A recording is started when motion is detected                              |
+|         | rtspEnabled        | Switch   | r/w       | ON: RTSP video streams are enabled                                              |
+|         | snapshot           | Image    | yes       | Latest camera image, updated on motion and on a `REFRESH` command               |
+|         | takeSnapshot       | Switch   | no        | ON: Fetch a new image into `snapshot`, switches back to OFF automatically       |
+|         | lastEvent          | String   | yes       | Last event: `MOTION`, `ARMED`, `DISARMED`, `PRIVACY_ON`, `PRIVACY_OFF`          |
+|         | lastEventTimestamp | DateTime | yes       | Time of the last camera event                                                   |
+|         | lastEventZone      | String   | yes       | Name of the motion zone that reported the last motion                           |
+|         | lastEventImage     | Image    | yes       | Camera image taken when the last motion was detected                            |
+| zones   | motion<id>         | Switch   | yes       | ON: Motion is detected in this zone (one channel per enabled motion zone)       |
+| device  | statusLed          | Switch   | r/w       | ON: Status LED disabled                                                         |
 
 RTSP streaming is disabled by default, switch on `rtspEnabled` to use the streams.
 The Thing properties `rtspStreamMain` (`rtsp://<device ip>/stream/0`) and `rtspStreamSub` (`rtsp://<device ip>/stream/1`, lower resolution) contain the stream URLs.
 The URLs never include credentials, so the device password doesn't end up in a Thing property.
 If device authentication is enabled, configure user and password in your video client.
+
+`snapshot` and `lastEventImage` are fetched from the device when motion is detected.
+Switch `takeSnapshot` to ON (or send `REFRESH` to `snapshot`) to fetch a new image on demand.
+No image is fetched while privacy mode is on.
+Motion zones are configured in the Shelly app.
+The binding creates a `zones#motion<id>` channel for each enabled motion zone, labelled with the zone name.
+`lastEventZone` is only created when at least one motion zone exists.
 
 ### Shelly Plus Wall Dimmer US (thing-type: shellypluswdus)
 

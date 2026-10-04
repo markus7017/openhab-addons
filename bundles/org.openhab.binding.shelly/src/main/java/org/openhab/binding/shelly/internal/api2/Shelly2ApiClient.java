@@ -116,6 +116,8 @@ import org.openhab.core.types.UnDefType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonObject;
+
 /**
  * {@link Shelly2ApiClient} Low level part of the RPC API
  *
@@ -496,6 +498,11 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         }
 
         profile.cameraConfig = dc.camera0;
+        if (profile.isCamera) {
+            // camerazone:<id> keys are dynamic and can't be mapped by Shelly2GetConfigResult
+            profile.cameraZones = ShellyCameraHandler.parseZones(gson,
+                    apiRequest(SHELLYRPC_METHOD_GETCONFIG, null, JsonObject.class));
+        }
 
         return dc;
     }
@@ -535,29 +542,6 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
             }
             return result;
         }
-    }
-
-    protected static Shelly2AuthChallenge parseAuthChallenge(String header) {
-        Shelly2AuthChallenge challenge = new Shelly2AuthChallenge();
-        for (String o : header.split(",")) {
-            String key = substringBefore(o, "=").stripLeading().trim();
-            String value = substringAfter(o, "=").replace("\"", "").trim();
-            switch (key) {
-                case "Digest qop":
-                    challenge.authType = SHELLY2_AUTHTTYPE_DIGEST;
-                    break;
-                case "realm":
-                    challenge.realm = value;
-                    break;
-                case "nonce":
-                    challenge.nonce = value;
-                    break;
-                case "algorithm":
-                    challenge.algorithm = value;
-                    break;
-            }
-        }
-        return challenge;
     }
 
     @Override

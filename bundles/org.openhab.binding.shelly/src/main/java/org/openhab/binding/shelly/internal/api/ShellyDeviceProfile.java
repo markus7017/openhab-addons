@@ -127,6 +127,7 @@ public class ShellyDeviceProfile {
     public String presenceMainZoneKey = SHELLY2_PRESENCE_ZONE_PREFIX + SHELLY2_PRESENCE_DEFAULT_ZONE_ID;
     public boolean isCamera; // true: Shelly Camera
     public @Nullable Shelly2CameraConfig cameraConfig; // Camera.GetConfig, kept in sync by the setters
+    public Map<Integer, String> cameraZones = Map.of(); // enabled motion zones: camerazone id -> name
     public boolean is3EM; // true for Shelly 3EM and Pro 3EM
     public String floodAlarmMode = ""; // Flood Gen4: alarm mode from Flood.GetConfig
     public int reportHoldoff = 0; // Flood Gen4: report holdoff in seconds

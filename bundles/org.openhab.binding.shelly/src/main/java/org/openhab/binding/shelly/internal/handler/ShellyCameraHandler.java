@@ -16,7 +16,9 @@ import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
+import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -32,6 +34,7 @@ import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2C
 import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig.Shelly2CameraMotion;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig.Shelly2CameraNightVision;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraStatus;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraZoneConfig;
 import org.openhab.binding.shelly.internal.config.ShellyBindingRuntimeConfig;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 import org.openhab.binding.shelly.internal.provider.ShellyStateDescriptionProvider;
@@ -41,9 +44,17 @@ import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.IncreaseDecreaseType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.PercentType;
+import org.openhab.core.library.types.RawType;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.types.Command;
+import org.openhab.core.types.RefreshType;
+import org.openhab.core.types.State;
+import org.openhab.core.types.UnDefType;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link ShellyCameraHandler} implements status mapping, channel updates and command handling for the Shelly
@@ -64,6 +75,64 @@ public class ShellyCameraHandler extends ShellyBaseHandler {
     }
 
     @Override
+    public void handleCommand(ChannelUID channelUID, Command command) {
+        if (command instanceof RefreshType && CHANNEL_CAMERA_SNAPSHOT.equals(channelUID.getIdWithoutGroup())) {
+            scheduler.execute(() -> refreshSnapshot(false));
+            return;
+        }
+        super.handleCommand(channelUID, command);
+    }
+
+    @Override
+    public void onCameraZoneEvent(int zone, String event) {
+        boolean motion = SHELLY2_EVENT_CAMERA_MOTION.equals(event);
+        updateChannel(CHANNEL_GROUP_CAMERA_ZONES, CHANNEL_CAMERA_ZONE_MOTION + zone, OnOffType.from(motion));
+        if (motion) {
+            String name = profile.cameraZones.getOrDefault(zone, "");
+            updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_LAST_EVENT_ZONE,
+                    getStringType(name.isEmpty() ? String.valueOf(zone) : name));
+        }
+    }
+
+    /**
+     * Derives camera events from status changes, the device reports them by NotifyStatus without a NotifyEvent
+     */
+    private boolean detectEvent(String group, String channel, @Nullable Boolean value, String onEvent,
+            String offEvent) {
+        State previous = getChannelValue(group, channel);
+        if (value == null || !(previous instanceof OnOffType) || previous == OnOffType.from(value)) {
+            return false;
+        }
+        String event = (value ? onEvent : offEvent).toUpperCase(Locale.ROOT);
+        triggerChannel(CHANNEL_GROUP_SENSOR, CHANNEL_EVENT_TRIGGER, event);
+        if (SHELLY2_EVENT_CAMERA_MOTION_END.equalsIgnoreCase(event)) {
+            return false;
+        }
+        boolean updated = updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_LAST_EVENT, getStringType(event));
+        updated |= updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_LAST_EVENT_TS, getTimestamp());
+        if (!SHELLY2_EVENT_CAMERA_MOTION.equalsIgnoreCase(event)) {
+            updated |= updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_LAST_EVENT_ZONE, UnDefType.UNDEF);
+        }
+        return updated;
+    }
+
+    void refreshSnapshot(boolean motionEvent) {
+        Shelly2CameraStatus cs = profile.status.camera;
+        if (cs == null || Boolean.TRUE.equals(cs.privacy)) {
+            return; // the device answers 502 while privacy mode is on
+        }
+        try {
+            RawType image = new RawType(api.getCameraSnapshot(), SHELLY2_CAMERA_SNAPSHOT_MIME_TYPE);
+            updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_SNAPSHOT, image);
+            if (motionEvent) {
+                updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_LAST_EVENT_IMAGE, image);
+            }
+        } catch (ShellyApiException e) {
+            logger.debug("{}: Unable to fetch camera snapshot: {}", thingName, e.toString());
+        }
+    }
+
+    @Override
     public boolean handleDeviceCommand(ChannelUID channelUID, Command command) throws ShellyApiException {
         String channel = channelUID.getIdWithoutGroup();
         boolean on = command == OnOffType.ON;
@@ -74,6 +143,18 @@ public class ShellyCameraHandler extends ShellyBaseHandler {
             case CHANNEL_CAMERA_PRIVACY:
                 api.setCamera(null, on);
                 break;
+            case CHANNEL_CAMERA_TAKE_SNAPSHOT:
+                if (!on) {
+                    return false;
+                }
+                // auto-update only predicts ON, publish ON and OFF so the UI sees both state changes
+                String takeSnapshot = mkChannelId(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_TAKE_SNAPSHOT);
+                updateChannel(takeSnapshot, OnOffType.ON, true);
+                scheduler.execute(() -> {
+                    refreshSnapshot(false);
+                    updateChannel(takeSnapshot, OnOffType.OFF, true);
+                });
+                return false;
             case CHANNEL_MEDIA_PLAY_SOUND:
                 api.playCameraSound(command.toString());
                 return false;
@@ -92,13 +173,28 @@ public class ShellyCameraHandler extends ShellyBaseHandler {
     public boolean updateDeviceStatus(ShellySettingsStatus status) throws ShellyApiException {
         Shelly2CameraStatus cs = status.camera;
         Shelly2CameraConfig config = profile.cameraConfig;
-        updateThingChannels(Map.of(), ShellyChannelDefinitions.createCameraChannels(getThing(), config, cs));
+        updateThingChannels(Map.of(),
+                ShellyChannelDefinitions.createCameraChannels(getThing(), config, cs, profile.cameraZones));
 
         boolean updated = false;
         if (cs != null) {
             if (Boolean.TRUE.equals(cs.motion)
                     && getChannelValue(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION) != OnOffType.ON) {
                 updated |= updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION_TS, getTimestamp());
+                scheduler.execute(() -> refreshSnapshot(true));
+            }
+            updated |= detectEvent(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION, cs.motion, SHELLY2_EVENT_CAMERA_MOTION,
+                    SHELLY2_EVENT_CAMERA_MOTION_END);
+            updated |= detectEvent(CHANNEL_GROUP_CONTROL, CHANNEL_CAMERA_ARMED, cs.arm, SHELLY2_EVENT_CAMERA_ARMED,
+                    SHELLY2_EVENT_CAMERA_DISARMED);
+            updated |= detectEvent(CHANNEL_GROUP_CONTROL, CHANNEL_CAMERA_PRIVACY, cs.privacy,
+                    SHELLY2_EVENT_CAMERA_PRIVACY_ON, SHELLY2_EVENT_CAMERA_PRIVACY_OFF);
+            if (Boolean.FALSE.equals(cs.motion)) {
+                // no motion in any zone, also recovers zone channels from a missed camerazone.motion_end
+                for (Integer zone : profile.cameraZones.keySet()) {
+                    updated |= updateChannel(CHANNEL_GROUP_CAMERA_ZONES, CHANNEL_CAMERA_ZONE_MOTION + zone,
+                            OnOffType.OFF);
+                }
             }
             updated |= updateSwitch(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION, cs.motion);
             updated |= updateSwitch(CHANNEL_GROUP_CONTROL, CHANNEL_CAMERA_ARMED, cs.arm);
@@ -141,6 +237,25 @@ public class ShellyCameraHandler extends ShellyBaseHandler {
         cached.motion = delta.motion != null ? delta.motion : cached.motion;
         cached.streamer = delta.streamer != null ? delta.streamer : cached.streamer;
         return cached;
+    }
+
+    public static Map<Integer, String> parseZones(Gson gson, JsonObject config) {
+        Map<Integer, String> zones = new TreeMap<>();
+        for (Map.Entry<String, JsonElement> entry : config.entrySet()) {
+            if (!entry.getKey().startsWith(SHELLY2_CAMERAZONE_COMPONENT_PREFIX) || !entry.getValue().isJsonObject()) {
+                continue;
+            }
+            Shelly2CameraZoneConfig zone = gson.fromJson(entry.getValue(), Shelly2CameraZoneConfig.class);
+            if (zone == null || !SHELLY2_CAMERAZONE_TYPE_MOTION.equals(zone.type)
+                    || Boolean.FALSE.equals(zone.enable)) {
+                continue;
+            }
+            Integer id = zone.id;
+            if (id != null) {
+                zones.put(id, getString(zone.name).trim());
+            }
+        }
+        return zones;
     }
 
     public static boolean applyEvent(Shelly2CameraStatus status, String event) {

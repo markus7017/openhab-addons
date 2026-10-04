@@ -113,6 +113,10 @@ public interface ShellyApiInterface extends ShellyDiscoveryInterface {
         throw new ShellyApiException("Request not supported");
     }
 
+    default byte[] getCameraSnapshot() throws ShellyApiException {
+        throw new ShellyApiException("Request not supported");
+    }
+
     ShellyOtaCheckResult checkForUpdate() throws ShellyApiException;
 
     ShellySettingsUpdate firmwareUpdate(String uri) throws ShellyApiException;

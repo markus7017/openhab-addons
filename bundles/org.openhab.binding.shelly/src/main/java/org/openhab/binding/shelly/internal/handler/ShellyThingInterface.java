@@ -86,6 +86,9 @@ public interface ShellyThingInterface {
 
     boolean updateDeviceStatus(ShellySettingsStatus status) throws ShellyApiException;
 
+    default void onCameraZoneEvent(int zone, String event) {
+    }
+
     void updateChannelDefinitions(Map<String, Channel> dynChannels);
 
     boolean updateThingChannels(Map<String, Channel> channelUpdates, Map<String, Channel> newChannels);

@@ -27,6 +27,8 @@ import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.ShellyDevices.THING_TYPE_SHELLYPLUSCAMERA;
 
 import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.jupiter.api.BeforeAll;
@@ -44,13 +46,17 @@ import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.IncreaseDecreaseType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.PercentType;
+import org.openhab.core.library.types.RawType;
 import org.openhab.core.library.types.StringType;
+import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingUID;
+import org.openhab.core.thing.binding.BaseThingHandler;
 import org.openhab.core.types.UnDefType;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonParser;
 
 /**
  * @author Markus Michels - Initial contribution
@@ -69,6 +75,12 @@ public class ShellyCameraHandlerTest {
     private static final String STATUS_JSON = """
             {"camera:0":{"id":0,"arm":true,"privacy":false,"streamer":"running","motion":true,"streams":0,
             "recording_encryption":{"configured":false},"streamer_version":"115"}}
+            """;
+    private static final String ZONES_JSON = """
+            {"camera:0":{"id":0},"camerazone:200":{"id":200,"enable":true,"type":"motion","name":"Entrance"},
+            "camerazone:201":{"id":201,"enable":true,"type":"privacy","name":"Window"},
+            "camerazone:202":{"id":202,"enable":false,"type":"motion","name":"Off"},
+            "camerazone:203":{"id":203,"enable":true,"type":"motion"}}
             """;
 
     private final Gson gson = new Gson();
@@ -218,6 +230,152 @@ public class ShellyCameraHandlerTest {
 
         verify(handler, times(1)).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_SENSOR_MOTION_TS),
                 any(DateTimeType.class));
+        verify(handler, times(1)).updateChannel(eq(CHANNEL_GROUP_CAMERA), eq(CHANNEL_CAMERA_LAST_EVENT_IMAGE),
+                any(RawType.class));
+    }
+
+    @Test
+    public void parseZonesKeepsEnabledMotionZonesOnly() {
+        Map<Integer, String> zones = ShellyCameraHandler.parseZones(gson,
+                JsonParser.parseString(ZONES_JSON).getAsJsonObject());
+
+        assertThat(zones, is(Map.of(200, "Entrance", 203, "")));
+    }
+
+    @Test
+    public void createCameraChannelsAddsZoneChannelsLabelledByName() {
+        Thing thing = mock(Thing.class);
+        when(thing.getUID()).thenReturn(new ThingUID("shelly", "shellypluscamera", "test"));
+        Shelly2CameraStatus status = gson.fromJson(STATUS_JSON, Shelly2DeviceStatusResult.class).camera0;
+
+        Map<String, Channel> channels = ShellyChannelDefinitions.createCameraChannels(thing, null, status,
+                Map.of(200, "Entrance", 203, ""));
+
+        assertThat(channels.get("zones#motion200").getLabel(), is("Entrance"));
+        assertTrue(channels.get("zones#motion203").getLabel().endsWith(" 203"));
+        assertTrue(channels.containsKey("camera#lastEventZone"));
+        assertTrue(channels.containsKey("camera#snapshot"));
+        assertFalse(ShellyChannelDefinitions.createCameraChannels(thing, null, status, Map.of())
+                .containsKey("camera#lastEventZone"));
+    }
+
+    @Test
+    public void activityChannelsKeepTheirOwnDefinition() {
+        Thing thing = mock(Thing.class);
+        when(thing.getUID()).thenReturn(new ThingUID("shelly", "shellypluscamera", "test"));
+        Shelly2CameraStatus status = gson.fromJson(STATUS_JSON, Shelly2DeviceStatusResult.class).camera0;
+
+        Map<String, Channel> channels = ShellyChannelDefinitions.createCameraChannels(thing, null, status,
+                Map.of(200, "Entrance"));
+
+        assertThat(channels.get("camera#lastEvent").getChannelTypeUID().getId(), is("cameraLastEvent"));
+        assertThat(channels.get("camera#lastEventTimestamp").getAcceptedItemType(), is("DateTime"));
+        assertThat(channels.get("camera#lastEventZone").getChannelTypeUID().getId(), is("cameraLastEventZone"));
+        assertThat(channels.get("camera#lastEventImage").getAcceptedItemType(), is("Image"));
+        assertThat(channels.get("camera#takeSnapshot").getAcceptedItemType(), is("Switch"));
+    }
+
+    @Test
+    public void takeSnapshotFetchesImageAndResetsSwitch() throws Exception {
+        ShellyCameraHandler handler = createHandler();
+
+        handler.handleDeviceCommand(channel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_TAKE_SNAPSHOT), OnOffType.ON);
+
+        verify(handler).updateChannel(eq(CHANNEL_GROUP_CAMERA), eq(CHANNEL_CAMERA_SNAPSHOT), any(RawType.class));
+        verify(handler).updateChannel("camera#takeSnapshot", OnOffType.ON, true);
+        verify(handler).updateChannel("camera#takeSnapshot", OnOffType.OFF, true);
+        verify(handler, never()).updateDeviceStatus(any());
+    }
+
+    @Test
+    public void zoneMotionUpdatesZoneAndLastEventZone() throws Exception {
+        ShellyCameraHandler handler = createHandler();
+
+        handler.onCameraZoneEvent(200, "motion");
+
+        verify(handler).updateChannel(CHANNEL_GROUP_CAMERA_ZONES, "motion200", OnOffType.ON);
+        verify(handler).updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_LAST_EVENT_ZONE, new StringType("Entrance"));
+    }
+
+    @Test
+    public void zoneMotionEndOnlyClearsZone() throws Exception {
+        ShellyCameraHandler handler = createHandler();
+
+        handler.onCameraZoneEvent(200, "motion_end");
+
+        verify(handler).updateChannel(CHANNEL_GROUP_CAMERA_ZONES, "motion200", OnOffType.OFF);
+        verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_CAMERA), eq(CHANNEL_CAMERA_LAST_EVENT_ZONE), any());
+    }
+
+    @Test
+    public void motionStatusChangeSetsLastEventAndTriggers() throws Exception {
+        ShellyCameraHandler handler = createHandler();
+        doReturn(OnOffType.OFF).when(handler).getChannelValue(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION);
+
+        handler.updateDeviceStatus(profile.status);
+
+        verify(handler).updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_LAST_EVENT, new StringType("MOTION"));
+        verify(handler).updateChannel(eq(CHANNEL_GROUP_CAMERA), eq(CHANNEL_CAMERA_LAST_EVENT_TS),
+                any(DateTimeType.class));
+        verify(handler).triggerChannel(CHANNEL_GROUP_SENSOR, CHANNEL_EVENT_TRIGGER, "MOTION");
+        verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_CAMERA), eq(CHANNEL_CAMERA_LAST_EVENT_ZONE), any());
+    }
+
+    @Test
+    public void disarmStatusChangeClearsLastEventZone() throws Exception {
+        ShellyCameraHandler handler = createHandler();
+        doReturn(OnOffType.ON).when(handler).getChannelValue(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION);
+        doReturn(OnOffType.ON).when(handler).getChannelValue(CHANNEL_GROUP_CONTROL, CHANNEL_CAMERA_ARMED);
+        profile.status.camera.arm = false;
+
+        handler.updateDeviceStatus(profile.status);
+
+        verify(handler).updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_LAST_EVENT, new StringType("DISARMED"));
+        verify(handler).updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_LAST_EVENT_ZONE, UnDefType.UNDEF);
+        verify(handler).triggerChannel(CHANNEL_GROUP_SENSOR, CHANNEL_EVENT_TRIGGER, "DISARMED");
+    }
+
+    @Test
+    public void initialStatusDoesNotRaiseEvents() throws Exception {
+        ShellyCameraHandler handler = createHandler();
+
+        handler.updateDeviceStatus(profile.status);
+
+        verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_CAMERA), eq(CHANNEL_CAMERA_LAST_EVENT), any());
+        verify(handler, never()).triggerChannel(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    public void motionSnapshotUpdatesBothImageChannels() throws Exception {
+        ShellyCameraHandler handler = createHandler();
+        when(api.getCameraSnapshot()).thenReturn(new byte[] { 1, 2, 3 });
+
+        handler.refreshSnapshot(true);
+        handler.refreshSnapshot(false);
+
+        RawType image = new RawType(new byte[] { 1, 2, 3 }, "image/jpeg");
+        verify(handler, times(2)).updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_SNAPSHOT, image);
+        verify(handler, times(1)).updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_LAST_EVENT_IMAGE, image);
+    }
+
+    @Test
+    public void snapshotIsSkippedInPrivacyMode() throws Exception {
+        ShellyCameraHandler handler = createHandler();
+        profile.status.camera.privacy = true;
+
+        handler.refreshSnapshot(true);
+
+        verify(api, never()).getCameraSnapshot();
+    }
+
+    @Test
+    public void motionEndResetsZoneChannels() throws Exception {
+        ShellyCameraHandler handler = createHandler();
+        profile.status.camera.motion = false;
+
+        handler.updateDeviceStatus(profile.status);
+
+        verify(handler).updateChannel(CHANNEL_GROUP_CAMERA_ZONES, "motion200", OnOffType.OFF);
     }
 
     private ShellyApiInterface api = mock(ShellyApiInterface.class);
@@ -236,14 +394,26 @@ public class ShellyCameraHandlerTest {
         when(thing.getUID()).thenReturn(new ThingUID("shelly", "shellypluscamera", "test"));
         profile.cameraConfig = gson.fromJson(CONFIG_JSON, Shelly2GetConfigResult.class).camera0;
         profile.status.camera = gson.fromJson(STATUS_JSON, Shelly2DeviceStatusResult.class).camera0;
+        profile.cameraZones = Map.of(200, "Entrance");
         Field apiField = ShellyBaseHandler.class.getDeclaredField("api");
         apiField.setAccessible(true);
         apiField.set(handler, api);
+        when(api.getCameraSnapshot()).thenReturn(new byte[] { 1 });
+        ScheduledExecutorService scheduler = mock(ScheduledExecutorService.class);
+        doAnswer(i -> {
+            ((Runnable) i.getArgument(0)).run();
+            return null;
+        }).when(scheduler).execute(any());
+        Field schedulerField = BaseThingHandler.class.getDeclaredField("scheduler");
+        schedulerField.setAccessible(true);
+        schedulerField.set(handler, scheduler);
         handler.profile = profile;
         doReturn(thing).when(handler).getThing();
         doReturn(false).when(handler).updateThingChannels(any(), any());
         doReturn(true).when(handler).updateChannel(anyString(), anyString(), any());
+        doReturn(true).when(handler).updateChannel(anyString(), any(), anyBoolean());
         doReturn(UnDefType.NULL).when(handler).getChannelValue(anyString(), anyString());
+        doNothing().when(handler).triggerChannel(anyString(), anyString(), anyString());
         return handler;
     }
 

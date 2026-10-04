@@ -313,6 +313,14 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_CAMERA_MOTION_SENSITIVITY = "motionSensitivity";
     public static final String CHANNEL_CAMERA_RECORD_ON_MOTION = "recordOnMotion";
     public static final String CHANNEL_CAMERA_RTSP = "rtspEnabled";
+    public static final String CHANNEL_CAMERA_SNAPSHOT = "snapshot";
+    public static final String CHANNEL_CAMERA_TAKE_SNAPSHOT = "takeSnapshot";
+    public static final String CHANNEL_CAMERA_LAST_EVENT = "lastEvent";
+    public static final String CHANNEL_CAMERA_LAST_EVENT_TS = "lastEventTimestamp";
+    public static final String CHANNEL_CAMERA_LAST_EVENT_ZONE = "lastEventZone";
+    public static final String CHANNEL_CAMERA_LAST_EVENT_IMAGE = "lastEventImage";
+    public static final String CHANNEL_GROUP_CAMERA_ZONES = "zones";
+    public static final String CHANNEL_CAMERA_ZONE_MOTION = "motion"; // zones#motion<zone id>
 
     // Media (speaker/microphone)
     public static final String CHANNEL_GROUP_MEDIA = "media";

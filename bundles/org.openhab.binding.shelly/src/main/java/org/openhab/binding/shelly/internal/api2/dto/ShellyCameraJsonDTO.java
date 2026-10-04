@@ -29,6 +29,11 @@ public class ShellyCameraJsonDTO {
     public static final String SHELLYRPC_METHOD_CAMERA_PLAYSOUND = "Camera.PlaySound";
 
     public static final String SHELLY2_CAMERA_COMPONENT_PREFIX = "camera:";
+    public static final String SHELLY2_CAMERAZONE_COMPONENT_PREFIX = "camerazone:";
+    public static final String SHELLY2_CAMERAZONE_TYPE_MOTION = "motion";
+
+    public static final String SHELLY2_CAMERA_SNAPSHOT_URL = "/camera/0/snapshot";
+    public static final String SHELLY2_CAMERA_SNAPSHOT_MIME_TYPE = "image/jpeg";
 
     public static final String SHELLY2_EVENT_CAMERA_MOTION = "motion";
     public static final String SHELLY2_EVENT_CAMERA_MOTION_END = "motion_end";
@@ -79,6 +84,13 @@ public class ShellyCameraJsonDTO {
         @SerializedName("night_vision")
         public @Nullable Shelly2CameraNightVision nightVision;
         public @Nullable Shelly2CameraEnable rtsp;
+    }
+
+    public static class Shelly2CameraZoneConfig {
+        public @Nullable Integer id;
+        public @Nullable Boolean enable;
+        public @Nullable String type; // motion|privacy
+        public @Nullable String name;
     }
 
     public static class Shelly2CameraSetParams {

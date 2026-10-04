@@ -163,6 +163,41 @@ public class ShellyHttpClient {
         throw new ShellyApiException("API Timeout or inconsistent result"); // successful
     }
 
+    /**
+     * GET binary content (e.g. a JPEG snapshot), answering a Digest challenge from the device if required
+     *
+     * @param uri: URI (e.g. "/camera/0/snapshot")
+     */
+    public byte[] httpGetBinary(String uri) throws ShellyApiException {
+        String url = config.getDeviceApiUrl() + uri;
+        try {
+            ContentResponse response = newBinaryRequest(url, "");
+            String challenge = getString(response.getHeaders().get(HttpHeader.WWW_AUTHENTICATE));
+            if (response.getStatus() == HttpStatus.UNAUTHORIZED_401 && !challenge.isEmpty()) {
+                @Nullable
+                Shelly2AuthRsp rsp = buildAuthResponse(HttpMethod.GET, uri, parseAuthChallenge(challenge),
+                        SHELLY2_AUTHDEF_USER, config.getPassword());
+                response = newBinaryRequest(url, formatAuthResponse(uri, rsp));
+            }
+            if (response.getStatus() != HttpStatus.OK_200) {
+                throw new ShellyApiException(ShellyApiResult.builder(response).build());
+            }
+            return response.getContent();
+        } catch (ExecutionException | InterruptedException | TimeoutException | IllegalArgumentException e) {
+            throw new ShellyApiException(ShellyApiResult.builder(HttpMethod.GET.toString(), url).build(), e);
+        }
+    }
+
+    private ContentResponse newBinaryRequest(String url, String authHeader)
+            throws InterruptedException, TimeoutException, ExecutionException {
+        Request request = httpClient.newRequest(url).method(HttpMethod.GET).timeout(SHELLY_API_TIMEOUT_MS,
+                TimeUnit.MILLISECONDS);
+        if (!authHeader.isEmpty()) {
+            request.header(HTTP_HEADER_AUTH, authHeader);
+        }
+        return request.send();
+    }
+
     public String httpPost(String uri, String data) throws ShellyApiException {
         return innerRequest(HttpMethod.POST, uri, null, data).response;
     }
@@ -250,9 +285,37 @@ public class ShellyHttpClient {
         return builder.build();
     }
 
+    protected static Shelly2AuthChallenge parseAuthChallenge(String header) {
+        Shelly2AuthChallenge challenge = new Shelly2AuthChallenge();
+        for (String o : header.split(",")) {
+            String key = substringBefore(o, "=").stripLeading().trim();
+            String value = substringAfter(o, "=").replace("\"", "").trim();
+            switch (key) {
+                case "Digest qop":
+                    challenge.authType = SHELLY2_AUTHTTYPE_DIGEST;
+                    break;
+                case "realm":
+                    challenge.realm = value;
+                    break;
+                case "nonce":
+                    challenge.nonce = value;
+                    break;
+                case "algorithm":
+                    challenge.algorithm = value;
+                    break;
+            }
+        }
+        return challenge;
+    }
+
     protected @Nullable Shelly2AuthRsp buildAuthResponse(String uri, @Nullable Shelly2AuthChallenge challenge,
             String user, String password) throws ShellyApiException {
-        return buildAuthResponse(challenge, user, password, sha256(HttpMethod.POST + ":" + uri));
+        return buildAuthResponse(HttpMethod.POST, uri, challenge, user, password);
+    }
+
+    protected @Nullable Shelly2AuthRsp buildAuthResponse(HttpMethod method, String uri,
+            @Nullable Shelly2AuthChallenge challenge, String user, String password) throws ShellyApiException {
+        return buildAuthResponse(challenge, user, password, sha256(method + ":" + uri));
     }
 
     // a WebSocket request has no HTTP method/URI, the RPC spec defines HA2 = SHA256("dummy_method:dummy_uri")

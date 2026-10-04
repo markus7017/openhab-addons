@@ -34,7 +34,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
@@ -620,8 +619,13 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         for (Shelly2NotifyEvent e : events) {
             String event = getString(e.event);
             int id = getInteger(e.id);
-            if (profile.isCamera && getString(e.component).startsWith(SHELLY2_CAMERA_COMPONENT_PREFIX)) {
+            String component = getString(e.component);
+            if (profile.isCamera && component.startsWith(SHELLY2_CAMERA_COMPONENT_PREFIX)) {
                 handleCameraEvent(profile, event);
+                continue;
+            }
+            if (profile.isCamera && component.startsWith(SHELLY2_CAMERAZONE_COMPONENT_PREFIX)) {
+                getThing().onCameraZoneEvent(id, event);
                 continue;
             }
             switch (event) {
@@ -1233,7 +1237,6 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         }
         profile.status.camera = ShellyCameraHandler.mergeStatus(profile.status.camera, delta);
         getThing().updateDeviceStatus(profile.status);
-        getThing().triggerChannel(CHANNEL_GROUP_SENSOR, CHANNEL_EVENT_TRIGGER, event.toUpperCase(Locale.ROOT));
     }
 
     @Override
@@ -1265,6 +1268,11 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         Shelly2CameraPlaySoundParams params = new Shelly2CameraPlaySoundParams();
         params.sound = sound;
         apiRequest(SHELLYRPC_METHOD_CAMERA_PLAYSOUND, params, String.class);
+    }
+
+    @Override
+    public byte[] getCameraSnapshot() throws ShellyApiException {
+        return httpGetBinary(SHELLY2_CAMERA_SNAPSHOT_URL);
     }
 
     /**

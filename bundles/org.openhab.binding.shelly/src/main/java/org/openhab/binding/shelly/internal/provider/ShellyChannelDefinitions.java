@@ -83,6 +83,7 @@ public class ShellyChannelDefinitions {
     public static final String ITEMT_COLOR = "Color";
     public static final String ITEMT_LOCATION = "Location";
     public static final String ITEMT_DATETIME = "DateTime";
+    public static final String ITEMT_IMAGE = "Image";
     public static final String ITEMT_TEMP = "Number:Temperature"; // Temperature with unit
     public static final String ITEMT_LUX = "Number:Illuminance";
     public static final String ITEMT_POWER = "Number:Power"; // Watts
@@ -446,6 +447,16 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_RECORD_ON_MOTION, "cameraRecordOnMotion",
                         ITEMT_SWITCH))
                 .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_RTSP, "cameraRtspEnabled", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_SNAPSHOT, "cameraSnapshot", ITEMT_IMAGE))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_TAKE_SNAPSHOT, "cameraTakeSnapshot",
+                        ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_LAST_EVENT, "cameraLastEvent", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_LAST_EVENT_TS, "cameraLastEventTimestamp",
+                        ITEMT_DATETIME))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_LAST_EVENT_ZONE, "cameraLastEventZone",
+                        ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_LAST_EVENT_IMAGE, "cameraLastEventImage",
+                        ITEMT_IMAGE))
 
                 // Media
                 .add(new ShellyChannel(m, CHGR_MEDIA, CHANNEL_MEDIA_VOLUME, "system:volume", ITEMT_DIMMER))
@@ -474,8 +485,9 @@ public class ShellyChannelDefinitions {
             channel = CHANNEL_INPUT; // status#input0..n -> status#input; sensors#input1 (Addon) is a fixed name
         } else if (channel.startsWith(CHANNEL_BUTTON_TRIGGER)) {
             channel = CHANNEL_BUTTON_TRIGGER;
-        } else if (channel.startsWith(CHANNEL_STATUS_EVENTTYPE)) {
-            channel = CHANNEL_STATUS_EVENTTYPE;
+        } else if (channel.startsWith(CHANNEL_STATUS_EVENTTYPE)
+                && channel.substring(CHANNEL_STATUS_EVENTTYPE.length()).chars().allMatch(Character::isDigit)) {
+            channel = CHANNEL_STATUS_EVENTTYPE; // lastEvent1..n, but not camera#lastEventTimestamp etc.
         } else if (channel.startsWith(CHANNEL_STATUS_EVENTCOUNT)) {
             channel = CHANNEL_STATUS_EVENTCOUNT;
         }
@@ -577,9 +589,16 @@ public class ShellyChannelDefinitions {
      * @return {@code Map<String, Channel>} of channels to be added to the thing
      */
     public static Map<String, Channel> createCameraChannels(final Thing thing,
-            final @Nullable Shelly2CameraConfig config, final @Nullable Shelly2CameraStatus status) {
+            final @Nullable Shelly2CameraConfig config, final @Nullable Shelly2CameraStatus status,
+            final Map<Integer, String> zones) {
         Map<String, Channel> add = new LinkedHashMap<>();
         if (status != null) {
+            addChannel(thing, add, true, CHGR_CAMERA, CHANNEL_CAMERA_SNAPSHOT);
+            addChannel(thing, add, true, CHGR_CAMERA, CHANNEL_CAMERA_TAKE_SNAPSHOT);
+            addChannel(thing, add, true, CHGR_CAMERA, CHANNEL_CAMERA_LAST_EVENT);
+            addChannel(thing, add, true, CHGR_CAMERA, CHANNEL_CAMERA_LAST_EVENT_TS);
+            addChannel(thing, add, !zones.isEmpty(), CHGR_CAMERA, CHANNEL_CAMERA_LAST_EVENT_ZONE);
+            addChannel(thing, add, true, CHGR_CAMERA, CHANNEL_CAMERA_LAST_EVENT_IMAGE);
             addChannel(thing, add, status.arm != null, CHGR_CONTROL, CHANNEL_CAMERA_ARMED);
             addChannel(thing, add, status.privacy != null, CHGR_CONTROL, CHANNEL_CAMERA_PRIVACY);
             addChannel(thing, add, status.motion != null, CHGR_SENSOR, CHANNEL_SENSOR_MOTION);
@@ -604,6 +623,19 @@ public class ShellyChannelDefinitions {
             addChannel(thing, add, audio != null && audio.input != null, CHGR_MEDIA, CHANNEL_MEDIA_MUTE);
             addChannel(thing, add, config.sounds != null, CHGR_MEDIA, CHANNEL_MEDIA_SOUNDS);
             addChannel(thing, add, config.sounds != null, CHGR_MEDIA, CHANNEL_MEDIA_PLAY_SOUND);
+        }
+        ShellyChannel motionDef = getDefinition(
+                CHGR_SENSOR + ChannelUID.CHANNEL_GROUP_SEPARATOR + CHANNEL_SENSOR_MOTION);
+        if (motionDef != null) {
+            zones.forEach((id, name) -> {
+                String channelId = CHANNEL_GROUP_CAMERA_ZONES + ChannelUID.CHANNEL_GROUP_SEPARATOR
+                        + CHANNEL_CAMERA_ZONE_MOTION + id;
+                // zone ids are dynamic (200+), so the label carries the zone name instead of an index suffix
+                add.put(channelId,
+                        ChannelBuilder.create(new ChannelUID(thing.getUID(), channelId), motionDef.itemType)
+                                .withType(new ChannelTypeUID(BINDING_ID, motionDef.typeId))
+                                .withLabel(name.isEmpty() ? motionDef.label + " " + id : name).build());
+            });
         }
         return add;
     }
