@@ -110,6 +110,7 @@ public class ShellyDevices {
     public static final String SHELLYDT_PLUSFLOODSG4 = "S4SN-0071Z"; // Shelly Flood S Gen4
     public static final String SHELLYDT_PLUSPRESENCE = "S4SN-0U61X"; // Shelly Presence Gen4
     public static final String SHELLYDT_PLUSUNI = "SNSN-0043X";
+    public static final String SHELLYDT_PILL = "S3SN-0U53X";
     public static final String SHELLYDT_PLUSDIMMEREU = "SNDM-0011EU";
     public static final String SHELLYDT_PLUSDIMMERUS = "SNDM-0013US";
     public static final String SHELLYDT_PLUSDIMMERG3 = "S3DM-0A101WWL";
@@ -276,6 +277,7 @@ public class ShellyDevices {
     public static final ThingTypeUID THING_TYPE_SHELLYPLUSI4DC = new ThingTypeUID(BINDING_ID, "shellyplusi4dc");
     public static final ThingTypeUID THING_TYPE_SHELLYPLUSHT = new ThingTypeUID(BINDING_ID, "shellyplusht");
     public static final ThingTypeUID THING_TYPE_SHELLYPLUSUNI = new ThingTypeUID(BINDING_ID, "shellyplusuni");
+    public static final ThingTypeUID THING_TYPE_SHELLYPLUSPILL = new ThingTypeUID(BINDING_ID, "shellypluspill");
     public static final ThingTypeUID THING_TYPE_SHELLYPLUSSMOKE = new ThingTypeUID(BINDING_ID, "shellyplussmoke");
     public static final ThingTypeUID THING_TYPE_SHELLYPLUSFLOOD = new ThingTypeUID(BINDING_ID, "shellyplusflood");
     public static final ThingTypeUID THING_TYPE_SHELLYPLUSPRESENCE = new ThingTypeUID(BINDING_ID, "shellypluspresence");
@@ -511,7 +513,7 @@ public class ShellyDevices {
             Map.entry(SHELLYDT_PLUSSMOKE, THING_TYPE_SHELLYPLUSSMOKE),
             Map.entry(SHELLYDT_PLUSFLOODG4, THING_TYPE_SHELLYPLUSFLOOD),
             Map.entry(SHELLYDT_PLUSFLOODSG4, THING_TYPE_SHELLYPLUSFLOOD),
-            Map.entry(SHELLYDT_PLUSUNI, THING_TYPE_SHELLYPLUSUNI),
+            Map.entry(SHELLYDT_PLUSUNI, THING_TYPE_SHELLYPLUSUNI), Map.entry(SHELLYDT_PILL, THING_TYPE_SHELLYPLUSPILL),
             Map.entry(SHELLYDT_PLUSDIMMEREU, THING_TYPE_SHELLYPLUSDIMMER),
             Map.entry(SHELLYDT_PLUSDIMMERUS, THING_TYPE_SHELLYPLUSDIMMERUS),
             Map.entry(SHELLYDT_PLUSDIMMERG4US, THING_TYPE_SHELLYPLUSDIMMERUS),
@@ -727,7 +729,8 @@ public class ShellyDevices {
             Map.entry("shellyplusflood", THING_TYPE_SHELLYPLUSFLOOD), //
             Map.entry("shellyfloodg4", THING_TYPE_SHELLYPLUSFLOOD),
             Map.entry("shellyfloodsg4", THING_TYPE_SHELLYPLUSFLOOD),
-            Map.entry("shellyplusuni", THING_TYPE_SHELLYPLUSUNI),
+            Map.entry("shellyplusuni", THING_TYPE_SHELLYPLUSUNI), Map.entry("shellypill", THING_TYPE_SHELLYPLUSPILL),
+            Map.entry("shellypluspill", THING_TYPE_SHELLYPLUSPILL),
             Map.entry("shellypluswdus", THING_TYPE_SHELLYPLUSDIMMERUS),
             Map.entry("shellydimmerg4us", THING_TYPE_SHELLYPLUSDIMMERUS),
             Map.entry("shellyplus10v", THING_TYPE_SHELLYPLUSDIMMER10V),
@@ -832,6 +835,7 @@ public class ShellyDevices {
             Map.entry(THING_TYPE_SHELLYPRO3, 0), //
             Map.entry(THING_TYPE_SHELLYPLUS1L, 0), //
             Map.entry(THING_TYPE_SHELLYPLUS2L, 0), //
+            Map.entry(THING_TYPE_SHELLYPLUSPILL, 0), //
             Map.entry(THING_TYPE_SHELLYPROEM50, 2), //
             Map.entry(THING_TYPE_SHELLY3EM, 3), //
             Map.entry(THING_TYPE_SHELLYPLUS3EM63, 3), //

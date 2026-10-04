@@ -16,6 +16,9 @@ import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
+import java.util.Map;
+import java.util.Set;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
@@ -37,6 +40,7 @@ import org.openhab.core.library.types.PercentType;
 import org.openhab.core.library.types.StopMoveType;
 import org.openhab.core.library.types.UpDownType;
 import org.openhab.core.library.unit.Units;
+import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.types.Command;
@@ -204,6 +208,10 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
 
     @Override
     public boolean updateDeviceStatus(ShellySettingsStatus status) throws ShellyApiException {
+        if (profile.isPill) {
+            reconcilePillChannels(status);
+        }
+
         // map status to channels
         boolean updated = false;
         updated |= updateRelays(status);
@@ -309,6 +317,13 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
         if (!areChannelsCreated()) {
             updateChannelDefinitions(ShellyChannelDefinitions.createRelayChannels(getThing(), profile, relay, idx));
         }
+    }
+
+    private void reconcilePillChannels(ShellySettingsStatus status) {
+        Map<String, Channel> channels = ShellyChannelDefinitions.createPillChannels(getThing(), profile, status);
+        Set<String> obsolete = ShellyChannelDefinitions.getObsoletePillChannelIds(getThing(), channels.keySet());
+        updateThingChannels(Map.of(), channels);
+        removeChannels(obsolete);
     }
 
     private void createRollerChannels(ShellyRollerStatus roller) {

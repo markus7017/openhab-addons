@@ -592,6 +592,36 @@ public class ShellyChannelDefinitions {
         return add;
     }
 
+    /**
+     * The Pill's peripheral mode decides which relay, input and sensor channels exist, so they are created
+     * from the current mode rather than once.
+     *
+     * @return relay, input and sensor channels for the current peripheral mode
+     */
+    public static Map<String, Channel> createPillChannels(final Thing thing, final ShellyDeviceProfile profile,
+            final ShellySettingsStatus status) {
+        Map<String, Channel> add = new LinkedHashMap<>();
+        List<ShellySettingsRelay> relays = status.relays;
+        if (relays != null) {
+            for (int i = 0; i < Math.min(relays.size(), profile.numRelays); i++) {
+                add.putAll(createRelayChannels(thing, profile, relays.get(i), i));
+            }
+        }
+        add.putAll(createInputChannels(thing, profile, status));
+        addAddonChannels(thing, profile, 0, add);
+        return add;
+    }
+
+    /**
+     * @return Pill relay/input/sensor channel ids ("group#channel") not in the current channel set
+     */
+    public static Set<String> getObsoletePillChannelIds(final Thing thing, final Set<String> current) {
+        return thing.getChannels().stream().map(channel -> channel.getUID().getId())
+                .filter(id -> id.startsWith(CHANNEL_GROUP_RELAY_CONTROL)
+                        || id.startsWith(CHANNEL_GROUP_SENSOR + ChannelUID.CHANNEL_GROUP_SEPARATOR))
+                .filter(id -> !current.contains(id)).collect(Collectors.toSet());
+    }
+
     private static void addAddonChannels(final Thing thing, final ShellyDeviceProfile profile, int idx,
             Map<String, Channel> add) {
         // Shelly 1/1PM Addon as external switch (e.g. reed contact); relay_num -1 means standalone.

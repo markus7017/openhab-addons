@@ -578,6 +578,9 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                     profile.updateWakeupPeriod(params.sys.wakeupPeriod / 60);
                 }
             }
+            if (profile.isPill) {
+                Shelly2PillMapper.mapStatus(params, params, pillSwitchIds, pillInputIds);
+            }
             status.temperature = SHELLY_API_INVTEMP; // mark invalid
             updated |= fillDeviceStatus(status, message.params, true);
             if (getDouble(status.temperature) == SHELLY_API_INVTEMP) {
@@ -616,6 +619,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         for (Shelly2NotifyEvent e : events) {
             String event = getString(e.event);
             int id = getInteger(e.id);
+            List<Integer> inputIds = pillInputIds;
+            if (profile.isPill && inputIds.contains(id)) {
+                id = inputIds.indexOf(id); // inputs are processed by index
+            }
             switch (event) {
                 case SHELLY2_EVENT_BTNUP:
                 case SHELLY2_EVENT_BTNDOWN:
@@ -817,6 +824,9 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         ShellyDeviceProfile profile = getProfile();
         ShellySettingsStatus status = profile.status;
         Shelly2DeviceStatusResult ds = apiRequest(SHELLYRPC_METHOD_GETSTATUS, null, Shelly2DeviceStatusResult.class);
+        if (profile.isPill) {
+            Shelly2PillMapper.mapStatus(getPillComponents().status(), ds, pillSwitchIds, pillInputIds);
+        }
         status.time = ds.sys.time;
         status.uptime = ds.sys.uptime;
         status.cloud.connected = getBool(ds.cloud.connected);

@@ -117,6 +117,7 @@ See section [Discovery](#discovery) for details.
 | shellyplusi4dc       | Shelly Plus i4 with 4x DC input                          | SNSN-0D24X                                                                |
 | shellyplus10v        | Shelly Plus Dimmer 0-10V (Gen 2) or 0/1-10V (Gen 3/4)    | SNDM-00100WW, SNGW-0A11WW010, S3DM-0010WW, S4DM-0010WW                    |
 | shellyplusuni        | Shelly Plus UNI                                          | SNSN-0043X                                                                |
+| shellypluspill       | The Pill by Shelly                                       | S3SN-0U53X                                                                |
 | shellyplusht         | Shelly Plus HT with temperature + humidity sensor        | SNSN-0013A, S3SN-0U12A, S3SN-1U12A                                        |
 | shellyplussmoke      | Shelly Plus Smoke sensor                                 | SNSN-0031Z                                                                |
 | shellyplusflood      | Shelly Flood Gen4 / Flood S Gen4 water leak sensor       | S4SN-0071A, S4SN-0071Z                                                    |
@@ -1829,6 +1830,36 @@ totalEnergy might reset on restart depending on device type and firmware version
 | status2 |            |         |           | Same for Input 2                                                      |
 | status3 |            |         |           | Same for Input 3                                                      |
 | status4 |            |         |           | Same for Input 4                                                      |
+
+Channels lastEvent and eventCount are only available if input type is set to momentary button
+
+### The Pill by Shelly (thing-type: shellypluspill)
+
+The channels depend on the peripheral mode configured on the device (Shelly app or web UI).
+The binding adds and removes the channels when the mode changes.
+
+| Peripheral mode     | Channels                                                                         |
+| ------------------- | -------------------------------------------------------------------------------- |
+| SSR                 | relay1, relay2: relay channels (see Shelly Plus 1)                               |
+| Digital I/O         | relay/relayN: output channels for each output, input channels for each input     |
+| DHT22               | sensors: temperature1, humidity                                                  |
+| Analog input        | sensors: voltage                                                                 |
+| 1-Wire (DS18B20)    | sensors: temperature1..temperature5                                              |
+
+| Group   | Channel      | Type     | read-only | Description                                                           |
+| ------- | ------------ | -------- | --------- | --------------------------------------------------------------------- |
+| relay   | output       | Switch   | r/w       | Controls the output (relayN if more than one output is configured)    |
+|         | autoOn       | Number   | r/w       | Relay #1: Sets a timer to turn the device ON after every OFF command  |
+|         | autoOff      | Number   | r/w       | Relay #1: Sets a timer to turn the device OFF after every ON command  |
+|         | timerActive  | Switch   | yes       | Relay #1: ON: An auto-on/off timer is active                          |
+|         | input        | Switch   | yes       | State of the input (input1..3 if more than one input is configured)   |
+|         | button       | Trigger  | yes       | Event trigger, see section Button Events                              |
+|         | lastEvent    | String   | yes       | S/SS/SSS for 1/2/3x Shortpush or L for Longpush                       |
+|         | eventCount   | Number   | yes       | Counter gets incremented every time the device issues a button event. |
+| sensors | temperature1 | Number   | yes       | Temperature value of external sensor #1                               |
+|         | humidity     | Number   | yes       | Humidity in percent (DHT22)                                           |
+|         | voltage      | Number   | yes       | Voltage of the analog input                                           |
+|         | lastUpdate   | DateTime | yes       | Timestamp of the last sensor update (heartbeat)                       |
 
 Channels lastEvent and eventCount are only available if input type is set to momentary button
 

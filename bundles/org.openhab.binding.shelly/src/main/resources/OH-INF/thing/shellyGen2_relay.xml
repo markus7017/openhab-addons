@@ -302,6 +302,29 @@
 		<config-description-ref uri="thing-type:shelly:relay"/>
 	</thing-type>
 
+	<thing-type id="shellypluspill">
+		<label>Shelly Pill</label>
+		<description>The Pill by Shelly - Universal Module for Peripherals (SSR, Digital I/O, Sensors)</description>
+		<semantic-equipment-tag>ControlDevice</semantic-equipment-tag>
+		<channel-groups>
+			<channel-group id="relay" typeId="relayChannel"/>
+			<channel-group id="relay1" typeId="relayChannel">
+				<label>Relay 1</label>
+			</channel-group>
+			<channel-group id="relay2" typeId="relayChannel">
+				<label>Relay 2</label>
+			</channel-group>
+			<channel-group id="relay3" typeId="relayChannel">
+				<label>Relay 3</label>
+			</channel-group>
+			<channel-group id="sensors" typeId="externalSensors"/>
+			<channel-group id="device" typeId="deviceStatus"/>
+		</channel-groups>
+
+		<representation-property>serviceName</representation-property>
+		<config-description-ref uri="thing-type:shelly:relay-gen2"/>
+	</thing-type>
+
 	<thing-type id="shelly1mini">
 		<label>ShellyPlus 1 Mini</label>
 		<description>Shelly Plus Mini 1 - Single Relay Switch</description>

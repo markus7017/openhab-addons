@@ -130,6 +130,7 @@ public class ShellyDeviceProfile {
     public boolean isEM50; // true for Shelly Pro EM50
     public boolean isEM1; // true for em1-clamp meter devices (Plus EM, Mini EM, Pro EM50); Pro EM50 also has a relay
     public boolean isWS90; // true for Ecowitt WS90
+    public boolean isPill; // true for The Pill (peripherals are dynamic components with id 200+n)
 
     public int minTemp = 0; // Bulb/Duo: Min Light Temp
     public int maxTemp = 0; // Bulb/Duo: Max Light Temp
@@ -258,6 +259,7 @@ public class ShellyDeviceProfile {
         isEM50 = THING_TYPE_SHELLYPROEM50.equals(thingTypeUID);
         isEM1 = GROUP_EM1_THING_TYPES.contains(thingTypeUID);
         isWS90 = THING_TYPE_SHELLYBLUWS90.equals(thingTypeUID);
+        isPill = THING_TYPE_SHELLYPLUSPILL.equals(thingTypeUID);
 
         isSensor = isHT || isFlood || isDW || isSmoke || isGas || isButton || isMultiButton || isUNI || isMotion
                 || isSense || isTRV || isWall || isWS90 || isPresence;
@@ -568,6 +570,8 @@ public class ShellyDeviceProfile {
             return String.valueOf(idx);
         } else if (hasRelays) {
             return numRelays == 1 && numInputs >= 2 ? String.valueOf(idx) : "";
+        } else if (isPill) {
+            return numInputs >= 2 ? String.valueOf(idx) : "";
         }
         return "";
     }

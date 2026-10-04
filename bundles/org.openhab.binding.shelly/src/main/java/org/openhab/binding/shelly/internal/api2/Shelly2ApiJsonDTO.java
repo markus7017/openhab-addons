@@ -543,6 +543,12 @@ public class Shelly2ApiJsonDTO {
             public Shelly2DevConfigInput input3;
             @SerializedName("input:4")
             public Shelly2DevConfigInput input4;
+            @SerializedName("input:200")
+            public @Nullable Shelly2DevConfigInput input200; // The Pill
+            @SerializedName("input:201")
+            public @Nullable Shelly2DevConfigInput input201;
+            @SerializedName("input:202")
+            public @Nullable Shelly2DevConfigInput input202;
 
             @SerializedName("switch:0")
             public Shelly2DevConfigSwitch switch0;
@@ -554,6 +560,12 @@ public class Shelly2ApiJsonDTO {
             public Shelly2DevConfigSwitch switch3;
             @SerializedName("switch:100")
             public Shelly2DevConfigSwitch switch100; // Pro 3EM Add-On
+            @SerializedName("switch:200")
+            public @Nullable Shelly2DevConfigSwitch switch200; // The Pill
+            @SerializedName("switch:201")
+            public @Nullable Shelly2DevConfigSwitch switch201;
+            @SerializedName("switch:202")
+            public @Nullable Shelly2DevConfigSwitch switch202;
 
             @SerializedName("cb:0")
             ShellyDeviceConfigCB cb0;
@@ -938,6 +950,12 @@ public class Shelly2ApiJsonDTO {
             public Shelly2InputStatus input4;
             @SerializedName("input:100")
             public Shelly2InputStatus input100; // Digital Input from Add-On
+            @SerializedName("input:200")
+            public @Nullable Shelly2InputStatus input200; // The Pill
+            @SerializedName("input:201")
+            public @Nullable Shelly2InputStatus input201;
+            @SerializedName("input:202")
+            public @Nullable Shelly2InputStatus input202;
 
             @SerializedName("rgbw:0")
             public @Nullable Shelly2RGBWStatus rgbw0;
@@ -952,6 +970,12 @@ public class Shelly2ApiJsonDTO {
             public Shelly2RelayStatus switch3;
             @SerializedName("switch:100")
             public Shelly2RelayStatus switch100; // Pro 3EM Add-On
+            @SerializedName("switch:200")
+            public @Nullable Shelly2RelayStatus switch200; // The Pill
+            @SerializedName("switch:201")
+            public @Nullable Shelly2RelayStatus switch201;
+            @SerializedName("switch:202")
+            public @Nullable Shelly2RelayStatus switch202;
 
             @SerializedName("cb:0")
             Shelly2CBStatus cb0;
@@ -1015,11 +1039,23 @@ public class Shelly2ApiJsonDTO {
             public @Nullable Shelly2DeviceStatusTempId temperature103;
             @SerializedName("temperature:104")
             public @Nullable Shelly2DeviceStatusTempId temperature104;
+            @SerializedName("temperature:200")
+            public @Nullable Shelly2DeviceStatusTempId temperature200; // The Pill
+            @SerializedName("temperature:201")
+            public @Nullable Shelly2DeviceStatusTempId temperature201;
+            @SerializedName("temperature:202")
+            public @Nullable Shelly2DeviceStatusTempId temperature202;
+            @SerializedName("temperature:203")
+            public @Nullable Shelly2DeviceStatusTempId temperature203;
+            @SerializedName("temperature:204")
+            public @Nullable Shelly2DeviceStatusTempId temperature204;
 
             @SerializedName("humidity:0")
             public @Nullable Shelly2DeviceStatusHumidity humidity0;
             @SerializedName("humidity:100")
             public @Nullable Shelly2DeviceStatusHumidity humidity100;
+            @SerializedName("humidity:200")
+            public @Nullable Shelly2DeviceStatusHumidity humidity200; // The Pill
 
             @SerializedName("illuminance:0")
             Shelly2DeviceStatusIlluminance illuminance0;
@@ -1038,6 +1074,8 @@ public class Shelly2ApiJsonDTO {
             public @Nullable Shelly2DeviceStatusVoltage voltmeter2;
             @SerializedName("voltmeter:100")
             public @Nullable Shelly2DeviceStatusVoltage voltmeter100;
+            @SerializedName("voltmeter:200")
+            public @Nullable Shelly2DeviceStatusVoltage voltmeter200; // The Pill
 
             @SerializedName("devicepower:0")
             public Shelly2DeviceStatusPower devicepower0;

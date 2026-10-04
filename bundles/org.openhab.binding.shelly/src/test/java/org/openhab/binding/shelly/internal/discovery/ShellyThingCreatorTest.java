@@ -126,6 +126,7 @@ public class ShellyThingCreatorTest {
                 Arguments.of("shelly2pmg4-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUS2PM_RELAY),
                 Arguments.of("shelly1lg4-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUS1L),
                 Arguments.of("shelly2lg4-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUS2L),
+                Arguments.of("shellypill-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPILL), //
                 Arguments.of("shellyplusrgbwpm-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSRGBWPM), //
                 Arguments.of("shellyduobulbg3-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSDUOBULB), //
                 Arguments.of("shellyplusduobulb-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSDUOBULB), //
@@ -264,6 +265,7 @@ public class ShellyThingCreatorTest {
                 Arguments.of(SHELLYDT_PLUSFLOODSG4, "", THING_TYPE_SHELLYPLUSFLOOD), //
                 Arguments.of(SHELLYDT_PLUSPRESENCE, "", THING_TYPE_SHELLYPLUSPRESENCE), //
                 Arguments.of(SHELLYDT_PLUSUNI, "", THING_TYPE_SHELLYPLUSUNI), //
+                Arguments.of(SHELLYDT_PILL, "", THING_TYPE_SHELLYPLUSPILL), //
                 Arguments.of(SHELLYDT_PLUSDIMMEREU, "", THING_TYPE_SHELLYPLUSDIMMER), //
                 Arguments.of(SHELLYDT_PLUSDIMMERG3, "", THING_TYPE_SHELLYPLUSDIMMER), //
                 Arguments.of(SHELLYDT_PLUSDIMMERG4, "", THING_TYPE_SHELLYPLUSDIMMER), //
