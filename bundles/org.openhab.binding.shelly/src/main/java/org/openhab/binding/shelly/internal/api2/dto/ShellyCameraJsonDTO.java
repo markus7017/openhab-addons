@@ -41,13 +41,10 @@ public class ShellyCameraJsonDTO {
     public static final String SHELLY2_CAMERA_RTSP_STREAM_SUB = "/stream/1";
 
     public static class Shelly2CameraStatus {
-        public @Nullable Integer id;
         public @Nullable Boolean arm;
         public @Nullable Boolean privacy;
         public @Nullable Boolean motion;
         public @Nullable String streamer; // stopped|starting|running|stopping|unknown
-        public @Nullable Integer streams; // number of active streams
-        public String @Nullable [] errors;
     }
 
     public static class Shelly2CameraConfig {
@@ -75,8 +72,6 @@ public class ShellyCameraJsonDTO {
             public @Nullable Boolean irLeds;
         }
 
-        public @Nullable Integer id;
-        public @Nullable String name;
         public @Nullable Shelly2CameraEnable led;
         public @Nullable Shelly2CameraAudio audio;
         public @Nullable Shelly2CameraEnable sounds;

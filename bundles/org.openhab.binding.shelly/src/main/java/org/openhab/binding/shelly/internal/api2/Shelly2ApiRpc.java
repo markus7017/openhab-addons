@@ -1226,15 +1226,12 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
     }
 
     private void handleCameraEvent(ShellyDeviceProfile profile, String event) throws ShellyApiException {
-        Shelly2CameraStatus status = profile.status.camera;
-        if (status == null) {
-            status = new Shelly2CameraStatus();
-            profile.status.camera = status;
-        }
-        if (!ShellyCameraHandler.applyEvent(status, event)) {
+        Shelly2CameraStatus delta = new Shelly2CameraStatus();
+        if (!ShellyCameraHandler.applyEvent(delta, event)) {
             logger.debug("{}: Unhandled camera event {}", thingName, event);
             return;
         }
+        profile.status.camera = ShellyCameraHandler.mergeStatus(profile.status.camera, delta);
         getThing().updateDeviceStatus(profile.status);
         getThing().triggerChannel(CHANNEL_GROUP_SENSOR, CHANNEL_EVENT_TRIGGER, event.toUpperCase(Locale.ROOT));
     }

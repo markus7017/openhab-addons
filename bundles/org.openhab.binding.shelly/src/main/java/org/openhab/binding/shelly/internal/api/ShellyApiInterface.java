@@ -101,11 +101,17 @@ public interface ShellyApiInterface extends ShellyDiscoveryInterface {
 
     void setFloodConfig(int id, @Nullable String alarmMode, int reportHoldoff) throws ShellyApiException;
 
-    void setCamera(@Nullable Boolean arm, @Nullable Boolean privacy) throws ShellyApiException;
+    default void setCamera(@Nullable Boolean arm, @Nullable Boolean privacy) throws ShellyApiException {
+        throw new ShellyApiException("Request not supported");
+    }
 
-    void setCameraConfig(Shelly2CameraConfig config) throws ShellyApiException;
+    default void setCameraConfig(Shelly2CameraConfig config) throws ShellyApiException {
+        throw new ShellyApiException("Request not supported");
+    }
 
-    void playCameraSound(String sound) throws ShellyApiException;
+    default void playCameraSound(String sound) throws ShellyApiException {
+        throw new ShellyApiException("Request not supported");
+    }
 
     ShellyOtaCheckResult checkForUpdate() throws ShellyApiException;
 

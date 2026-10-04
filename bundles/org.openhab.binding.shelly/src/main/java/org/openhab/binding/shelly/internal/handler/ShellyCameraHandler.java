@@ -122,22 +122,16 @@ public class ShellyCameraHandler extends ShellyBaseHandler {
         updated |= updateSwitch(CHANNEL_GROUP_DEV_STATUS, CHANNEL_LED_STATUS_DISABLE, negate(getEnable(config.led)));
         updated |= updateSwitch(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_SOUNDS, getEnable(config.sounds));
         Shelly2CameraAudio audio = config.audio;
-        if (audio != null) {
-            updated |= updateSwitch(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_MUTE, negate(getEnable(audio.input)));
-            Integer volume = getVolume(config);
-            if (volume != null) {
-                updated |= updateChannel(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_VOLUME,
-                        new PercentType(clampVolume(volume)));
-            }
+        updated |= updateSwitch(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_MUTE,
+                negate(getEnable(audio != null ? audio.input : null)));
+        Integer volume = getVolume(config);
+        if (volume != null) {
+            updated |= updateChannel(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_VOLUME, new PercentType(clampVolume(volume)));
         }
         return updated;
     }
 
-    /**
-     * NotifyStatus only carries the changed fields, so they are merged into the cached status instead of replacing it
-     *
-     * @return the status to keep in the cache
-     */
+    // NotifyStatus only carries the changed fields, merge them into the cached status instead of replacing it
     public static Shelly2CameraStatus mergeStatus(@Nullable Shelly2CameraStatus cached, Shelly2CameraStatus delta) {
         if (cached == null) {
             return delta;
@@ -146,14 +140,9 @@ public class ShellyCameraHandler extends ShellyBaseHandler {
         cached.privacy = delta.privacy != null ? delta.privacy : cached.privacy;
         cached.motion = delta.motion != null ? delta.motion : cached.motion;
         cached.streamer = delta.streamer != null ? delta.streamer : cached.streamer;
-        cached.streams = delta.streams != null ? delta.streams : cached.streams;
-        cached.errors = delta.errors != null ? delta.errors : cached.errors;
         return cached;
     }
 
-    /**
-     * @return true if the event is a known camera event and has been applied to the status
-     */
     public static boolean applyEvent(Shelly2CameraStatus status, String event) {
         switch (event) {
             case SHELLY2_EVENT_CAMERA_MOTION, SHELLY2_EVENT_CAMERA_MOTION_END:
@@ -170,11 +159,7 @@ public class ShellyCameraHandler extends ShellyBaseHandler {
         }
     }
 
-    /**
-     * Camera.SetConfig accepts a partial config, so only the setting addressed by the channel is sent
-     *
-     * @return the partial config, null if the channel or command is not supported
-     */
+    // Camera.SetConfig accepts a partial config, so only the setting addressed by the channel is sent
     static @Nullable Shelly2CameraConfig buildConfig(String channel, Command command,
             @Nullable Shelly2CameraConfig current) {
         boolean on = command == OnOffType.ON;
@@ -225,13 +210,7 @@ public class ShellyCameraHandler extends ShellyBaseHandler {
         return config;
     }
 
-    /**
-     * @return the new volume (0..100) for the given command, null if the command is not supported
-     */
     static @Nullable Integer computeVolume(@Nullable Integer currentVolume, Command command) {
-        if (command instanceof PercentType percent) {
-            return percent.intValue();
-        }
         if (command instanceof OnOffType) {
             return command == OnOffType.ON ? 100 : 0;
         }

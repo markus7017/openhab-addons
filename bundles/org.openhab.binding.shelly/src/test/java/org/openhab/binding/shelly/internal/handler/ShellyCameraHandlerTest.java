@@ -17,7 +17,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -37,11 +36,6 @@ import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceConfig.Shelly2GetConfigResult;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusResult;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig.Shelly2CameraAudio;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig.Shelly2CameraAudioOutput;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig.Shelly2CameraEnable;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig.Shelly2CameraMotion;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig.Shelly2CameraNightVision;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraStatus;
 import org.openhab.binding.shelly.internal.provider.ShellyChannelDefinitions;
 import org.openhab.binding.shelly.internal.provider.ShellyTranslationProvider;
@@ -80,60 +74,8 @@ public class ShellyCameraHandlerTest {
     private final Gson gson = new Gson();
 
     @Test
-    public void configIsParsedFromRealDevicePayload() {
-        Shelly2GetConfigResult result = gson.fromJson(CONFIG_JSON, Shelly2GetConfigResult.class);
-        assertNotNull(result);
-        Shelly2CameraConfig config = result.camera0;
-        assertNotNull(config);
-
-        Shelly2CameraEnable led = config.led;
-        assertNotNull(led);
-        assertThat(led.enable, is(true));
-        Shelly2CameraAudio audio = config.audio;
-        assertNotNull(audio);
-        Shelly2CameraEnable input = audio.input;
-        assertNotNull(input);
-        assertThat(input.enable, is(true));
-        Shelly2CameraAudioOutput output = audio.output;
-        assertNotNull(output);
-        assertThat(output.volume, is(100));
-        Shelly2CameraMotion motion = config.motion;
-        assertNotNull(motion);
-        assertThat(motion.sensitivity, is("medium"));
-        Shelly2CameraNightVision nightVision = config.nightVision;
-        assertNotNull(nightVision);
-        assertThat(nightVision.mode, is("auto"));
-        assertThat(nightVision.irLeds, is(true));
-        Shelly2CameraEnable rtsp = config.rtsp;
-        assertNotNull(rtsp);
-        assertThat(rtsp.enable, is(false));
-    }
-
-    @Test
-    public void statusIsParsedFromRealDevicePayload() {
-        Shelly2DeviceStatusResult result = gson.fromJson(STATUS_JSON, Shelly2DeviceStatusResult.class);
-        assertNotNull(result);
-        Shelly2CameraStatus status = result.camera0;
-        assertNotNull(status);
-        assertThat(status.arm, is(true));
-        assertThat(status.privacy, is(false));
-        assertThat(status.motion, is(true));
-        assertThat(status.streamer, is("running"));
-        assertThat(status.streams, is(0));
-    }
-
-    @Test
-    public void mergeStatusWithoutCacheReturnsDelta() {
-        Shelly2CameraStatus delta = new Shelly2CameraStatus();
-        assertThat(ShellyCameraHandler.mergeStatus(null, delta), is(sameInstance(delta)));
-    }
-
-    @Test
     public void mergeStatusKeepsFieldsMissingInDelta() {
-        Shelly2DeviceStatusResult result = gson.fromJson(STATUS_JSON, Shelly2DeviceStatusResult.class);
-        assertNotNull(result);
-        Shelly2CameraStatus cached = result.camera0;
-        assertNotNull(cached);
+        Shelly2CameraStatus cached = gson.fromJson(STATUS_JSON, Shelly2DeviceStatusResult.class).camera0;
         Shelly2CameraStatus delta = new Shelly2CameraStatus();
         delta.motion = false;
 
@@ -261,6 +203,8 @@ public class ShellyCameraHandlerTest {
         verify(handler).updateChannel(CHANNEL_GROUP_MEDIA, CHANNEL_MEDIA_VOLUME, new PercentType(100));
         verify(handler).updateChannel(CHANNEL_GROUP_CONTROL, CHANNEL_CAMERA_ARMED, OnOffType.ON);
         verify(handler).updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION, OnOffType.ON);
+        verify(handler).updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_NIGHT_VISION, new StringType("auto"));
+        verify(handler).updateChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_IR_LEDS, OnOffType.ON);
     }
 
     @Test

@@ -495,9 +495,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
             }
         }
 
-        if (profile.isCamera) {
-            profile.cameraConfig = dc.camera0;
-        }
+        profile.cameraConfig = dc.camera0;
 
         return dc;
     }
