@@ -10,6 +10,9 @@
 		<category>Camera</category>
 		<semantic-equipment-tag>Camera</semantic-equipment-tag>
 		<channel-groups>
+			<channel-group id="control" typeId="control"/>
+			<channel-group id="sensors" typeId="cameraSensors"/>
+			<channel-group id="media" typeId="cameraMedia"/>
 			<channel-group id="camera" typeId="camera"/>
 			<channel-group id="device" typeId="deviceStatus"/>
 		</channel-groups>
@@ -18,12 +21,22 @@
 		<config-description-ref uri="thing-type:shelly:relay-gen2"/>
 	</thing-type>
 
-	<channel-group-type id="camera">
-		<label>Camera</label>
-		<description>Camera state, motion detection, night vision and audio settings</description>
+	<channel-group-type id="cameraSensors">
+		<label>Sensors</label>
+		<description>Motion detection and camera events</description>
 		<channels>
 			<channel id="event" typeId="cameraEvent"/>
 		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="cameraMedia">
+		<label>Audio</label>
+		<description>Speaker and microphone settings</description>
+	</channel-group-type>
+
+	<channel-group-type id="camera">
+		<label>Camera</label>
+		<description>Video streaming, night vision and motion detection settings</description>
 	</channel-group-type>
 
 	<channel-type id="cameraEvent">
@@ -135,30 +148,20 @@
 		</tags>
 	</channel-type>
 
-	<channel-type id="cameraLed" advanced="true">
-		<item-type>Switch</item-type>
-		<label>Status LED</label>
-		<description>ON: the status LED is enabled</description>
-		<tags>
-			<tag>Switch</tag>
-			<tag>Enabled</tag>
-		</tags>
-	</channel-type>
-
-	<channel-type id="cameraSounds" advanced="true">
+	<channel-type id="mediaSounds" advanced="true">
 		<item-type>Switch</item-type>
 		<label>Device Sounds</label>
-		<description>ON: the camera plays built-in notification sounds</description>
+		<description>ON: the device plays built-in notification sounds</description>
 		<tags>
 			<tag>Switch</tag>
 			<tag>Enabled</tag>
 		</tags>
 	</channel-type>
 
-	<channel-type id="cameraPlaySound">
+	<channel-type id="mediaPlaySound">
 		<item-type>String</item-type>
 		<label>Play Sound</label>
-		<description>Play one of the built-in sounds on the camera speaker</description>
+		<description>Play one of the built-in sounds on the device speaker</description>
 		<tags>
 			<tag>Control</tag>
 		</tags>

@@ -107,7 +107,7 @@ import org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.Shelly
 import org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.Shelly2StatusPresence;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
-import org.openhab.binding.shelly.internal.handler.ShellyCamera;
+import org.openhab.binding.shelly.internal.handler.ShellyCameraHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.core.thing.ThingTypeUID;
@@ -701,8 +701,8 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         if (cs == null) {
             return false;
         }
-        status.camera = ShellyCamera.mergeStatus(status.camera, cs);
-        return channelUpdate && ShellyCamera.updateChannels(getThing(), status);
+        status.camera = ShellyCameraHandler.mergeStatus(status.camera, cs);
+        return channelUpdate && getThing().updateDeviceStatus(status);
     }
 
     private boolean updateRelayStatus(int id, ShellySettingsStatus status, @Nullable Shelly2RelayStatus rs,

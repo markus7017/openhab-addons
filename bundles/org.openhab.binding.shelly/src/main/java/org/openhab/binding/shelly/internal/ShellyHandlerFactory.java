@@ -28,6 +28,7 @@ import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyBindingRuntimeConfig;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyBluHandler;
+import org.openhab.binding.shelly.internal.handler.ShellyCameraHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyLightHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyManagerInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyProtectedHandler;
@@ -147,6 +148,11 @@ public class ShellyHandlerFactory extends BaseThingHandlerFactory {
             logger.debug("{}: Create new thing of type {} using ShellyBluSensorHandler", thing.getLabel(),
                     thingTypeUID.toString());
             handler = new ShellyBluHandler(thing, messages, bindingConfig, thingTable, coapServer, httpClient,
+                    webSocketClient, locationProvider, stateDescriptionProvider);
+        } else if (GROUP_CAMERA_THING_TYPES.contains(thingTypeUID)) {
+            logger.debug("{}: Create new thing of type {} using ShellyCameraHandler", thing.getLabel(),
+                    thingTypeUID.toString());
+            handler = new ShellyCameraHandler(thing, messages, bindingConfig, thingTable, coapServer, httpClient,
                     webSocketClient, locationProvider, stateDescriptionProvider);
         } else if (SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
             logger.debug("{}: Create new thing of type {} using ShellyRelayHandler", thing.getLabel(),

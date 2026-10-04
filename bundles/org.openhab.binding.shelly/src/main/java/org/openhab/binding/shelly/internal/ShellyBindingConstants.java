@@ -305,21 +305,21 @@ public class ShellyBindingConstants {
 
     // Camera
     public static final String CHANNEL_GROUP_CAMERA = "camera";
-    public static final String CHANNEL_CAMERA_ARMED = "armed";
-    public static final String CHANNEL_CAMERA_PRIVACY = "privacy";
-    public static final String CHANNEL_CAMERA_MOTION = "motion";
+    public static final String CHANNEL_CAMERA_ARMED = "armed"; // control group
+    public static final String CHANNEL_CAMERA_PRIVACY = "privacy"; // control group
     public static final String CHANNEL_CAMERA_STREAMER = "streamerState";
     public static final String CHANNEL_CAMERA_NIGHT_VISION = "nightVisionMode";
     public static final String CHANNEL_CAMERA_IR_LEDS = "irLeds";
     public static final String CHANNEL_CAMERA_MOTION_SENSITIVITY = "motionSensitivity";
     public static final String CHANNEL_CAMERA_RECORD_ON_MOTION = "recordOnMotion";
-    public static final String CHANNEL_CAMERA_LED = "led";
-    public static final String CHANNEL_CAMERA_VOLUME = "volume";
-    public static final String CHANNEL_CAMERA_MIC_MUTED = "micMuted";
-    public static final String CHANNEL_CAMERA_SOUNDS = "sounds";
-    public static final String CHANNEL_CAMERA_PLAY_SOUND = "playSound";
     public static final String CHANNEL_CAMERA_RTSP = "rtspEnabled";
-    public static final String CHANNEL_CAMERA_EVENT = "event";
+
+    // Media (speaker/microphone)
+    public static final String CHANNEL_GROUP_MEDIA = "media";
+    public static final String CHANNEL_MEDIA_VOLUME = "volume";
+    public static final String CHANNEL_MEDIA_MUTE = "mute";
+    public static final String CHANNEL_MEDIA_SOUNDS = "sounds";
+    public static final String CHANNEL_MEDIA_PLAY_SOUND = "playSound";
 
     // General
     public static final String CHANNEL_LAST_UPDATE = "lastUpdate";

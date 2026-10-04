@@ -84,6 +84,8 @@ public interface ShellyThingInterface {
 
     boolean updateInputs(ShellySettingsStatus status);
 
+    boolean updateDeviceStatus(ShellySettingsStatus status) throws ShellyApiException;
+
     void updateChannelDefinitions(Map<String, Channel> dynChannels);
 
     boolean updateThingChannels(Map<String, Channel> channelUpdates, Map<String, Channel> newChannels);

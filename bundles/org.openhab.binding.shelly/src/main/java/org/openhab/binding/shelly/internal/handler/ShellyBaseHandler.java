@@ -492,14 +492,6 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 profile = getProfile(false);
             }
 
-            if (profile.isCamera && CHANNEL_GROUP_CAMERA.equals(group)) {
-                // camera channel ids (led, volume, ...) are generic, so dispatch on the group before the id switch
-                logger.debug("{}: Camera command {} for channel {}", thingName, command, channel);
-                ShellyCamera.handleCommand(this, channel, command);
-                restartWatchdog();
-                return;
-            }
-
             boolean update = false;
             switch (channelUID.getIdWithoutGroup()) {
                 case CHANNEL_SENSE_KEY: // Shelly Sense: Send Key
@@ -592,7 +584,9 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                     }
                     break;
                 case CHANNEL_SENSOR_MUTE:
-                    if (profile.isSmoke && ((OnOffType) command) == OnOffType.ON) {
+                    if (!profile.isSmoke) {
+                        update = handleDeviceCommand(channelUID, command);
+                    } else if (command == OnOffType.ON) {
                         logger.debug("{}: Mute Smoke Alarm", thingName);
                         api.muteSmokeAlarm(0);
                         updateChannel(getString(channelUID.getGroupId()), CHANNEL_SENSOR_MUTE, OnOffType.OFF);
@@ -777,7 +771,6 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         updated |= updateInputs(status);
         updated |= updateMeters(this, status);
         updated |= updateSensors(this, status);
-        updated |= ShellyCamera.updateChannels(this, status);
 
         // All channels must be created after the first cycle
         channelsCreated = true;
@@ -1922,6 +1915,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
     /**
      * Device specific handlers are overriding this method to do additional stuff
      */
+    @Override
     public boolean updateDeviceStatus(ShellySettingsStatus status) throws ShellyApiException {
         return false;
     }

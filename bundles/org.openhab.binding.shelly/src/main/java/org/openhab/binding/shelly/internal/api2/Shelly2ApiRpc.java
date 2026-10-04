@@ -90,9 +90,10 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptLi
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptListResponse.ShellyScriptListEntry;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptPutCodeParams;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptResponse;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig.Shelly2CameraEnable;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.Shelly2StatusPresence;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
-import org.openhab.binding.shelly.internal.handler.ShellyCamera;
+import org.openhab.binding.shelly.internal.handler.ShellyCameraHandler;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
@@ -1163,6 +1164,14 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
 
     @Override
     public void setLedStatus(String ledName, boolean value) throws ShellyApiException {
+        if (getProfile().isCamera && ledName.equals(SHELLY_LED_STATUS_DISABLE)) {
+            Shelly2CameraEnable led = new Shelly2CameraEnable();
+            led.enable = !value;
+            Shelly2CameraConfig config = new Shelly2CameraConfig();
+            config.led = led;
+            setCameraConfig(config);
+            return;
+        }
         Shelly2RpcRequestParams params = new Shelly2RpcRequestParams().withConfig();
         params.id = 0;
         if (ledName.equals(SHELLY_LED_STATUS_DISABLE)) {
@@ -1222,12 +1231,12 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
             status = new Shelly2CameraStatus();
             profile.status.camera = status;
         }
-        if (!ShellyCamera.applyEvent(status, event)) {
+        if (!ShellyCameraHandler.applyEvent(status, event)) {
             logger.debug("{}: Unhandled camera event {}", thingName, event);
             return;
         }
-        ShellyCamera.updateChannels(getThing(), profile.status);
-        getThing().triggerChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_EVENT, event.toUpperCase(Locale.ROOT));
+        getThing().updateDeviceStatus(profile.status);
+        getThing().triggerChannel(CHANNEL_GROUP_SENSOR, CHANNEL_EVENT_TRIGGER, event.toUpperCase(Locale.ROOT));
     }
 
     @Override
