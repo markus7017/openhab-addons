@@ -45,6 +45,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLi
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusRelay;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyThermnostat;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.core.library.unit.ImperialUnits;
@@ -573,6 +574,21 @@ public class Shelly1HttpApi extends ShellyHttpClient implements ShellyApiInterfa
 
     @Override
     public void setFloodConfig(int id, @Nullable String alarmMode, int reportHoldoff) throws ShellyApiException {
+        throw new ShellyApiException("Request not supported");
+    }
+
+    @Override
+    public void setCamera(@Nullable Boolean arm, @Nullable Boolean privacy) throws ShellyApiException {
+        throw new ShellyApiException("Request not supported");
+    }
+
+    @Override
+    public void setCameraConfig(Shelly2CameraConfig config) throws ShellyApiException {
+        throw new ShellyApiException("Request not supported");
+    }
+
+    @Override
+    public void playCameraSound(String sound) throws ShellyApiException {
         throw new ShellyApiException("Request not supported");
     }
 

@@ -121,6 +121,7 @@ See section [Discovery](#discovery) for details.
 | shellyplussmoke      | Shelly Plus Smoke sensor                                 | SNSN-0031Z                                                                |
 | shellyplusflood      | Shelly Flood Gen4 / Flood S Gen4 water leak sensor       | S4SN-0071A, S4SN-0071Z                                                    |
 | shellypluspresence   | Shelly Presence Gen4 mmWave radar sensor                 | S4SN-0U61X                                                                |
+| shellypluscamera     | Shelly Camera (Gen3) indoor Wi-Fi camera                 | S1CM-0DXW00                                                               |
 | shellypluswdus       | Shelly Plus Wall Dimmer US                               | SNDM-0013US, S4DM-0A102US                                                 |
 | shellyplusdimmer     | Shelly Plus Dimmer                                       | SNDM-0011EU, S3DM-0A101WWL, S4DM-0A101WWL                                 |
 | shellyplusdalidimmer | Shelly Plus DALI Dimmer                                  | S3DM-0A1WW, S4DM-0A1WW                                                    |
@@ -1900,6 +1901,35 @@ Readings from the other zones are not published.
 | control | sensorEnable | Switch             | r/w       | Enable or disable the mmWave radar sensor                      |
 
 Real Presence Gen4 hardware never reports a numeric lux value, only the `illumination` class - `lux` stays `NULL`/undefined.
+
+### Shelly Camera (thing-type: shellypluscamera)
+
+Mains-powered (USB-C) indoor Wi-Fi camera with motion detection, night vision, microphone and speaker.
+`armed`, `privacy` and `motion` are pushed in real time when the device reports a change and are also refreshed on every poll cycle.
+Channels are only created for settings the device reports.
+
+| Group  | Channel           | Type    | read-only | Description                                                                         |
+| ------ | ----------------- | ------- | --------- | ----------------------------------------------------------------------------------- |
+| camera | armed             | Switch  | r/w       | ON: Camera is armed, motion events and recordings are active                        |
+|        | privacy           | Switch  | r/w       | ON: Privacy mode, video and audio capture are disabled                              |
+|        | motion            | Switch  | yes       | ON: Motion is currently detected                                                    |
+|        | streamerState     | String  | yes       | State of the video streamer (stopped / starting / running / stopping / unknown)     |
+|        | nightVisionMode   | String  | r/w       | Night vision mode: `auto`, `day` or `night`                                         |
+|        | irLeds            | Switch  | r/w       | ON: Infrared LEDs are used in night mode                                            |
+|        | motionSensitivity | String  | r/w       | Motion detection sensitivity: `low`, `medium` or `high`                             |
+|        | recordOnMotion    | Switch  | r/w       | ON: A recording is started when motion is detected                                  |
+|        | led               | Switch  | r/w       | ON: Status LED enabled                                                              |
+|        | volume            | Dimmer  | r/w       | Speaker volume in %                                                                 |
+|        | micMuted          | Switch  | r/w       | ON: Microphone is muted                                                             |
+|        | sounds            | Switch  | r/w       | ON: Camera plays its built-in notification sounds                                   |
+|        | playSound         | String  | no        | Play a built-in sound: `alert`, `ding-dong` or `notification`                       |
+|        | rtspEnabled       | Switch  | r/w       | ON: RTSP video streams are enabled                                                  |
+|        | event             | Trigger | yes       | `MOTION`, `MOTION_END`, `ARMED`, `DISARMED`, `PRIVACY_ON`, `PRIVACY_OFF`            |
+
+RTSP streaming is disabled by default, switch on `rtspEnabled` to use the streams.
+The Thing properties `rtspStreamMain` (`rtsp://<device ip>/stream/0`) and `rtspStreamSub` (`rtsp://<device ip>/stream/1`, lower resolution) contain the stream URLs.
+The URLs never include credentials, so the device password doesn't end up in a Thing property.
+If device authentication is enabled, configure user and password in your video client.
 
 ### Shelly Plus Wall Dimmer US (thing-type: shellypluswdus)
 

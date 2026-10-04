@@ -39,6 +39,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettings
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsRgbwLight;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyThermnostat;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig;
 import org.openhab.binding.shelly.internal.discovery.ShellyThingCreator;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
 import org.openhab.core.thing.ThingTypeUID;
@@ -124,6 +125,8 @@ public class ShellyDeviceProfile {
     public boolean isWall; // true: Shelly Wall Display
     public boolean isPresence; // true: Shelly Presence Gen4 (mmWave radar)
     public String presenceMainZoneKey = SHELLY2_PRESENCE_ZONE_PREFIX + SHELLY2_PRESENCE_DEFAULT_ZONE_ID;
+    public boolean isCamera; // true: Shelly Camera
+    public @Nullable Shelly2CameraConfig cameraConfig; // Camera.GetConfig, kept in sync by the setters
     public boolean is3EM; // true for Shelly 3EM and Pro 3EM
     public String floodAlarmMode = ""; // Flood Gen4: alarm mode from Flood.GetConfig
     public int reportHoldoff = 0; // Flood Gen4: report holdoff in seconds
@@ -254,6 +257,7 @@ public class ShellyDeviceProfile {
         isTRV = THING_TYPE_SHELLYTRV.equals(thingTypeUID);
         isWall = GROUP_WALLDISPLAY_THING_TYPES.contains(thingTypeUID);
         isPresence = GROUP_PRESENCE_THING_TYPES.contains(thingTypeUID);
+        isCamera = GROUP_CAMERA_THING_TYPES.contains(thingTypeUID);
         is3EM = GROUP_3EM_THING_TYPES.contains(thingTypeUID);
         isEM50 = THING_TYPE_SHELLYPROEM50.equals(thingTypeUID);
         isEM1 = GROUP_EM1_THING_TYPES.contains(thingTypeUID);

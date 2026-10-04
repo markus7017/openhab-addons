@@ -59,6 +59,8 @@ public class ShellyBindingConstants {
     public static final String PROPERTY_COAP_VERSION = "coapVersion";
     public static final String PROPERTY_COIOTAUTO = "coiotAutoEnable";
     public static final String PROPERTY_CHANNEL_SCHEMA_VERSION = "channelSchemaVersion";
+    public static final String PROPERTY_CAMERA_RTSP_MAIN = "rtspStreamMain";
+    public static final String PROPERTY_CAMERA_RTSP_SUB = "rtspStreamSub";
 
     /*
      * Channel Groups Used at Runtime
@@ -300,6 +302,24 @@ public class ShellyBindingConstants {
     public static final String CHANNEL_LORA_RSSI = "rssi";
     public static final String CHANNEL_LORA_SNR = "snr";
     public static final String CHANNEL_LORA_AIRTIME = "airtime";
+
+    // Camera
+    public static final String CHANNEL_GROUP_CAMERA = "camera";
+    public static final String CHANNEL_CAMERA_ARMED = "armed";
+    public static final String CHANNEL_CAMERA_PRIVACY = "privacy";
+    public static final String CHANNEL_CAMERA_MOTION = "motion";
+    public static final String CHANNEL_CAMERA_STREAMER = "streamerState";
+    public static final String CHANNEL_CAMERA_NIGHT_VISION = "nightVisionMode";
+    public static final String CHANNEL_CAMERA_IR_LEDS = "irLeds";
+    public static final String CHANNEL_CAMERA_MOTION_SENSITIVITY = "motionSensitivity";
+    public static final String CHANNEL_CAMERA_RECORD_ON_MOTION = "recordOnMotion";
+    public static final String CHANNEL_CAMERA_LED = "led";
+    public static final String CHANNEL_CAMERA_VOLUME = "volume";
+    public static final String CHANNEL_CAMERA_MIC_MUTED = "micMuted";
+    public static final String CHANNEL_CAMERA_SOUNDS = "sounds";
+    public static final String CHANNEL_CAMERA_PLAY_SOUND = "playSound";
+    public static final String CHANNEL_CAMERA_RTSP = "rtspEnabled";
+    public static final String CHANNEL_CAMERA_EVENT = "event";
 
     // General
     public static final String CHANNEL_LAST_UPDATE = "lastUpdate";

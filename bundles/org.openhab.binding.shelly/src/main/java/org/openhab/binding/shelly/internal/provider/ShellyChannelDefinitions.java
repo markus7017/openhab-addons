@@ -46,6 +46,11 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettings
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortLightStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLightChannel;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig.Shelly2CameraAudio;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig.Shelly2CameraMotion;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig.Shelly2CameraNightVision;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraStatus;
 import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.core.thing.Channel;
@@ -111,6 +116,7 @@ public class ShellyChannelDefinitions {
     private static final String CHGR_COLOR = CHANNEL_GROUP_COLOR_CONTROL;
     private static final String CHGR_WHITE = CHANNEL_GROUP_WHITE_CONTROL;
     private static final String CHGR_LORA = CHANNEL_GROUP_LORA;
+    private static final String CHGR_CAMERA = CHANNEL_GROUP_CAMERA;
 
     public static final String PREFIX_GROUP = "group-type." + BINDING_ID + ".";
     public static final String PREFIX_CHANNEL = "channel-type." + BINDING_ID + ".";
@@ -425,7 +431,26 @@ public class ShellyChannelDefinitions {
                 .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_TXERRORS, "loraTxErrors", ITEMT_NUMBER))
                 .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_SNR, "loraSNR", ITEMT_DIMENSIONLESS))
                 .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_AIRTIME, "loraAirtime", ITEMT_TIME))
-                .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_RSSI, "loraSignal", ITEMT_POWER));
+                .add(new ShellyChannel(m, CHGR_LORA, CHANNEL_LORA_RSSI, "loraSignal", ITEMT_POWER))
+
+                // Camera
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_ARMED, "cameraArmed", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_PRIVACY, "cameraPrivacy", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_MOTION, "system:motion", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_STREAMER, "cameraStreamerState", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_NIGHT_VISION, "cameraNightVisionMode",
+                        ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_IR_LEDS, "cameraIrLeds", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_MOTION_SENSITIVITY, "cameraMotionSensitivity",
+                        ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_RECORD_ON_MOTION, "cameraRecordOnMotion",
+                        ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_LED, "cameraLed", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_VOLUME, "system:volume", ITEMT_DIMMER))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_MIC_MUTED, "system:mute", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_SOUNDS, "cameraSounds", ITEMT_SWITCH))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_PLAY_SOUND, "cameraPlaySound", ITEMT_STRING))
+                .add(new ShellyChannel(m, CHGR_CAMERA, CHANNEL_CAMERA_RTSP, "cameraRtspEnabled", ITEMT_SWITCH));
     }
 
     public static @Nullable ShellyChannel getDefinition(String channelName) throws IllegalArgumentException {
@@ -542,6 +567,47 @@ public class ShellyChannelDefinitions {
         addChannel(thing, add, profile.settings.loraRxEnabled, CHGR_LORA, CHANNEL_LORA_SNR);
         addChannel(thing, add, true, CHGR_LORA, CHANNEL_LORA_AIRTIME);
 
+        return add;
+    }
+
+    /**
+     * Auto-create channels for the Shelly Camera, each depending on the reported status/config field
+     *
+     * @return {@code Map<String, Channel>} of channels to be added to the thing
+     */
+    public static Map<String, Channel> createCameraChannels(final Thing thing, final ShellyDeviceProfile profile,
+            final @Nullable Shelly2CameraStatus status) {
+        Map<String, Channel> add = new LinkedHashMap<>();
+        if (!profile.isCamera) {
+            return add;
+        }
+
+        Shelly2CameraConfig config = profile.cameraConfig;
+        if (status != null) {
+            addChannel(thing, add, status.arm != null, CHGR_CAMERA, CHANNEL_CAMERA_ARMED);
+            addChannel(thing, add, status.privacy != null, CHGR_CAMERA, CHANNEL_CAMERA_PRIVACY);
+            addChannel(thing, add, status.motion != null, CHGR_CAMERA, CHANNEL_CAMERA_MOTION);
+            addChannel(thing, add, status.streamer != null, CHGR_CAMERA, CHANNEL_CAMERA_STREAMER);
+        }
+        if (config != null) {
+            Shelly2CameraNightVision nightVision = config.nightVision;
+            Shelly2CameraMotion motion = config.motion;
+            Shelly2CameraAudio audio = config.audio;
+            addChannel(thing, add, nightVision != null && nightVision.mode != null, CHGR_CAMERA,
+                    CHANNEL_CAMERA_NIGHT_VISION);
+            addChannel(thing, add, nightVision != null && nightVision.irLeds != null, CHGR_CAMERA,
+                    CHANNEL_CAMERA_IR_LEDS);
+            addChannel(thing, add, motion != null && motion.sensitivity != null, CHGR_CAMERA,
+                    CHANNEL_CAMERA_MOTION_SENSITIVITY);
+            addChannel(thing, add, motion != null && motion.recording != null, CHGR_CAMERA,
+                    CHANNEL_CAMERA_RECORD_ON_MOTION);
+            addChannel(thing, add, config.led != null, CHGR_CAMERA, CHANNEL_CAMERA_LED);
+            addChannel(thing, add, audio != null && audio.output != null, CHGR_CAMERA, CHANNEL_CAMERA_VOLUME);
+            addChannel(thing, add, audio != null && audio.input != null, CHGR_CAMERA, CHANNEL_CAMERA_MIC_MUTED);
+            addChannel(thing, add, config.sounds != null, CHGR_CAMERA, CHANNEL_CAMERA_SOUNDS);
+            addChannel(thing, add, config.sounds != null, CHGR_CAMERA, CHANNEL_CAMERA_PLAY_SOUND);
+            addChannel(thing, add, config.rtsp != null, CHGR_CAMERA, CHANNEL_CAMERA_RTSP);
+        }
         return add;
     }
 

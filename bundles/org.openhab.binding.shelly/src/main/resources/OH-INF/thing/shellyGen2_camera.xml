@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="shelly"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<thing-type id="shellypluscamera">
+		<label>Shelly Camera</label>
+		<description>Shelly Camera - Indoor Wi-Fi camera with motion detection, night vision and two-way audio</description>
+		<category>Camera</category>
+		<semantic-equipment-tag>Camera</semantic-equipment-tag>
+		<channel-groups>
+			<channel-group id="camera" typeId="camera"/>
+			<channel-group id="device" typeId="deviceStatus"/>
+		</channel-groups>
+
+		<representation-property>serviceName</representation-property>
+		<config-description-ref uri="thing-type:shelly:relay-gen2"/>
+	</thing-type>
+
+	<channel-group-type id="camera">
+		<label>Camera</label>
+		<description>Camera state, motion detection, night vision and audio settings</description>
+		<channels>
+			<channel id="event" typeId="cameraEvent"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-type id="cameraEvent">
+		<kind>trigger</kind>
+		<label>Camera Event</label>
+		<description>Triggered on motion start/end, arm/disarm and privacy mode changes</description>
+		<event>
+			<options>
+				<option value="MOTION">Motion detected</option>
+				<option value="MOTION_END">Motion ended</option>
+				<option value="ARMED">Armed</option>
+				<option value="DISARMED">Disarmed</option>
+				<option value="PRIVACY_ON">Privacy mode on</option>
+				<option value="PRIVACY_OFF">Privacy mode off</option>
+			</options>
+		</event>
+	</channel-type>
+
+	<channel-type id="cameraArmed">
+		<item-type>Switch</item-type>
+		<label>Armed</label>
+		<description>ON: motion events and recordings are active</description>
+		<tags>
+			<tag>Switch</tag>
+			<tag>Enabled</tag>
+		</tags>
+	</channel-type>
+
+	<channel-type id="cameraPrivacy">
+		<item-type>Switch</item-type>
+		<label>Privacy Mode</label>
+		<description>ON: video and audio capture are disabled</description>
+		<tags>
+			<tag>Switch</tag>
+			<tag>Enabled</tag>
+		</tags>
+	</channel-type>
+
+	<channel-type id="cameraStreamerState" advanced="true">
+		<item-type>String</item-type>
+		<label>Streamer State</label>
+		<description>State of the camera's video streamer</description>
+		<tags>
+			<tag>Status</tag>
+			<tag>Mode</tag>
+		</tags>
+		<state readOnly="true">
+			<options>
+				<option value="stopped">Stopped</option>
+				<option value="starting">Starting</option>
+				<option value="running">Running</option>
+				<option value="stopping">Stopping</option>
+				<option value="unknown">Unknown</option>
+			</options>
+		</state>
+	</channel-type>
+
+	<channel-type id="cameraNightVisionMode">
+		<item-type>String</item-type>
+		<label>Night Vision Mode</label>
+		<description>Night vision mode: switch automatically by ambient light, or force day/night mode</description>
+		<tags>
+			<tag>Control</tag>
+			<tag>Mode</tag>
+		</tags>
+		<state>
+			<options>
+				<option value="auto">Auto</option>
+				<option value="day">Day</option>
+				<option value="night">Night</option>
+			</options>
+		</state>
+	</channel-type>
+
+	<channel-type id="cameraIrLeds" advanced="true">
+		<item-type>Switch</item-type>
+		<label>IR LEDs</label>
+		<description>ON: infrared LEDs are used in night mode</description>
+		<tags>
+			<tag>Switch</tag>
+			<tag>Enabled</tag>
+		</tags>
+	</channel-type>
+
+	<channel-type id="cameraMotionSensitivity">
+		<item-type>String</item-type>
+		<label>Motion Sensitivity</label>
+		<description>Sensitivity of the motion detection</description>
+		<tags>
+			<tag>Control</tag>
+			<tag>Mode</tag>
+		</tags>
+		<state>
+			<options>
+				<option value="low">Low</option>
+				<option value="medium">Medium</option>
+				<option value="high">High</option>
+			</options>
+		</state>
+	</channel-type>
+
+	<channel-type id="cameraRecordOnMotion">
+		<item-type>Switch</item-type>
+		<label>Record on Motion</label>
+		<description>ON: a recording is started when motion is detected</description>
+		<tags>
+			<tag>Switch</tag>
+			<tag>Enabled</tag>
+		</tags>
+	</channel-type>
+
+	<channel-type id="cameraLed" advanced="true">
+		<item-type>Switch</item-type>
+		<label>Status LED</label>
+		<description>ON: the status LED is enabled</description>
+		<tags>
+			<tag>Switch</tag>
+			<tag>Enabled</tag>
+		</tags>
+	</channel-type>
+
+	<channel-type id="cameraSounds" advanced="true">
+		<item-type>Switch</item-type>
+		<label>Device Sounds</label>
+		<description>ON: the camera plays built-in notification sounds</description>
+		<tags>
+			<tag>Switch</tag>
+			<tag>Enabled</tag>
+		</tags>
+	</channel-type>
+
+	<channel-type id="cameraPlaySound">
+		<item-type>String</item-type>
+		<label>Play Sound</label>
+		<description>Play one of the built-in sounds on the camera speaker</description>
+		<tags>
+			<tag>Control</tag>
+		</tags>
+		<command>
+			<options>
+				<option value="alert">Alert</option>
+				<option value="ding-dong">Ding-Dong</option>
+				<option value="notification">Notification</option>
+			</options>
+		</command>
+	</channel-type>
+
+	<channel-type id="cameraRtspEnabled" advanced="true">
+		<item-type>Switch</item-type>
+		<label>RTSP Streaming</label>
+		<description>ON: the RTSP video streams are enabled, see Thing properties for the stream URLs</description>
+		<tags>
+			<tag>Switch</tag>
+			<tag>Enabled</tag>
+		</tags>
+	</channel-type>
+</thing:thing-descriptions>

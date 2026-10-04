@@ -17,6 +17,7 @@ import static org.openhab.binding.shelly.internal.api.ShellyApiLightUtil.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.ShellyBluJsonDTO.*;
+import static org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
@@ -33,6 +34,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
@@ -90,6 +92,7 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptPu
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.ShellyScriptResponse;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.Shelly2StatusPresence;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
+import org.openhab.binding.shelly.internal.handler.ShellyCamera;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.binding.shelly.internal.handler.ShellyThingTable;
 import org.openhab.binding.shelly.internal.util.ShellyVersionComparator;
@@ -616,6 +619,10 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         for (Shelly2NotifyEvent e : events) {
             String event = getString(e.event);
             int id = getInteger(e.id);
+            if (profile.isCamera && getString(e.component).startsWith(SHELLY2_CAMERA_COMPONENT_PREFIX)) {
+                handleCameraEvent(profile, event);
+                continue;
+            }
             switch (event) {
                 case SHELLY2_EVENT_BTNUP:
                 case SHELLY2_EVENT_BTNDOWN:
@@ -1207,6 +1214,51 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
         params.enable = enable;
         apiRequest(SHELLYRPC_METHOD_PRESENCE_SETSENSOR, params, String.class);
         sensorData.sensorEnable = enable; // status has no such field, keep the cached config in sync
+    }
+
+    private void handleCameraEvent(ShellyDeviceProfile profile, String event) throws ShellyApiException {
+        Shelly2CameraStatus status = profile.status.camera;
+        if (status == null) {
+            status = new Shelly2CameraStatus();
+            profile.status.camera = status;
+        }
+        if (!ShellyCamera.applyEvent(status, event)) {
+            logger.debug("{}: Unhandled camera event {}", thingName, event);
+            return;
+        }
+        ShellyCamera.updateChannels(getThing(), profile.status);
+        getThing().triggerChannel(CHANNEL_GROUP_CAMERA, CHANNEL_CAMERA_EVENT, event.toUpperCase(Locale.ROOT));
+    }
+
+    @Override
+    public void setCamera(@Nullable Boolean arm, @Nullable Boolean privacy) throws ShellyApiException {
+        Shelly2CameraSetParams params = new Shelly2CameraSetParams();
+        params.arm = arm;
+        params.privacy = privacy;
+        apiRequest(SHELLYRPC_METHOD_CAMERA_SET, params, String.class);
+        Shelly2CameraStatus status = getProfile().status.camera;
+        if (status != null) {
+            status.arm = arm != null ? arm : status.arm;
+            status.privacy = privacy != null ? privacy : status.privacy;
+        }
+    }
+
+    @Override
+    public void setCameraConfig(Shelly2CameraConfig config) throws ShellyApiException {
+        Shelly2CameraSetConfigParams params = new Shelly2CameraSetConfigParams();
+        params.config = config;
+        apiRequest(SHELLYRPC_METHOD_CAMERA_SETCONFIG, params, String.class);
+        // SetConfig takes a partial config, re-read the full config instead of merging it into the cache
+        Shelly2RpcRequestParams getParams = new Shelly2RpcRequestParams();
+        getParams.id = 0;
+        getProfile().cameraConfig = apiRequest(SHELLYRPC_METHOD_CAMERA_GETCONFIG, getParams, Shelly2CameraConfig.class);
+    }
+
+    @Override
+    public void playCameraSound(String sound) throws ShellyApiException {
+        Shelly2CameraPlaySoundParams params = new Shelly2CameraPlaySoundParams();
+        params.sound = sound;
+        apiRequest(SHELLYRPC_METHOD_CAMERA_PLAYSOUND, params, String.class);
     }
 
     /**

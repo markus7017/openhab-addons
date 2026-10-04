@@ -20,6 +20,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.shelly.internal.api.ShellyApiLightUtil.ShellyLightApiComponent;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor.ShellyMotionSettings;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2APClientList;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraStatus;
 import org.openhab.core.thing.CommonTriggerEvents;
 
 import com.google.gson.annotations.SerializedName;
@@ -806,6 +807,7 @@ public class Shelly1ApiJsonDTO {
         public @Nullable ArrayList<@NonNull ShellyShortLightStatus> dimmers;
         public @Nullable Integer daliCgCount; // Gen2 DALI Dimmer: control gear count on the DALI bus
         public @Nullable Boolean daliScanActive; // Gen2 DALI Dimmer: a bus scan is currently in progress
+        public @Nullable Shelly2CameraStatus camera; // Shelly Camera: camera:0 status
         public ArrayList<ShellyRollerStatus> rollers;
         public ArrayList<ShellySettingsLight> lights;
         public ArrayList<ShellySettingsMeter> meters;

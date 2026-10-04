@@ -15,6 +15,7 @@ package org.openhab.binding.shelly.internal.handler;
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.ShellyDevices.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
+import static org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.*;
 import static org.openhab.binding.shelly.internal.handler.ShellyComponents.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 import static org.openhab.core.thing.Thing.*;
@@ -491,6 +492,14 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
                 profile = getProfile(false);
             }
 
+            if (profile.isCamera && CHANNEL_GROUP_CAMERA.equals(group)) {
+                // camera channel ids (led, volume, ...) are generic, so dispatch on the group before the id switch
+                logger.debug("{}: Camera command {} for channel {}", thingName, command, channel);
+                ShellyCamera.handleCommand(this, channel, command);
+                restartWatchdog();
+                return;
+            }
+
             boolean update = false;
             switch (channelUID.getIdWithoutGroup()) {
                 case CHANNEL_SENSE_KEY: // Shelly Sense: Send Key
@@ -768,6 +777,7 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
         updated |= updateInputs(status);
         updated |= updateMeters(this, status);
         updated |= updateSensors(this, status);
+        updated |= ShellyCamera.updateChannels(this, status);
 
         // All channels must be created after the first cycle
         channelsCreated = true;
@@ -1721,6 +1731,13 @@ public abstract class ShellyBaseHandler extends BaseThingHandler
             properties.put(PROPERTY_UPDATE_NEW_VERS, getString(status.update.newVersion));
         }
         properties.put(PROPERTY_COIOTAUTO, String.valueOf(autoCoIoT));
+        InetAddress deviceIp = apiConfig.getDeviceIpAddress();
+        if (profile.isCamera && deviceIp != null) {
+            // credentials are never included, the device password must not end up in a Thing property
+            String rtspBase = "rtsp://" + deviceIp.getHostAddress();
+            properties.put(PROPERTY_CAMERA_RTSP_MAIN, rtspBase + SHELLY2_CAMERA_RTSP_STREAM_MAIN);
+            properties.put(PROPERTY_CAMERA_RTSP_SUB, rtspBase + SHELLY2_CAMERA_RTSP_STREAM_SUB);
+        }
 
         flushProperties(properties);
     }

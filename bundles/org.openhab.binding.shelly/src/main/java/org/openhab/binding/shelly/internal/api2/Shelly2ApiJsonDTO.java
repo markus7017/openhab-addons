@@ -22,6 +22,8 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceS
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2DeviceStatusSysAvlUpdate;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2RpcBaseMessage.Shelly2RpcMessageError;
 import org.openhab.binding.shelly.internal.api2.ShellyBluJsonDTO.Shelly2NotifyBluEventData;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraStatus;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyCoverJsonDTO.Shelly2CoverStatus;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyCoverJsonDTO.Shelly2DevConfigCover;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.Shelly2DevConfigPresence;
@@ -613,6 +615,9 @@ public class Shelly2ApiJsonDTO {
             public Shelly2DeviceConfigLora lora100;
 
             public @Nullable Shelly2DevConfigPresence presence;
+
+            @SerializedName("camera:0")
+            public @Nullable Shelly2CameraConfig camera0;
         }
 
         public class Shelly2DeviceConfigSta {
@@ -1047,6 +1052,9 @@ public class Shelly2ApiJsonDTO {
 
             @SerializedName("dali")
             public @Nullable Shelly2DaliStatus dali;
+
+            @SerializedName("camera:0")
+            public @Nullable Shelly2CameraStatus camera0;
         }
 
         public class Shelly2DeviceStatusSys {

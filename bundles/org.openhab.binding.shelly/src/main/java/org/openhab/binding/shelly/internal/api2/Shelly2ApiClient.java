@@ -98,6 +98,7 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2RelaySt
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2RpcBaseMessage;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2RpcRequest.Shelly2RpcRequestParams;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2StatusEm1;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraStatus;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyCoverJsonDTO.Shelly2CoverStatus;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyCoverJsonDTO.Shelly2DevConfigCover;
 import org.openhab.binding.shelly.internal.api2.dto.ShellyCoverJsonDTO.Shelly2DevConfigCover.Shelly2DeviceConfigCoverObstructionDetection;
@@ -106,6 +107,7 @@ import org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.Shelly
 import org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.Shelly2StatusPresence;
 import org.openhab.binding.shelly.internal.config.ShellyApiConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
+import org.openhab.binding.shelly.internal.handler.ShellyCamera;
 import org.openhab.binding.shelly.internal.handler.ShellyComponents;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.core.thing.ThingTypeUID;
@@ -493,6 +495,10 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
             }
         }
 
+        if (profile.isCamera) {
+            profile.cameraConfig = dc.camera0;
+        }
+
         return dc;
     }
 
@@ -669,6 +675,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         updated |= updateLightModeStatus(0, status, result.cct0, channelUpdate);
         updated |= updateLightModeStatus(1, status, result.cct1, channelUpdate);
         updated |= updateLoraStatus(result.lora100);
+        updated |= updateCameraStatus(status, result.camera0, channelUpdate);
         if (channelUpdate) {
             updated |= ShellyComponents.updateMeters(getThing(), status);
         }
@@ -687,6 +694,15 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         updateAddonStatus(status, result);
         updated |= ShellyComponents.updateSensors(getThing(), status);
         return updated;
+    }
+
+    private boolean updateCameraStatus(ShellySettingsStatus status, @Nullable Shelly2CameraStatus cs,
+            boolean channelUpdate) throws ShellyApiException {
+        if (cs == null) {
+            return false;
+        }
+        status.camera = ShellyCamera.mergeStatus(status.camera, cs);
+        return channelUpdate && ShellyCamera.updateChannels(getThing(), status);
     }
 
     private boolean updateRelayStatus(int id, ShellySettingsStatus status, @Nullable Shelly2RelayStatus rs,

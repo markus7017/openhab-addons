@@ -157,6 +157,8 @@ public class ShellyThingCreatorTest {
                 Arguments.of("shellypresenceg4-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPRESENCE), // app=ShellyPresenceG4
                 Arguments.of("shellypresence-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPRESENCE), // older firmware
                 Arguments.of("shellypluspresence-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSPRESENCE), //
+                Arguments.of("shellycamera-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSCAMERA), //
+                Arguments.of("shellypluscamera-" + DEVICE_ID, "", THING_TYPE_SHELLYPLUSCAMERA), //
 
                 // Shelly BLU
                 Arguments.of("shellyblubutton-" + DEVICE_ID, "", THING_TYPE_SHELLYBLUBUTTON1), //
@@ -263,6 +265,7 @@ public class ShellyThingCreatorTest {
                 Arguments.of(SHELLYDT_PLUSFLOODG4, "", THING_TYPE_SHELLYPLUSFLOOD), //
                 Arguments.of(SHELLYDT_PLUSFLOODSG4, "", THING_TYPE_SHELLYPLUSFLOOD), //
                 Arguments.of(SHELLYDT_PLUSPRESENCE, "", THING_TYPE_SHELLYPLUSPRESENCE), //
+                Arguments.of(SHELLYDT_CAMERA, "", THING_TYPE_SHELLYPLUSCAMERA), //
                 Arguments.of(SHELLYDT_PLUSUNI, "", THING_TYPE_SHELLYPLUSUNI), //
                 Arguments.of(SHELLYDT_PLUSDIMMEREU, "", THING_TYPE_SHELLYPLUSDIMMER), //
                 Arguments.of(SHELLYDT_PLUSDIMMERG3, "", THING_TYPE_SHELLYPLUSDIMMER), //

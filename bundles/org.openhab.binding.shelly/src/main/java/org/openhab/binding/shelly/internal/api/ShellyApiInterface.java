@@ -25,6 +25,7 @@ import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyShortLig
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusLight;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusRelay;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyStatusSensor;
+import org.openhab.binding.shelly.internal.api2.dto.ShellyCameraJsonDTO.Shelly2CameraConfig;
 
 /**
  * The {@link ShellyApiInterface} Defines device API
@@ -99,6 +100,12 @@ public interface ShellyApiInterface extends ShellyDiscoveryInterface {
     void setPresenceSensor(boolean enable) throws ShellyApiException;
 
     void setFloodConfig(int id, @Nullable String alarmMode, int reportHoldoff) throws ShellyApiException;
+
+    void setCamera(@Nullable Boolean arm, @Nullable Boolean privacy) throws ShellyApiException;
+
+    void setCameraConfig(Shelly2CameraConfig config) throws ShellyApiException;
+
+    void playCameraSound(String sound) throws ShellyApiException;
 
     ShellyOtaCheckResult checkForUpdate() throws ShellyApiException;
 
