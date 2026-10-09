@@ -380,6 +380,23 @@ public class ShellyComponentsTest {
     }
 
     @Test
+    void updateSensorsPillLastUpdateWrittenOnlyWhenValueChanged() throws Exception {
+        ShellyThingInterface handler = mockHandler(new ShellyDeviceProfile(THING_TYPE_SHELLYPLUSPILL));
+        ShellySettingsStatus status = new ShellySettingsStatus();
+        ShellyExtTemperature ext = new ShellyExtTemperature();
+        ext.sensor1 = sensorAt(22.5);
+        status.extTemperature = ext;
+
+        when(handler.updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_ESENSOR_TEMP1), any())).thenReturn(false);
+        ShellyComponents.updateSensors(handler, status);
+        verify(handler, never()).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_LAST_UPDATE), any());
+
+        when(handler.updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_ESENSOR_TEMP1), any())).thenReturn(true);
+        ShellyComponents.updateSensors(handler, status);
+        verify(handler).updateChannel(eq(CHANNEL_GROUP_SENSOR), eq(CHANNEL_LAST_UPDATE), any());
+    }
+
+    @Test
     void updateSensorsNullSensorSlotSkipsPublish() throws Exception {
         ShellyThingInterface handler = relayHandlerWith(new ShellySettingsStatus());
         ShellySettingsStatus status = new ShellySettingsStatus();

@@ -895,9 +895,10 @@ public class ShellyComponents {
                         toQuantityType(getDouble(anaSensor.percent), DIGITS_PERCENT, Units.PERCENT));
             }
         }
-        if (hasAddon && !(profile.isSensor || profile.hasBattery)) {
+        if (hasAddon && !(profile.isSensor || profile.hasBattery) && (updated || !profile.isPill)) {
             // Relay devices with addon sensors: always refresh lastUpdate so the channel shows
-            // when sensor data was last received, even when temperature values are unchanged
+            // when sensor data was last received, even when temperature values are unchanged.
+            // The Pill reports sensor changes by NotifyStatus, so lastUpdate shows when a value changed.
             thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_LAST_UPDATE, getTimestamp());
             updated = true;
         }

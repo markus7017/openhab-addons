@@ -1838,31 +1838,33 @@ Channels lastEvent and eventCount are only available if input type is set to mom
 The channels depend on the peripheral mode configured on the device (Shelly app or web UI).
 The binding adds and removes the channels when the mode changes.
 Sensor channels follow the configured sensors, so they stay in place when a sensor reading fails.
+While a sensor can't be read (e.g. disconnected), its channel is set to UNDEF.
+The group number matches the pin: an output or input on pin 1 is in group relay1 (I/O 1), pin 2 in relay2 (I/O 2), and so on.
 
 | Peripheral mode  | Channels                                                                     |
 | ---------------- | ---------------------------------------------------------------------------- |
 | SSR              | relay1, relay2: relay channels (see Shelly Plus 1)                           |
-| Digital I/O      | relay/relayN: output channels for each output, input channels for each input |
+| Digital I/O      | relayN: output channels for an output pin, input channels for an input pin   |
 | DHT22            | sensors: temperature1, humidity                                              |
 | Analog input     | sensors: voltage                                                             |
 | 1-Wire (DS18B20) | sensors: temperature1..temperature5                                          |
 
 | Group   | Channel      | Type     | read-only | Description                                                           |
 | ------- | ------------ | -------- | --------- | --------------------------------------------------------------------- |
-| relay   | output       | Switch   | r/w       | Controls the output (relayN if more than one output is configured)    |
+| relayN  | output       | Switch   | r/w       | Controls the output of pin N                                          |
 |         | autoOn       | Number   | r/w       | Sets a timer to turn the output ON after every OFF command            |
 |         | autoOff      | Number   | r/w       | Sets a timer to turn the output OFF after every ON command            |
 |         | timerActive  | Switch   | yes       | ON: An auto-on/off timer is active                                    |
-|         | input        | Switch   | yes       | State of the input (input1..3 if more than one input is configured)   |
+|         | input        | Switch   | yes       | State of the input of pin N                                           |
 |         | button       | Trigger  | yes       | Event trigger, see section Button Events                              |
 |         | lastEvent    | String   | yes       | S/SS/SSS for 1/2/3x Shortpush or L for Longpush                       |
 |         | eventCount   | Number   | yes       | Counter gets incremented every time the device issues a button event. |
 | sensors | temperature1 | Number   | yes       | Temperature of sensor #1 (temperature2..5 for more DS18B20 sensors)   |
 |         | humidity     | Number   | yes       | Humidity in percent (DHT22)                                           |
 |         | voltage      | Number   | yes       | Voltage of the analog input                                           |
-|         | lastUpdate   | DateTime | yes       | Timestamp of the last sensor update (heartbeat)                       |
+|         | lastUpdate   | DateTime | yes       | Timestamp of the last sensor value change                             |
 
-Channels lastEvent and eventCount are only available if input type is set to momentary button.
+Channels button, lastEvent and eventCount are only available if the input type is set to Button, because the device sends button events only in this mode.
 
 ### Shelly Plus HT (thing-type: shellyplusht)
 

@@ -16,6 +16,9 @@ import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.ShellyDevices.*;
 import static org.openhab.binding.shelly.internal.api.ShellyApiLightUtil.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
+import static org.openhab.binding.shelly.internal.api2.Shelly2PillMapper.getPin;
+import static org.openhab.binding.shelly.internal.api2.Shelly2PillMapper.getPosition;
+import static org.openhab.binding.shelly.internal.api2.dto.ShellyPillJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
@@ -411,6 +414,8 @@ public class ShellyDeviceProfile {
                     : CHANNEL_GROUP_DIMMER_CONTROL + idx;
         } else if (isRoller) {
             return numRollers <= 1 ? CHANNEL_GROUP_ROL_CONTROL : CHANNEL_GROUP_ROL_CONTROL + idx;
+        } else if (isPill) {
+            return getPillGroup(SHELLY2_PILL_KEY_SWITCH, i);
         } else if (hasRelays) {
             return numRelays <= 1 ? CHANNEL_GROUP_RELAY_CONTROL : CHANNEL_GROUP_RELAY_CONTROL + idx;
         } else if (isRGBW2) {
@@ -434,6 +439,23 @@ public class ShellyDeviceProfile {
 
         // e.g. ix3
         return numRelays == 1 ? CHANNEL_GROUP_STATUS : CHANNEL_GROUP_STATUS + idx;
+    }
+
+    /**
+     * The Pill's switch and input of the same pin share the group of that pin, so the group numbering matches the
+     * device even when inputs and outputs are mixed.
+     */
+    private String getPillGroup(String type, int position) {
+        int pin = getPin(pillComponents, type, position);
+        return CHANNEL_GROUP_RELAY_CONTROL + ((pin >= 0 ? pin : position) + 1);
+    }
+
+    /**
+     * @param pin 0-based pin of The Pill, taken from the channel group
+     * @return index of the pin's switch in settings.relays, -1 if the pin has no switch
+     */
+    public int getPillRelayIdx(int pin) {
+        return getPosition(pillComponents, SHELLY2_PILL_KEY_SWITCH, pin);
     }
 
     public String getMeterGroup(int idx) {
@@ -523,6 +545,8 @@ public class ShellyDeviceProfile {
         int idx = i + 1; // group names are 1-based
         if (isRGBW2) {
             return CHANNEL_GROUP_LIGHT_CONTROL;
+        } else if (isPill) {
+            return getPillGroup(SHELLY2_PILL_KEY_INPUT, i);
         } else if (isIX || isMultiButton) {
             return CHANNEL_GROUP_STATUS + idx;
         } else if (isButton) {
@@ -552,7 +576,7 @@ public class ShellyDeviceProfile {
 
     public String getInputSuffix(int i) {
         int idx = i + 1; // channel names are 1-based
-        if (isRGBW2 || isIX || isMultiButton) {
+        if (isRGBW2 || isIX || isMultiButton || isPill) {
             return ""; // RGBW2 has only 1 channel
         } else if (isRoller) {
             // Roller has 2 relays, but it will be mapped to 1 roller with 2 inputs
@@ -571,8 +595,6 @@ public class ShellyDeviceProfile {
             return String.valueOf(idx);
         } else if (hasRelays) {
             return numRelays == 1 && numInputs >= 2 ? String.valueOf(idx) : "";
-        } else if (isPill) {
-            return numInputs >= 2 ? String.valueOf(idx) : "";
         }
         return "";
     }
@@ -594,7 +616,7 @@ public class ShellyDeviceProfile {
         List<ShellySettingsDimmer> dimmers = settings.dimmers;
         List<ShellySettingsRelay> relays = settings.relays;
         List<ShellySettingsRgbwLight> lights = settings.lights;
-        if ((isIX || isBlu) && inputs != null && idx < inputs.size()) {
+        if ((isIX || isBlu || isPill) && inputs != null && idx < inputs.size()) {
             ShellySettingsInput input = inputs.get(idx);
             btnType = getString(input.btnType);
         } else if (isDimmer) {

@@ -781,7 +781,8 @@ public class ShellyChannelDefinitions {
                 String suffix = profile.getInputSuffix(i); // multi ? String.valueOf(i + 1) : "";
                 addChannel(thing, add, !profile.isBlu && !profile.isButton && !profile.isMultiButton, group,
                         CHANNEL_INPUT + suffix);
-                addChannel(thing, add, true, group,
+                // The Pill sends push events only for inputs of type button
+                addChannel(thing, add, !profile.isPill || profile.inButtonMode(i), group,
                         (!profile.isRoller ? CHANNEL_BUTTON_TRIGGER + suffix : CHANNEL_EVENT_TRIGGER));
                 if (profile.inButtonMode(i)) {
                     // Create unconditionally: event/eventCount are null until the button is pressed for the

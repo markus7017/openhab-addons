@@ -26,7 +26,6 @@ import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceS
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2DeviceStatus.Shelly2InputStatus;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2NotifyEvent;
 import org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.Shelly2RelayStatus;
-import org.openhab.binding.shelly.internal.api2.dto.ShellyPillJsonDTO;
 
 /**
  * {@link Shelly2PillMapper} maps the peripheral components of The Pill (instance ids 200+n) onto the component
@@ -61,7 +60,7 @@ public class Shelly2PillMapper {
     }
 
     /**
-     * @param type component type prefix, e.g. {@link ShellyPillJsonDTO#SHELLY2_PILL_KEY_SWITCH}
+     * @param type component type prefix, e.g. "switch:"
      * @param index 0-based peripheral index
      * @return component key, e.g. "switch:201" for index 1
      */
@@ -80,13 +79,34 @@ public class Shelly2PillMapper {
         return components.stream().filter(Shelly2PillMapper::isInputComponent).toList().indexOf(key);
     }
 
+    /**
+     * @param type component type prefix, e.g. "switch:"
+     * @param position position of the component among the configured components of this type
+     * @return 0-based peripheral index (pin) of the component, -1 if not configured
+     */
+    public static int getPin(List<String> components, String type, int position) {
+        List<String> keys = components.stream().filter(key -> key.startsWith(type)).toList();
+        if (position < 0 || position >= keys.size()) {
+            return -1;
+        }
+        return Integer.parseInt(keys.get(position).substring(type.length())) - SHELLY2_PILL_ID;
+    }
+
+    /**
+     * @return position of the component with the given pin among the configured components of this type, -1 if not
+     *         configured
+     */
+    public static int getPosition(List<String> components, String type, int pin) {
+        return components.stream().filter(key -> key.startsWith(type)).toList().indexOf(getComponentKey(type, pin));
+    }
+
     public static void mapConfig(Shelly2GetConfigResult pill, Shelly2GetConfigResult dc) {
         dc.switch0 = pill.switch200;
         dc.switch1 = pill.switch201;
         dc.switch2 = pill.switch202;
 
         List<Shelly2DevConfigInput> inputs = getConfiguredInputs(pill);
-        dc.input0 = inputs.size() > 0 ? inputs.get(0) : null;
+        dc.input0 = !inputs.isEmpty() ? inputs.get(0) : null;
         dc.input1 = inputs.size() > 1 ? inputs.get(1) : null;
         dc.input2 = inputs.size() > 2 ? inputs.get(2) : null;
     }

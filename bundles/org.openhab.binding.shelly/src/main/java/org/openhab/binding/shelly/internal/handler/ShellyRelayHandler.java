@@ -88,6 +88,13 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
         if (groupName.startsWith(CHANNEL_GROUP_RELAY_CONTROL)
                 && groupName.length() > CHANNEL_GROUP_RELAY_CONTROL.length()) {
             rIndex = Integer.parseInt(substringAfter(channelUID.getGroupId(), CHANNEL_GROUP_RELAY_CONTROL)) - 1;
+            if (profile.isPill) {
+                rIndex = profile.getPillRelayIdx(rIndex);
+                if (rIndex < 0) {
+                    logger.debug("{}: No output configured for channel {}", thingName, channelUID);
+                    return false;
+                }
+            }
         } else if (groupName.startsWith(CHANNEL_GROUP_ROL_CONTROL)
                 && groupName.length() > CHANNEL_GROUP_ROL_CONTROL.length()) {
             rIndex = Integer.parseInt(substringAfter(channelUID.getGroupId(), CHANNEL_GROUP_ROL_CONTROL)) - 1;

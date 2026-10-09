@@ -17,7 +17,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.ShellyDevices.THING_TYPE_SHELLYPLUS1PM;
+import static org.openhab.binding.shelly.internal.ShellyDevices.THING_TYPE_SHELLYPLUSPILL;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +42,8 @@ import org.openhab.binding.shelly.internal.config.ShellyBindingRuntimeConfig;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.core.net.NetworkAddressChangeListener;
 import org.openhab.core.net.NetworkAddressService;
+import org.openhab.core.thing.ThingTypeUID;
+import org.openhab.core.types.UnDefType;
 
 import com.google.gson.Gson;
 
@@ -104,7 +108,11 @@ public class Shelly2AddonStatusTest {
     }
 
     private ShellyThingInterface mockRelayThing() {
-        ShellyDeviceProfile profile = new ShellyDeviceProfile(THING_TYPE_SHELLYPLUS1PM);
+        return mockThing(THING_TYPE_SHELLYPLUS1PM);
+    }
+
+    private ShellyThingInterface mockThing(ThingTypeUID thingTypeUID) {
+        ShellyDeviceProfile profile = new ShellyDeviceProfile(thingTypeUID);
         profile.isSensor = false;
         profile.hasBattery = false;
         ShellyThingInterface handler = mock(ShellyThingInterface.class);
@@ -257,5 +265,45 @@ public class Shelly2AddonStatusTest {
         newClient().testFillDeviceStatus(status, result);
 
         assertThat("valid voltage must set extVoltage", status.extVoltage, is(not(nullValue())));
+    }
+
+    @Test
+    void fillDeviceStatusPartialUpdateKeepsOtherSensors() throws ShellyApiException {
+        Shelly2DeviceStatusResult full = new Shelly2DeviceStatusResult();
+        full.temperature100 = full.new Shelly2DeviceStatusTempId();
+        full.temperature100.id = 100;
+        full.temperature100.tC = 21.0;
+        full.temperature101 = full.new Shelly2DeviceStatusTempId();
+        full.temperature101.id = 101;
+        full.temperature101.tC = 18.0;
+        Shelly2DeviceStatusResult partial = new Shelly2DeviceStatusResult();
+        partial.temperature101 = partial.new Shelly2DeviceStatusTempId();
+        partial.temperature101.id = 101;
+        partial.temperature101.tC = 19.5;
+
+        ShellySettingsStatus status = new ShellySettingsStatus();
+        TestableApiClient client = newClient();
+        client.testFillDeviceStatus(status, full);
+        client.testFillDeviceStatus(status, partial);
+
+        assertThat(status.extTemperature.sensor1.tC, is(21.0));
+        assertThat(status.extTemperature.sensor2.tC, is(19.5));
+    }
+
+    @Test
+    void pillSensorReadErrorSetsChannelUndef() throws ShellyApiException {
+        ShellyThingInterface thing = mockThing(THING_TYPE_SHELLYPLUSPILL);
+        Shelly2DeviceStatusResult result = new Shelly2DeviceStatusResult();
+        result.temperature101 = result.new Shelly2DeviceStatusTempId();
+        result.temperature101.id = 101;
+        result.temperature101.errors = new ArrayList<>(List.of("read"));
+        result.humidity100 = result.new Shelly2DeviceStatusHumidity();
+        result.humidity100.id = 100;
+        result.humidity100.errors = new ArrayList<>(List.of("read"));
+
+        new TestableApiClient(testConfig(), thing).testFillDeviceStatus(new ShellySettingsStatus(), result);
+
+        verify(thing).updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_ESENSOR_TEMP2, UnDefType.UNDEF);
+        verify(thing).updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_ESENSOR_HUMIDITY, UnDefType.UNDEF);
     }
 }
