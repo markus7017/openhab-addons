@@ -25,7 +25,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.DateTimeException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -327,16 +329,23 @@ public class ShellyUtils {
         return new DateTimeType(Instant.now().truncatedTo(ChronoUnit.SECONDS));
     }
 
-    public static DateTimeType getTimestamp(String zone, long timestamp) {
+    /**
+     * Gen1 meters report the device's local time as epoch seconds, which needs the device's timezone to get the instant
+     *
+     * @return the instant, or UNDEF if the timezone is invalid
+     */
+    public static State getTimestampFromLocalEpoch(String zone, long localEpoch) {
         try {
             ZoneId zoneId = zone.isEmpty() ? ZoneId.systemDefault() : ZoneId.of(zone);
-            Instant instant = Instant.ofEpochSecond(timestamp);
-            int delta = zoneId.getRules().getOffset(instant).getTotalSeconds();
-            return new DateTimeType(Instant.ofEpochSecond(timestamp - delta));
+            return new DateTimeType(
+                    LocalDateTime.ofEpochSecond(localEpoch, 0, ZoneOffset.UTC).atZone(zoneId).toInstant());
         } catch (DateTimeException e) {
-            // Unable to convert device's timezone, use system one
-            return getTimestamp();
+            return UnDefType.UNDEF;
         }
+    }
+
+    public static DateTimeType getTimestampFromEpoch(long epoch) {
+        return new DateTimeType(Instant.ofEpochSecond(epoch));
     }
 
     public static String convertTimestamp(long ts) {

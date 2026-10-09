@@ -278,7 +278,7 @@ public class ShellyComponents {
                 updated |= updateMinuteCounters(thingHandler, groupName, meter.counters);
                 if (meter.timestamp != null) {
                     thingHandler.updateChannel(groupName, CHANNEL_LAST_UPDATE,
-                            getTimestamp(getString(profile.settings.timezone), meter.timestamp));
+                            getTimestampFromLocalEpoch(getString(profile.settings.timezone), meter.timestamp));
                 }
             }
             m++;
@@ -471,7 +471,7 @@ public class ShellyComponents {
         if (updated) {
             if (timestamp > 0) {
                 thingHandler.updateChannel(groupName, CHANNEL_LAST_UPDATE,
-                        getTimestamp(getString(profile.settings.timezone), timestamp));
+                        getTimestampFromLocalEpoch(getString(profile.settings.timezone), timestamp));
             } else {
                 thingHandler.updateChannel(groupName, CHANNEL_LAST_UPDATE, getTimestamp());
             }
@@ -840,7 +840,7 @@ public class ShellyComponents {
                 long timestamp = getLong(sdata.sensor.motionTimestamp);
                 if (timestamp != 0) {
                     updated |= thingHandler.updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_MOTION_TS,
-                            getTimestamp(getString(profile.settings.timezone), timestamp));
+                            getTimestampFromEpoch(timestamp));
                 }
             }
 
