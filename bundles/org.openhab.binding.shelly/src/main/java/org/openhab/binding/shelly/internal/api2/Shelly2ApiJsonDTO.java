@@ -1446,6 +1446,7 @@ public class Shelly2ApiJsonDTO {
         public @Nullable Double ts;
         public @Nullable String component;
         public @Nullable String event;
+        public @Nullable String target;
         // a third-party script may send an array here
         @SerializedName("data")
         public @Nullable JsonElement data;

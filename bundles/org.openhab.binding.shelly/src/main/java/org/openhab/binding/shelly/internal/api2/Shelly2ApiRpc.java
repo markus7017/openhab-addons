@@ -17,6 +17,7 @@ import static org.openhab.binding.shelly.internal.api.ShellyApiLightUtil.*;
 import static org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.*;
 import static org.openhab.binding.shelly.internal.api2.ShellyBluJsonDTO.*;
+import static org.openhab.binding.shelly.internal.api2.dto.ShellyPillJsonDTO.SHELLY2_EVENT_COMPONENT_REMOVED;
 import static org.openhab.binding.shelly.internal.api2.dto.ShellyPresenceJsonDTO.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 
@@ -752,6 +753,11 @@ public class Shelly2ApiRpc extends Shelly2ApiClient implements ShellyApiInterfac
                                 getDecimal(e.numObjects))) {
                             updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_LAST_UPDATE, getTimestamp());
                         }
+                    }
+                    break;
+                case SHELLY2_EVENT_COMPONENT_REMOVED:
+                    if (profile.isPill) {
+                        updatePillSensorRemoved(e.target);
                     }
                     break;
                 default:

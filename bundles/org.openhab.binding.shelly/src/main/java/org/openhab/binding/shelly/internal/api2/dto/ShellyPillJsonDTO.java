@@ -38,6 +38,8 @@ public class ShellyPillJsonDTO {
     public static final String SHELLY2_PILL_KEY_HUMIDITY = "humidity:";
     public static final String SHELLY2_PILL_KEY_VOLTMETER = "voltmeter:";
 
+    public static final String SHELLY2_EVENT_COMPONENT_REMOVED = "component_removed";
+
     public static class Shelly2GetComponentsParams {
         public @Nullable Integer offset;
         public List<String> include = List.of(SHELLY2_GETCOMPONENTS_STATUS, SHELLY2_GETCOMPONENTS_CONFIG);

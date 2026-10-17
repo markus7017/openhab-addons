@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.shelly.internal.api2;
 
+import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.SHELLY2_EVENT_CFGCHANGED;
 import static org.openhab.binding.shelly.internal.api2.dto.ShellyPillJsonDTO.*;
 
@@ -98,6 +99,25 @@ public class Shelly2PillMapper {
      */
     public static int getPosition(List<String> components, String type, int pin) {
         return components.stream().filter(key -> key.startsWith(type)).toList().indexOf(getComponentKey(type, pin));
+    }
+
+    /**
+     * @return sensor channel fed by the given component, null if it is no Pill sensor
+     */
+    public static @Nullable String getSensorChannel(@Nullable String key) {
+        if (key == null) {
+            return null;
+        }
+        return switch (key) {
+            case SHELLY2_PILL_KEY_TEMPERATURE + SHELLY2_PILL_ID -> CHANNEL_ESENSOR_TEMP1;
+            case SHELLY2_PILL_KEY_TEMPERATURE + (SHELLY2_PILL_ID + 1) -> CHANNEL_ESENSOR_TEMP2;
+            case SHELLY2_PILL_KEY_TEMPERATURE + (SHELLY2_PILL_ID + 2) -> CHANNEL_ESENSOR_TEMP3;
+            case SHELLY2_PILL_KEY_TEMPERATURE + (SHELLY2_PILL_ID + 3) -> CHANNEL_ESENSOR_TEMP4;
+            case SHELLY2_PILL_KEY_TEMPERATURE + (SHELLY2_PILL_ID + 4) -> CHANNEL_ESENSOR_TEMP5;
+            case SHELLY2_PILL_KEY_HUMIDITY + SHELLY2_PILL_ID -> CHANNEL_ESENSOR_HUMIDITY;
+            case SHELLY2_PILL_KEY_VOLTMETER + SHELLY2_PILL_ID -> CHANNEL_ESENSOR_VOLTAGE;
+            default -> null;
+        };
     }
 
     public static void mapConfig(Shelly2GetConfigResult pill, Shelly2GetConfigResult dc) {

@@ -1713,9 +1713,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
             extTemp.sensor5 = updateExtTempSensor(ds.temperature104, extTemp.sensor5, CHANNEL_ESENSOR_TEMP5);
             // all sensors reported read errors: clear so that hasAddon() returns false and sensors#lastUpdate is
             // not written
-            boolean hasTemp = extTemp.sensor1 != null || extTemp.sensor2 != null || extTemp.sensor3 != null
-                    || extTemp.sensor4 != null || extTemp.sensor5 != null;
-            status.extTemperature = hasTemp ? extTemp : null;
+            status.extTemperature = hasExtTemperature(extTemp) ? extTemp : null;
         }
         Shelly2DeviceStatusHumidity humidity100 = ds.humidity100;
         if (humidity100 != null) {
@@ -1762,9 +1760,7 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
             return current;
         }
         if (hasReadError(value.errors)) {
-            Integer idBox = value.id;
-            logger.debug("{}: Addon temperature:{} sensor read error, skipping update", thingName,
-                    idBox != null ? idBox : "?");
+            logger.debug("{}: Addon sensor {} read error, skipping update", thingName, channel);
             updatePillSensorReadError(channel);
             return null;
         }
@@ -1783,6 +1779,41 @@ public class Shelly2ApiClient extends ShellyHttpClient implements ShellyDiscover
         if (getProfile().isPill && updateChannel(CHANNEL_GROUP_SENSOR, channel, UnDefType.UNDEF)) {
             updateChannel(CHANNEL_GROUP_SENSOR, CHANNEL_LAST_UPDATE, getTimestamp());
         }
+    }
+
+    /**
+     * The Pill removes the component of an unplugged sensor, so its status is no longer reported.
+     */
+    protected void updatePillSensorRemoved(@Nullable String key) throws ShellyApiException {
+        String channel = Shelly2PillMapper.getSensorChannel(key);
+        if (channel == null) {
+            return;
+        }
+        logger.debug("{}: Sensor {} was removed", thingName, key);
+        ShellySettingsStatus status = getProfile().status;
+        ShellyExtTemperature extTemp = status.extTemperature;
+        switch (channel) {
+            case CHANNEL_ESENSOR_HUMIDITY -> status.extHumidity = null;
+            case CHANNEL_ESENSOR_VOLTAGE -> status.extVoltage = null;
+            default -> {
+                if (extTemp != null) {
+                    switch (channel) {
+                        case CHANNEL_ESENSOR_TEMP1 -> extTemp.sensor1 = null;
+                        case CHANNEL_ESENSOR_TEMP2 -> extTemp.sensor2 = null;
+                        case CHANNEL_ESENSOR_TEMP3 -> extTemp.sensor3 = null;
+                        case CHANNEL_ESENSOR_TEMP4 -> extTemp.sensor4 = null;
+                        default -> extTemp.sensor5 = null;
+                    }
+                    status.extTemperature = hasExtTemperature(extTemp) ? extTemp : null;
+                }
+            }
+        }
+        updatePillSensorReadError(channel);
+    }
+
+    private static boolean hasExtTemperature(ShellyExtTemperature extTemp) {
+        return extTemp.sensor1 != null || extTemp.sensor2 != null || extTemp.sensor3 != null || extTemp.sensor4 != null
+                || extTemp.sensor5 != null;
     }
 
     private static boolean hasReadError(@Nullable ArrayList<String> errors) {

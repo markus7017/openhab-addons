@@ -14,6 +14,7 @@ package org.openhab.binding.shelly.internal.api2;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
 import static org.openhab.binding.shelly.internal.api2.Shelly2ApiJsonDTO.SHELLY2_EVENT_CFGCHANGED;
 import static org.openhab.binding.shelly.internal.api2.Shelly2PillMapper.getComponentKey;
 import static org.openhab.binding.shelly.internal.api2.dto.ShellyPillJsonDTO.*;
@@ -148,5 +149,16 @@ public class Shelly2PillMapperTest {
         assertThat(ds.temperature100.tC, is(21.5));
         assertThat(ds.humidity100.rh, is(45.0));
         assertThat(ds.voltmeter100.voltage, is(0.58));
+    }
+
+    @Test
+    public void removedSensorComponentMapsToSensorChannel() {
+        assertThat(Shelly2PillMapper.getSensorChannel("temperature:200"), is(CHANNEL_ESENSOR_TEMP1));
+        assertThat(Shelly2PillMapper.getSensorChannel("temperature:204"), is(CHANNEL_ESENSOR_TEMP5));
+        assertThat(Shelly2PillMapper.getSensorChannel("humidity:200"), is(CHANNEL_ESENSOR_HUMIDITY));
+        assertThat(Shelly2PillMapper.getSensorChannel("voltmeter:200"), is(CHANNEL_ESENSOR_VOLTAGE));
+        assertThat(Shelly2PillMapper.getSensorChannel("temperature:100"), is(nullValue()));
+        assertThat(Shelly2PillMapper.getSensorChannel("input:200"), is(nullValue()));
+        assertThat(Shelly2PillMapper.getSensorChannel(null), is(nullValue()));
     }
 }
