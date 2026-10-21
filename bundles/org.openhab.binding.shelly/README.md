@@ -2677,6 +2677,8 @@ end
 |         | playRadioFavId     | Number   | r/w       | Start playback of a radio favorite by its id                                      |
 | control | thermostatEnable   | Switch   | r/w       | Enable or disable the Wall Display thermostat                                     |
 |         | targetTemp         | Number   | r/w       | Thermostat target temperature in °C                                               |
+|         | schedule           | Switch   | r/w       | ON: The thermostat follows its schedule                                           |
+|         | selectedProfile    | String   | r/w       | Id of the active schedule profile, the profile names are offered as options       |
 
 The `media` channel group is only available on devices reporting a Media RPC
 component (e.g. Wall Display when a speaker/radio is configured). Media
@@ -2690,6 +2692,16 @@ available on devices reporting a Thermostat RPC component (e.g. Wall Display
 when a virtual thermostat is configured in the Shelly app). The thermostat's
 current temperature and controlled output are already reflected by the
 existing `sensors#temperature` and `relay#output` channels.
+
+The `schedule` and `selectedProfile` channels are available when the
+thermostat reports a schedule.
+`selectedProfile` accepts the id or the name of a profile.
+The ids and names of the profiles configured in the Shelly app are offered as
+options (for a Selection widget). Profiles and schedule rules themselves can
+only be edited in the Shelly app.
+The list of profiles is read when the Thing is initialized, and again when the
+device reports a profile that is not in the list yet.
+Renamed profiles are picked up when the Thing is initialized again.
 
 The `media` and `control` channels are added as soon as the corresponding
 component shows up in the device status, so enabling the media player or the
