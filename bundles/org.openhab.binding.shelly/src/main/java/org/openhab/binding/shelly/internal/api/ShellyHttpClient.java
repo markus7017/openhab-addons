@@ -241,6 +241,10 @@ public class ShellyHttpClient {
                 throw new ShellyApiException("Unexpected response: " + response);
             }
         } catch (ExecutionException | InterruptedException | TimeoutException | IllegalArgumentException e) {
+            if (e instanceof InterruptedException) {
+                // keep the interrupt so a cancelled job (e.g. on thing shutdown) stops instead of continuing
+                Thread.currentThread().interrupt();
+            }
             ShellyApiException ex = new ShellyApiException(builder.build(), e);
             if (!ex.isConnectionError() && !ex.isTimeout() && logger.isTraceEnabled()) {
                 logger.trace("{}: API call returned exception", thingName, ex);
