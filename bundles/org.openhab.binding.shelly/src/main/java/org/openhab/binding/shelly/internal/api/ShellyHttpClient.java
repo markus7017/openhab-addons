@@ -147,7 +147,7 @@ public class ShellyHttpClient {
 
                 if (e.isConnectionError()
                         || (!e.isTimeout() && !apiResult.isHttpServerError()) && !apiResult.isNotFound()
-                        || profile.hasBattery || (retries == 0)) {
+                        || profile.hasBattery || (retries == 0) || Thread.currentThread().isInterrupted()) {
                     // Sensor in sleep mode or API exception for non-battery device or retry counter expired
                     throw e; // non-timeout exception
                 }

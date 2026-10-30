@@ -51,7 +51,20 @@ class ShellyHttpClientInterruptTest {
         assertTrue(Thread.currentThread().isInterrupted());
     }
 
+    @Test
+    void interruptedGetRequestIsNotRetried() throws Exception {
+        HttpClient httpClient = mock(HttpClient.class);
+        ShellyHttpClient client = buildClient(httpClient);
+
+        assertThrows(ShellyApiException.class, () -> client.httpRequest("/status"));
+        verify(httpClient, times(1)).newRequest(anyString());
+    }
+
     private static ShellyHttpClient buildClient() throws Exception {
+        return buildClient(mock(HttpClient.class));
+    }
+
+    private static ShellyHttpClient buildClient(HttpClient httpClient) throws Exception {
         Request request = mock(Request.class);
         when(request.method(anyString())).thenReturn(request);
         when(request.timeout(anyLong(), any(TimeUnit.class))).thenReturn(request);
@@ -60,7 +73,6 @@ class ShellyHttpClientInterruptTest {
         when(request.getURI()).thenReturn(URI.create("http://192.168.1.2/rpc"));
         when(request.getMethod()).thenReturn("POST");
 
-        HttpClient httpClient = mock(HttpClient.class);
         when(httpClient.newRequest(anyString())).thenReturn(request);
 
         ShellyBindingConfiguration raw = ShellyBindingConfiguration
